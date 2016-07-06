@@ -213,7 +213,7 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="../build/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="../build/src-noconflict/ext-language_tools.js"></script>
 <script>
-    ace.require("ace/ext/language_tools");
+    var langTools = ace.require("ace/ext/language_tools");
 
     var editor = ace.edit("editor");
     var session = editor.getSession();
@@ -239,24 +239,27 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: true
+        enableLiveAutocompletion: true 
     });
    
     var warmUpCompleter = {
         getCompletions: function(editor, session, pos, prefix, callback) {
-            var wordList = ["\\begin{itemize} \n \n\\end{itemize}", "\\item"];
+            var wordList = ["\\begin{itemize} \n \n\\end{itemize}", 
+                            "\\begin{enumerate} \n \n\\\end{enumerate}"
+                           ];
+
             callback(null, wordList.map(function(word) {
-            return {
-                caption: word,
-                value: word,
-                meta: "TEX"
-            };
-        }));
+                return {
+                    caption: word,
+                    value: word,
+                    meta: "TEX"
+                };
+            }
+            ));
         }
     }
 
- 
-    editor.completers = [warmUpCompleter];
+    langTools.addCompleter(warmUpCompleter);
 
 </script>
 
