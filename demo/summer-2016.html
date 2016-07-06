@@ -214,7 +214,8 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="../build/src-noconflict/ext-language_tools.js"></script>
 <script>
     ace.require("ace/ext/language_tools");
-    smth = ace.require("ace/lib/katex/katex");
+    katex = ace.require("ace/lib/katex/katex");
+    console.log("KaTeX loaded successfully " + katex);
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
