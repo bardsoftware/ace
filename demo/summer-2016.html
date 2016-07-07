@@ -210,10 +210,13 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 
 \end{document}</pre>
 
-<script src="../build/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="../build/src-noconflict/ext-language_tools.js"></script>
+<script src="kitchen-sink/require.js"></script>
 <script>
+require.config({ paths : { "ace" : "../lib/ace" } });
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
     ace.require("ace/ext/language_tools");
+    katex = ace.require("ace/ext/katex");
+    console.log("KaTeX loaded successfully " + katex);
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -239,6 +242,8 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
         enableSnippets: true,
         enableLiveAutocompletion: false
     });
+
+});
 </script>
 
 </body>
