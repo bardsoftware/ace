@@ -8,7 +8,6 @@
     body {
         overflow: hidden;
     }
-
     #editor {
         margin: 0;
         position: absolute;
@@ -17,7 +16,6 @@
         left: 0;
         right: 0;
     }
-
     .typo {
       border-bottom: 1px dotted red;
     }
@@ -221,7 +219,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-
     window.onload = function() {
       session._emit("changeSpellingCheckSettings", {
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
@@ -237,12 +234,31 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
         }
       });
     };
+
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: false
+        enableLiveAutocompletion: true
     });
 
+    var warmUpCompleter = {
+        getCompletions: function(editor, session, pos, prefix, callback) {
+            var wordList = ["\\begin{itemize} \n \n\\end{itemize}", 
+                            "\\begin{enumerate} \n \n\\\end{enumerate}"
+                           ];
+
+            callback(null, wordList.map(function(word) {
+                return {
+                    caption: word,
+                    value: word,
+                    meta: "TEX"
+                };
+            }));
+        }
+    }
+
+    langTools.addCompleter(warmUpCompleter);
+    console.log("Simple Latex Completer successfully added");
 });
 </script>
 
