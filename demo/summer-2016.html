@@ -211,8 +211,7 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
-    langTools = ace.require("ace/ext/language_tools");
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, langTools) {
     katex = ace.require("ace/ext/katex");
     console.log("KaTeX loaded successfully " + katex);
     var editor = ace.edit("editor");
@@ -240,6 +239,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
         enableSnippets: true,
         enableLiveAutocompletion: true
     });
+
+
 
     var warmUpCompleter = {
         getCompletions: function(editor, session, pos, prefix, callback) {
