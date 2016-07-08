@@ -241,11 +241,9 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
 
 
 
-    var warmUpCompleter = {
+    var texCompleter = {
         getCompletions: function(editor, session, pos, prefix, callback) {
-            var wordList = ["\\begin{itemize} \n \n\\end{itemize}", 
-                            "\\begin{enumerate} \n \n\\\end{enumerate}"
-                           ];
+            var wordList = ["\\item"];
 
             callback(null, wordList.map(function(word) {
                 return {
@@ -256,8 +254,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
             }));
         }
     }
-
-    langTools.addCompleter(warmUpCompleter);
+    langTools.addCompleter(texCompleter);
     console.log("Simple Latex Completer successfully added");
 });
 </script>
