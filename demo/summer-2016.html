@@ -240,7 +240,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
     });
 
 
-    require(["ace/autocomplete/papeeria/tex_completer"], function(completer) {
+    require(["ace/ext/papeeria/tex_completer"], function(completer) {
       var texCompleter = completer;
       langTools.addCompleter(texCompleter);
       console.log("Simple Latex Completer successfully added");
