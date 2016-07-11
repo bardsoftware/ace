@@ -211,12 +211,12 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex", "ace/ext/katex-demo"], function(ace) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
     var langTools = ace.require("ace/ext/language_tools");
     katex = ace.require("ace/ext/katex");
     console.log("KaTeX loaded successfully " + katex);
 
-    ace.require("ace/ext/katex-demo");
+    setTimeout(function() { require(["ace/ext/katex-demo"], function() {}); }, 3000);
 
     var editor = ace.edit("editor");
     var session = editor.getSession();
