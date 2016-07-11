@@ -212,7 +212,7 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
 require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex", "ace/ext/katex-demo"], function(ace) {
-    ace.require("ace/ext/language_tools");
+    var langTools = ace.require("ace/ext/language_tools");
     katex = ace.require("ace/ext/katex");
     console.log("KaTeX loaded successfully " + katex);
 
