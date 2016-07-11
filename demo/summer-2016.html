@@ -240,23 +240,13 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
     });
 
 
+    require(["ace/ext/papeeria/tex_completer"], function(completer) {
+      var texCompleter = completer;
+      langTools.addCompleter(texCompleter);
+      console.log("Simple Latex Completer successfully added");
+    });
 
-    var texCompleter = {
-        getCompletions: function(editor, session, pos, prefix, callback) {
-            var wordList = ["\\item"];
-
-            callback(null, wordList.map(function(word) {
-                return {
-                    caption: word,
-                    value: word,
-                    meta: "TEX"
-                };
-            }));
-        }
-    }
-    langTools.snippetCompleter.getDocTooltip = null
-    langTools.addCompleter(texCompleter);
-    console.log("Simple Latex Completer successfully added");
+    langTools.snippetCompleter.getDocTooltip = null;
 });
 </script>
 
