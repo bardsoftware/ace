@@ -214,7 +214,7 @@ require.config({ paths : { "ace" : "../lib/ace" } });
 require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, langTools, katex) {
     console.log("KaTeX loaded successfully " + katex);
 
-    require(["ace/ext/katex-demo"]);
+    require(["ace/ext/papeeria/katex-demo"]);
 
     var editor = ace.edit("editor");
     var session = editor.getSession();
