@@ -1,9 +1,9 @@
 #formula {
-    text-align:      center;
-    font-size:       1.5em;
+    text-align: center;
+    font-size: 1.5em;
     margin: 0;
     position: absolute;
     top: 0;
     right: 0.4cm;
-    z-index: = 1;
+    z-index: 1;
 }
