@@ -241,22 +241,13 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
 
 
 
-    var texCompleter = {
-        getCompletions: function(editor, session, pos, prefix, callback) {
-            var wordList = ["\\item"];
+    require(["ace/ext/papeeria/tex_completer"], function(completer) {
+        var texCompleter = completer;
+        langTools.addCompleter(texCompleter);
+        console.log("Simple Latex Completer successfully added");
+    });
 
-            callback(null, wordList.map(function(word) {
-                return {
-                    caption: word,
-                    value: word,
-                    meta: "TEX"
-                };
-            }));
-        }
-    }
     langTools.snippetCompleter.getDocTooltip = null
-    langTools.addCompleter(texCompleter);
-    console.log("Simple Latex Completer successfully added");
 });
 </script>
 
