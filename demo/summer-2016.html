@@ -219,7 +219,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-    window.onload = function() {
+
+    var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
         alphabet: 'abcdefghijklmnopqrstuvwxyz1234567890',
         enabled: true,
@@ -234,6 +235,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace) {
         }
       });
     };
+    session.on("changeMode", initSpellCheck);
 
     editor.setOptions({
         enableBasicAutocompletion: true,
