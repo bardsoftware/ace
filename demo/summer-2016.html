@@ -211,7 +211,7 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex", "ace/ext/papeeria/katex-drawer"], function(ace, langTools, katex, katexDrawer) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex", "ace/ext/papeeria/katex-previewer"], function(ace, langTools, katex, katexPreviewer) {
     console.log("KaTeX loaded successfully " + katex);
 
     var editor = ace.edit("editor");
@@ -248,7 +248,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex", "ace/ext/papeeria
 
     langTools.snippetCompleter.getDocTooltip = null;
 
-    katexDrawer.setupPreviewer(editor);
+    katexPreviewer.setupPreviewer(editor);
 });
 </script>
 
