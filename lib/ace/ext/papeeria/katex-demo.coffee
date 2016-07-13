@@ -1,7 +1,7 @@
 define((require, exports, module) ->
     require("ace/ext/jquery")
 
-    $(document).ready ->
+    $(document).ready( ->
         # Adding KaTeX CSS
         cssKatexPath = require.toUrl("../katex/katex.min.css")
         linkKatex = $("<link>").attr("rel", "stylesheet").attr("href", cssKatexPath)
@@ -21,4 +21,5 @@ define((require, exports, module) ->
         # Drawing the sample formula in created element
         formulaString = "e^{i \\pi} + 1 = 0"
         katex.render(formulaString, span[0])
+    )
 )
