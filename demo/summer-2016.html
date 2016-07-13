@@ -213,6 +213,9 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 require.config({ paths : { "ace" : "../lib/ace" } });
 require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, langTools, katex) {
     console.log("KaTeX loaded successfully " + katex);
+
+    require(["ace/ext/papeeria/katex-demo"]);
+
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
