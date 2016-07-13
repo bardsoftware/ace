@@ -21,16 +21,17 @@ define((require, exports, module) ->
 
             katex = require("ace/ext/katex")
             katexInitialized = true
+            return
 
-        keyCode = 80
-        $(document).ready( ->
-            $(document).keydown((e) ->
-                if e.altKey and e.keyCode == keyCode
-                    if not katexInitialized
-                        initKaTeX()
-                    selectedText = editor.getSelectedText()
-                    katex.render(selectedText, $("#formula")[0])
-            )
-        )
+        editor.commands.addCommand({
+            name: "previewLaTeXFormula",
+            bindKey: {win: "Alt-p", mac: "Alt-p"},
+            exec: (editor) ->
+                if not katexInitialized
+                    initKaTeX()
+                selectedText = editor.getSelectedText()
+                katex.render(selectedText, $("#formula")[0])
+                return
+        })
     return
 )
