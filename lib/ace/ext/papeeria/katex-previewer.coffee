@@ -1,8 +1,7 @@
 define((require, exports, module) ->
     exports.setupPreviewer = (editor) ->
         require("ace/ext/jquery")
-        katexInitialized = false
-        katex = {}
+        katex = null
 
         initKaTeX = ->
             # Adding KaTeX CSS
@@ -20,18 +19,21 @@ define((require, exports, module) ->
             $("body").append(span)
 
             katex = require("ace/ext/katex")
-            katexInitialized = true
             return
 
         editor.commands.addCommand({
             name: "previewLaTeXFormula",
             bindKey: {win: "Alt-p", mac: "Alt-p"},
             exec: (editor) ->
-                if not katexInitialized
+                unless katex?
                     initKaTeX()
                 selectedText = editor.getSelectedText()
-                katex.render(selectedText, $("#formula")[0])
-                return
+                try
+                    katex.render(selectedText, $("#formula")[0])
+                catch e
+                    $("#formula").text("Can't parse selected text!")
+                finally
+                    return
         })
     return
 )
