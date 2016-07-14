@@ -31,7 +31,7 @@ define((require, exports, module) ->
                 try
                     katex.render(selectedText, $("#formula")[0])
                 catch e
-                    $("#formula").text("Can't parse selected text!")
+                    $("#formula").text(e.message)
                 finally
                     return
         })
