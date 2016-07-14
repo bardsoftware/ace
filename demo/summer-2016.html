@@ -211,9 +211,7 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex", "ace/ext/papeeria/katex-previewer"], function(ace, langTools, katex, katexPreviewer) {
-    console.log("KaTeX loaded successfully " + katex);
-
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"], function(ace, langTools, katexPreviewer) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
