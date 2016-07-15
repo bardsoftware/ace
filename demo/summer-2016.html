@@ -245,8 +245,9 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     });
 
     document.getElementById("editor").addEventListener("click", function() {
-      require(["ace/ext/papeeria/findSurroundingBrackets"], function(findSurroundingBrackets) {
-          console.log(findSurroundingBrackets(editor));
+      require(["ace/ext/papeeria/findSurroundingBrackets", "ace/ext/papeeria/highlightingBrackets"], function(findSurroundingBrackets, highlightingBrackets) {
+          var pos = findSurroundingBrackets(editor);
+          highlightingBrackets(editor, pos);
       });
     })
 
