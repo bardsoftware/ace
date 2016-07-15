@@ -1,4 +1,4 @@
-define (require, exports, module) ->
+define( (require, exports, module) ->
   'use strict'
   oop = require('../../lib/oop')
   TextHighlightRules = require('../../mode/text_highlight_rules').TextHighlightRules
@@ -97,7 +97,7 @@ define (require, exports, module) ->
       'start': [
         beginRule('itemize|enumerate', 'list')
         beginRule('equation|equation\\*', 'equation')
-        
+
         endRule('equation|equation\\*')
         endRule("itemize|enumerate")
 
@@ -128,3 +128,4 @@ define (require, exports, module) ->
   oop.inherits PapeeriaLatexHighlightRules, TextHighlightRules
   exports.PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRules
   return
+) 
