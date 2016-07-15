@@ -1,4 +1,4 @@
-define ((require, exports, module) ->
+define((require, exports, module) ->
     # SpellChecker is a class that by now provides only numbers highlighting,
     # but it will provide a hunspell spellchecking someday.
     class SpellChecker
@@ -8,9 +8,13 @@ define ((require, exports, module) ->
         # @param {String} token Token to check.
         # @return {Boolean} True if token is numeric, false otherwise.
         check: (token) =>
-            numericRegExp = /^\d+$/             # number regexp
-            return !numericRegExp.test(token)
+            return !NUMERIC_REGEXP.test(token)
+
 
     exports.SpellChecker = SpellChecker
     return
 )
+
+
+# Regexp to check if token is a number
+NUMERIC_REGEXP = /^\d+$/
