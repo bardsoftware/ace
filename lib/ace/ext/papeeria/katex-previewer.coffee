@@ -18,22 +18,29 @@ define((require, exports, module) ->
             span = $("<span>").attr("id", "formula")
             $("body").append(span)
 
-            katex = require("ace/ext/katex")
+            require(["ace/ext/katex/katex"], (katexInner) ->
+                katex = katexInner
+                return
+            )
+            return
+
+        callback = (editor) ->
+            unless katex?
+                initKaTeX()
+                setTimeout((-> callback(editor)), 0)
+                return
+            selectedText = editor.getSelectedText()
+            try
+                katex.render(selectedText, $("#formula")[0])
+            catch e
+                $("#formula").text(e.message)
             return
 
         editor.commands.addCommand({
             name: "previewLaTeXFormula",
             bindKey: {win: "Alt-p", mac: "Alt-p"},
-            exec: (editor) ->
-                unless katex?
-                    initKaTeX()
-                selectedText = editor.getSelectedText()
-                try
-                    katex.render(selectedText, $("#formula")[0])
-                catch e
-                    $("#formula").text(e.message)
-                finally
-                    return
+            exec: callback
         })
+        return
     return
 )
