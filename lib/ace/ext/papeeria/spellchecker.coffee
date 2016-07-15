@@ -1,16 +1,16 @@
-define (require, exports, module) ->
-    "use strict";
+define ((require, exports, module) ->
     # SpellChecker is a class that by now provides only numbers highlighting,
     # but it will provide a hunspell spellchecking someday.
     class SpellChecker
-        constructor: () ->
+        constructor: ->
 
         # Function checks whether token is numeric.
         # @param {String} token Token to check.
         # @return {Boolean} True if token is numeric, false otherwise.
-        check: (token) ->
+        check: (token) =>
             numericRegExp = /^\d+$/             # number regexp
-            !numericRegExp.test(token)
+            return !numericRegExp.test(token)
 
     exports.SpellChecker = SpellChecker
     return
+)
