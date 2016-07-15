@@ -32,15 +32,7 @@ define (require, exports, module) ->
         ]
         regex: '(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})'
       }
-      {
-        token: [
-          'keyword'
-          'lparen'
-          'variable.parameter'
-          'rparen'
-        ]
-        regex: '(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?'
-      }
+      
       {
         token: [
           'storage.type'
@@ -49,6 +41,15 @@ define (require, exports, module) ->
           'rparen'
         ]
         regex: '(\\\\(?:begin|end))({)(\\w*)(})'
+      }
+      {
+        token: [
+          'keyword'
+          'lparen'
+          'variable.parameter'
+          'rparen'
+        ]
+        regex: '(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?'
       }
       {
         token: 'storage.type'
@@ -67,98 +68,52 @@ define (require, exports, module) ->
         regex: '\\\\[^a-zA-Z]?'
       }
     ]
+    beginRule = (text = '\\w*', destination = 'start') -> 
+      {
+        token: [
+            'storage.type'
+            'lparen'
+            'variable.parameter'
+            'rparen'
+          ]
+        regex: '(\\\\(?:begin))({)(' + text + ')(})'
+        next: pushState(destination)
+      }
+
+    endRule = (text = '\\w*', destination = 'start') -> 
+      {
+        token: [
+            'storage.type'
+            'lparen'
+            'variable.parameter'
+            'rparen'
+          ]
+        regex: '(\\\\(?:begin))({)(' + text + ')(})'
+
+        next: popState
+      }
+
     @$rules =
       'start': [
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:begin))({)(itemize|enumerate)(})'
-          next: pushState('list')
-        }
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:begin))({)(equation|equation\\*)(})'
-          next: pushState('equation')
-        }
+        beginRule('itemize|enumerate', 'list')
+        beginRule('equation|equation*', 'equation')
       ]
       'equation': [
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:begin))({)(equation|equation\\*)(})'
-          next: pushState('equation')
-        }
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:end))({)(equation|equation\\*)(})'
-          next: popState
-        }
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:begin))({)(itemize|enumerate|descriprion)(})'
-          next: pushState('list')
-        }
+        beginRule('equation|equation*', 'equation')
+        endRule('equation|equation*')
+        beginRule('itemize|enumerate', 'list')
       ]
       'list': [
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:begin))({)(itemize|enumerate)(})'
-          next: pushState("list")
-
-        }
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:end))({)(itemize|enumerate|description)(})'
-          next: popState
-        }
-        {
-          token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
-          regex: '(\\\\(?:begin))({)(equation|equation\\*)(})'
-          next: pushState('equation')        
-        }
+        beginRule('itemize|enumerate', 'list')
+        beginRule('equation|equation*', 'equation')
+        endRule("itemize|enumerate")
       ]
+
+       
     for key of @$rules
       for rule of basicRules
-        @$rules[key].push(basicRules[rule])
-    console.log('asss', pushState)
+         @$rules[key].push(basicRules[rule])
+    
     return
 
   oop.inherits PapeeriaLatexHighlightRules, TextHighlightRules
