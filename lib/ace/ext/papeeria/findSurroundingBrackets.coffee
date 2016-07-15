@@ -1,4 +1,4 @@
-define (require, exports, module) ->
+define((require, exports, module) ->
 
   findSurroundingBrackets = (editor) ->
     position = editor.getCursorPosition()
@@ -26,14 +26,14 @@ define (require, exports, module) ->
         rightNearest = rightCandidate
       if leftCandidate
         if leftNearest.row <= leftCandidate.row
-          if leftNearest.row = leftCandidate.row
+          if leftNearest.row == leftCandidate.row
           	if leftNearest.column < leftCandidate.column
             	leftNearest = leftCandidate
           else
             leftNearest = leftCandidate
       if rightCandidate
         if rightNearest.row >= rightCandidate.row
-          if rightNearest.row = rightCandidate.row
+          if rightNearest.row == rightCandidate.row
           	if rightNearest.column > rightCandidate.column
             	rightNearest = rightCandidate
           else
@@ -47,3 +47,4 @@ define (require, exports, module) ->
       if session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)] == session.getLine(rightNearest.row).charAt(rightNearest.column)
         result.mismatch = false
     result
+)
