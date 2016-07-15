@@ -1,7 +1,7 @@
 define (require, exports, module) ->
   'use strict'
-  oop = require('../lib/oop')
-  TextHighlightRules = require('./text_highlight_rules').TextHighlightRules
+  oop = require('../../lib/oop')
+  TextHighlightRules = require('../../mode/text_highlight_rules').TextHighlightRules
 
   PapeeriaLatexHighlightRules = ->
 
