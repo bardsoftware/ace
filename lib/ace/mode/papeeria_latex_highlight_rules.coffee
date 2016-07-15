@@ -80,7 +80,7 @@ define (require, exports, module) ->
         next: pushState(destination)
       }
 
-    endRule = (text = '\\w*', destination = 'start') -> 
+    endRule = (text = '\\w*') -> 
       {
         token: [
             'storage.type'
@@ -88,7 +88,7 @@ define (require, exports, module) ->
             'variable.parameter'
             'rparen'
           ]
-        regex: '(\\\\(?:begin))({)(' + text + ')(})'
+        regex: '(\\\\(?:end))({)(' + text + ')(})'
 
         next: popState
       }
@@ -96,16 +96,25 @@ define (require, exports, module) ->
     @$rules =
       'start': [
         beginRule('itemize|enumerate', 'list')
-        beginRule('equation|equation*', 'equation')
+        beginRule('equation|equation\\*', 'equation')
+        
+        endRule('equation|equation\\*')
+        endRule("itemize|enumerate")
+
       ]
       'equation': [
-        beginRule('equation|equation*', 'equation')
-        endRule('equation|equation*')
+        beginRule('equation|equation\\*', 'equation')
         beginRule('itemize|enumerate', 'list')
+
+        endRule('equation|equation\\*')
+        endRule("itemize|enumerate")
+
       ]
       'list': [
         beginRule('itemize|enumerate', 'list')
-        beginRule('equation|equation*', 'equation')
+        beginRule('equation|equation\\*', 'equation')
+
+        endRule('equation|equation\\*')
         endRule("itemize|enumerate")
       ]
 
