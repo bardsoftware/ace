@@ -1,6 +1,6 @@
 define((require, exports, module) ->
 
-    findSurroundingBrackets = (editor) ->
+    exports.findSurroundingBrackets = (editor) ->
         position = editor.getCursorPosition()
         session = editor.getSession()
         allBrackets =
@@ -46,5 +46,5 @@ define((require, exports, module) ->
         if result.left and result.right
             if session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)] == session.getLine(rightNearest.row).charAt(rightNearest.column)
                 result.mismatch = false
-        result
+        return result
 )
