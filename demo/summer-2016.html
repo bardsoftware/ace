@@ -244,6 +244,12 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         console.log("Simple Latex Completer successfully added");
     });
 
+    document.getElementById("editor").addEventListener("click", function() {
+      require(["ace/ext/papeeria/findSurroundingBrackets"], function(findSurroundingBrackets) {
+          console.log(findSurroundingBrackets(editor));
+      });
+    })
+
     langTools.snippetCompleter.getDocTooltip = null;
 
     katexPreviewer.setupPreviewer(editor);
