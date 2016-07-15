@@ -3,7 +3,7 @@ define((require, exports, module) ->
         require("ace/ext/jquery")
         katex = null
 
-        initKaTeX = ->
+        initKaTeX = (onLoaded) ->
             # Adding KaTeX CSS
             cssKatexPath = require.toUrl("../katex/katex.min.css")
             linkKatex = $("<link>").attr("rel", "stylesheet").attr("href", cssKatexPath)
@@ -18,22 +18,32 @@ define((require, exports, module) ->
             span = $("<span>").attr("id", "formula")
             $("body").append(span)
 
-            katex = require("ace/ext/katex")
+            require(["ace/ext/katex/katex"], (katexInner) ->
+                katex = katexInner
+                onLoaded()
+                return
+            )
             return
+
+        onLoaded = ->
+            selectedText = editor.getSelectedText()
+            try
+                katex.render(selectedText, $("#formula")[0])
+            catch e
+                $("#formula").text(e.message)
+            return
+
+        callback = (editor) ->
+            unless katex?
+                initKaTeX(onLoaded)
+                return
+            onLoaded()
 
         editor.commands.addCommand({
             name: "previewLaTeXFormula",
             bindKey: {win: "Alt-p", mac: "Alt-p"},
-            exec: (editor) ->
-                unless katex?
-                    initKaTeX()
-                selectedText = editor.getSelectedText()
-                try
-                    katex.render(selectedText, $("#formula")[0])
-                catch e
-                    $("#formula").text(e.message)
-                finally
-                    return
+            exec: callback
         })
+        return
     return
 )
