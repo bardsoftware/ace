@@ -216,9 +216,10 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-    window.onload = function() {
+
+    var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
-        alphabet: 'abcdefghijklmnopqrstuvwxyz',
+        alphabet: 'abcdefghijklmnopqrstuvwxyz1234567890',
         enabled: true,
         language: "en_US",
         dicPath: "/demo/typojs/dictionaries/en_US/en_US.dic",
@@ -231,6 +232,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         }
       });
     };
+    session.on("changeMode", initSpellCheck);
 
     editor.setOptions({
         enableBasicAutocompletion: true,
