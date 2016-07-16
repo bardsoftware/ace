@@ -7,13 +7,36 @@ define (require, exports, module) ->
       'itemize'
       'enumerate'
     ]
-    
+
+    basicSnippets = [
+      {
+        caption: "\\usepackage[]{..."
+        snippet: """
+            \\usepackage{${1  :package}}\n\
+        """
+        meta: "base"
+      }
+      {
+        caption: "\\usepackage[]{..."
+        snippet: """
+            \\usepackage[${1:[options}]{${2:package}}\n\
+        """
+        meta: "base"
+      }
+      {
+        caption: "\\newcommand{..."
+        snippet: """
+            \\newcommand{\\${1:cmd}}[${2:opt}]{${3:realcmd}}${4}\n\
+        """
+        meta: "base"
+      }
+    ]
     listSnippets = for env in listEnvironments
         {
             caption: "\\begin{#{env}}..."
             snippet: """
                 \\begin{#{env}}
-                \t$1
+                \t\\item $1
                 \\end{#{env}}
             """
             meta: "list"
@@ -30,16 +53,16 @@ define (require, exports, module) ->
       }
     formulasSnippets = [
       {
-        caption: "\\frac{..."
+        caption: "\\frac{num}{denom}"
         snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
         meta: "equation"
       }
       {
-        caption: "\\sum{..."
+        caption: "\\sum{n}{i=..}{..}"
         snippet: """
-                	\\sum^{${1:n}}_{${2:i=1}}{${3}}";
+                  \\sum^{${1:n}}_{${2:i=1}}{${3}}";
             """
         meta: "equation"
       }
