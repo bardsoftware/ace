@@ -72,8 +72,12 @@ define((require, exports, module) ->
             right: rightNearest
             mismatch: true
         if result.left and result.right
-            if session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)] == session.getLine(rightNearest.row).charAt(rightNearest.column)
+            leftBracket = session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)]
+            rightBracket = session.getLine(rightNearest.row).charAt(rightNearest.column)
+            if  leftBracket == rightBracket
                 result.mismatch = false
         return result
-    module.exports = highlightingBrackets
+
+    exports.highlighter = 
+        highlightingBrackets: highlightingBrackets
 )
