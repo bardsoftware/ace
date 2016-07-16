@@ -242,7 +242,22 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
         enableLiveAutocompletion: true
     });
 
-
+  var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+  keyboardHandler = new HashHandler();
+  keyboardHandler.addCommand({
+  name: 'item.',
+  bindKey: {win: 'Enter', mac: 'Enter'},
+  exec: function(editor) {
+        if(editor.getSession().getContext(editor.getCursorPosition().row) == "list") {
+          editor.insert("\n\t\\item ")
+          return true; // CHANGE HERE ! true is when it capture it.
+        } else {
+          // just leave the key.
+          return false; // CHANGE HERE ! false is when I don't capture it.
+        }},
+  readOnly: true
+});
+editor.keyBinding.addKeyboardHandler(keyboardHandler);
 
     require(["ace/ext/papeeria/tex_completer"], function(completer) {
         var texCompleter = completer;
