@@ -210,18 +210,15 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, langTools, katex) {
-    console.log("KaTeX loaded successfully " + katex);
-
-    require(["ace/ext/papeeria/katex-demo"]);
-
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"], function(ace, langTools, katexPreviewer) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-    window.onload = function() {
+
+    var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
-        alphabet: 'abcdefghijklmnopqrstuvwxyz',
+        alphabet: 'abcdefghijklmnopqrstuvwxyz1234567890',
         enabled: true,
         language: "en_US",
         dicPath: "/demo/typojs/dictionaries/en_US/en_US.dic",
@@ -234,6 +231,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
         }
       });
     };
+    session.on("changeMode", initSpellCheck);
 
     editor.setOptions({
         enableBasicAutocompletion: true,
@@ -263,14 +261,14 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, la
         });
     editor.keyBinding.addKeyboardHandler(keyboardHandler);
 
-
     require(["ace/ext/papeeria/tex_completer"], function(completer) {
         var texCompleter = completer;
         langTools.addCompleter(texCompleter);
         console.log("Simple Latex Completer successfully added");
     });
 
-    langTools.snippetCompleter.getDocTooltip = null
+    langTools.snippetCompleter.getDocTooltip = null;
+    katexPreviewer.setupPreviewer(editor);
 });
 </script>
 
