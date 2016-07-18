@@ -246,18 +246,15 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       bindKey: {win: 'Enter', mac: 'Enter'},
       exec: function(editor) {
         var pos = editor.getCursorPosition()
-        if (editor.getSession().getContext(pos.row) == "list") {
-          var currline = editor.session.getLine(pos.row);
-          if (currline.indexOf("begin") > pos.column) {
-            return false;
-          }
+        var curLine = editor.session.getLine(pos.row);
+
+        if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) {
           editor.insert("\n\t\\item ")
           return true;
         }
         else {
           return false;
-        }},
-        readOnly: true
+        }}
         });
     editor.keyBinding.addKeyboardHandler(keyboardHandler);
 
