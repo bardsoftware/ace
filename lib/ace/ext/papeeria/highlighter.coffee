@@ -11,7 +11,7 @@ define((require, exports, module) ->
             session.removeMarker(session.$bracketHighlightRight)
             session.$bracketHighlightLeft = null
             session.$bracketHighlightRight = null
-        if pos.mismatch && session.getLine(cursorPosition.row).charAt(cursorPosition.column - 1) in session.$brackets
+        if pos.mismatch && session.getLine(cursorPosition.row).charAt(cursorPosition.column - 1) of session.$brackets
             pos.mismatch = false
             pos.right = 
                 row: cursorPosition.row
