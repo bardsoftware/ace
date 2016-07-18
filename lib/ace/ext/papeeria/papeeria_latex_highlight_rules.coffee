@@ -117,7 +117,7 @@ define((require, exports, module) ->
         endRule(listType)
 
       ]
-      'equation': [
+      equationState: [
         beginRule(equationType, equationState)
         beginRule(listType, listState)
 
@@ -125,7 +125,7 @@ define((require, exports, module) ->
         endRule(listType)
 
       ]
-      'list': [
+      listState: [
         beginRule(listType, listState)
         beginRule(equationType, equationState)
 
