@@ -6,6 +6,11 @@ define((require, exports, module) ->
         pos = findSurroundingBrackets(editor)
         session = editor.getSession()
         cursorPosition = editor.getCursorPosition()
+        if session.$bracketHighlightRight || session.$bracketHighlightLeft
+            session.removeMarker(session.$bracketHighlightLeft)
+            session.removeMarker(session.$bracketHighlightRight)
+            session.$bracketHighlightLeft = null
+            session.$bracketHighlightRight = null
         if pos.mismatch && session.getLine(cursorPosition.row).charAt(cursorPosition.column - 1) in session.$brackets
             pos.mismatch = false
             pos.right = 
