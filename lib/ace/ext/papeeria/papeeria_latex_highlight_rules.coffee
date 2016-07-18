@@ -1,19 +1,24 @@
-define( (require, exports, module) ->
+define((require, exports, module) ->
   'use strict'
   oop = require('../../lib/oop')
   TextHighlightRules = require('../../mode/text_highlight_rules').TextHighlightRules
 
   PapeeriaLatexHighlightRules = ->
-
-    pushState = (destination) -> (currentState, stack) ->
-      if currentState == 'start'
-        stack.push(currentState, destination)
-      else
-        stack.push(destination)
-      destination
+    ###*
+    * correct environment into stack
+    * @param {destination} string
+    * @return {function} function, which correctly puts on stack the current environment
+   ###
+    pushState = (destination) ->
+      (currentState, stack) ->
+        if currentState == 'start'
+          stack.push(currentState, destination)
+        else
+          stack.push(destination)
+        return destination
 
     popState = (currentState, stack) ->
-      stack.pop() or 'start'
+      return stack.pop() or 'start'
 
     basicRules = [
       {
@@ -32,7 +37,7 @@ define( (require, exports, module) ->
         ]
         regex: '(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})'
       }
-      
+
       {
         token: [
           'storage.type'
@@ -68,26 +73,26 @@ define( (require, exports, module) ->
         regex: '\\\\[^a-zA-Z]?'
       }
     ]
-    beginRule = (text = '\\w*', destination = 'start') -> 
-      {
+    beginRule = (text = '\\w*', destination = 'start') ->
+      return {
         token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
+          'storage.type'
+          'lparen'
+          'variable.parameter'
+          'rparen'
+        ]
         regex: '(\\\\(?:begin))({)(' + text + ')(})'
         next: pushState(destination)
       }
 
-    endRule = (text = '\\w*') -> 
-      {
+    endRule = (text = '\\w*') ->
+      return {
         token: [
-            'storage.type'
-            'lparen'
-            'variable.parameter'
-            'rparen'
-          ]
+          'storage.type'
+          'lparen'
+          'variable.parameter'
+          'rparen'
+        ]
         regex: '(\\\\(?:end))({)(' + text + ')(})'
 
         next: popState
@@ -118,11 +123,11 @@ define( (require, exports, module) ->
         endRule("itemize|enumerate")
       ]
 
-       
+
     for key of @$rules
       for rule of basicRules
-         @$rules[key].push(basicRules[rule])
-    
+        @$rules[key].push(basicRules[rule])
+
     return
 
   oop.inherits PapeeriaLatexHighlightRules, TextHighlightRules
