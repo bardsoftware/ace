@@ -11,16 +11,16 @@ define((require, exports, module) ->
     * its elements are then propagated to * the editor session and become 
     * available through getContext method.
 
-    * @param {destination} string
-    * @return {function} function, which correctly puts new type(destination) on stack
+    * @param {pushedState} string
+    * @return {function} function, which correctly puts new type(pushedState) on stack
    ###
-    pushState = (destination) ->
+    pushState = (pushedState) ->
       return (currentState, stack) ->
         if currentState == 'start'
-          stack.push(currentState, destination)
+          stack.push(currentState, pushedState)
         else
-          stack.push(destination)
-        return destination
+          stack.push(pushedState)
+        return pushedState
 
     popState = (currentState, stack) ->
       return stack.pop() or 'start'
@@ -78,7 +78,12 @@ define((require, exports, module) ->
         regex: '\\\\[^a-zA-Z]?'
       }
     ]
-    beginRule = (text = '\\w*', destination = 'start') ->
+    listType = 'itemize|enumerate'
+    equationType = 'equation|equation\\*'
+    listState = 'list'
+    equationState = 'equation'
+
+    beginRule = (text = '\\w*', pushedState = 'start') ->
       return {
         token: [
           'storage.type'
@@ -87,7 +92,7 @@ define((require, exports, module) ->
           'rparen'
         ]
         regex: '(\\\\(?:begin))({)(' + text + ')(})'
-        next: pushState(destination)
+        next: pushState(pushedState)
       }
 
     endRule = (text = '\\w*') ->
@@ -105,27 +110,27 @@ define((require, exports, module) ->
 
     @$rules =
       'start': [
-        beginRule('itemize|enumerate', 'list')
-        beginRule('equation|equation\\*', 'equation')
+        beginRule(listType, listState)
+        beginRule(equationType, equationState)
 
-        endRule('equation|equation\\*')
-        endRule("itemize|enumerate")
+        endRule(equationType)
+        endRule(listType)
 
       ]
       'equation': [
-        beginRule('equation|equation\\*', 'equation')
-        beginRule('itemize|enumerate', 'list')
+        beginRule(equationType, equationState)
+        beginRule(listType, listState)
 
-        endRule('equation|equation\\*')
-        endRule("itemize|enumerate")
+        endRule(equationType)
+        endRule(listType)
 
       ]
       'list': [
-        beginRule('itemize|enumerate', 'list')
-        beginRule('equation|equation\\*', 'equation')
+        beginRule(listType, listState)
+        beginRule(equationType, equationState)
 
-        endRule('equation|equation\\*')
-        endRule("itemize|enumerate")
+        endRule(equationType)
+        endRule(listType)
       ]
 
 
@@ -135,7 +140,7 @@ define((require, exports, module) ->
 
     return
 
-  oop.inherits PapeeriaLatexHighlightRules, TextHighlightRules
+  oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
   exports.PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRules
   return
 ) 
