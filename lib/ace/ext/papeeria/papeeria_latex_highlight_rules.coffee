@@ -10,7 +10,7 @@ define((require, exports, module) ->
     * @return {function} function, which correctly puts on stack the current environment
    ###
     pushState = (destination) ->
-      (currentState, stack) ->
+      return (currentState, stack) ->
         if currentState == 'start'
           stack.push(currentState, destination)
         else
