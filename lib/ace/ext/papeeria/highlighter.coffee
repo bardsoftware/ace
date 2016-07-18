@@ -5,11 +5,12 @@ define((require, exports, module) ->
     highlightBrackets = (editor) ->
         pos = findSurroundingBrackets(editor)
         session = editor.getSession()
-        if session.$bracketHighlightRight || session.$bracketHighlightLeft
-            session.removeMarker(session.$bracketHighlightLeft)
-            session.removeMarker(session.$bracketHighlightRight)
-            session.$bracketHighlightLeft = null
-            session.$bracketHighlightRight = null
+        cursorPosition = editor.getCursorPosition()
+        if pos.mismatch && session.getLine(cursorPosition.row).charAt(cursorPosition.column - 1) in session.$brackets
+            pos.mismatch = false
+            pos.right = 
+                row: cursorPosition.row
+                column: cursorPosition.column - 1
         if !pos.mismatch
             rangeLeft = new Range(pos.left.row, pos.left.column, pos.left.row, pos.left.column + 1)
             rangeRight = new Range(pos.right.row, pos.right.column, pos.right.row, pos.right.column + 1)

@@ -244,10 +244,25 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         langTools.addCompleter(texCompleter);
         console.log("Simple Latex Completer successfully added");
     });
-    
-    document.getElementById("editor").addEventListener("click", function() {
-        highlighter.highlightBrackets(editor);
+
+    var keyboardHandler = {
+      name: 'highlight',
+      bindKey: {win: 'Ctrl-0', mac: 'Commad-0'},
+      exec: function(editor) { return highlighter.highlightBrackets(editor)},
+      readOnly: true
+    }
+    editor.commands.addCommand(keyboardHandler);
+
+    document.getElementById("editor").addEventListener("click", function(editor){
+      if (session.$bracketHighlightRight || session.$bracketHighlightLeft) {
+        session.removeMarker(session.$bracketHighlightLeft);
+        session.removeMarker(session.$bracketHighlightRight);
+        session.$bracketHighlightLeft = null;
+        session.$bracketHighlightRight = null;
+      }
     });
+
+
 
     langTools.snippetCompleter.getDocTooltip = null;
 
