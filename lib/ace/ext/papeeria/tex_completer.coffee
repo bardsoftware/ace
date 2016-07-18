@@ -85,11 +85,11 @@ define (require, exports, module) ->
   exports.getCompletions = (editor, session, pos, prefix, callback) ->
     context = session.getContext(pos.row)
     if context == "start"
-      callback(null, listSnippets.concat equationSnippets.concat basicSnippets)
+      callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
 
     if context == 'list'
-      callback(null, listKeywords_.concat listSnippets.concat equationSnippets)
+      callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
 
     if context == "equation"
-      callback(null, formulasSnippets.concat equationKeywords_)
+      callback(null, formulasSnippets.concat(equationKeywords_))
   return
