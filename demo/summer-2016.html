@@ -246,8 +246,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     });
 
     var keyboardHandler = {
-      name: 'highlight',
-      bindKey: {win: 'Ctrl-0', mac: 'Commad-0'},
+      name: 'highlightBrackets',
+      bindKey: {win: 'Ctrl-Shift-0', mac: 'Command-Shift-0'},
       exec: function(editor) { return highlighter.highlightBrackets(editor)},
       readOnly: true
     }

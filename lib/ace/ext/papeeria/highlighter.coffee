@@ -5,17 +5,12 @@ define((require, exports, module) ->
     highlightBrackets = (editor) ->
         pos = findSurroundingBrackets(editor)
         session = editor.getSession()
-        cursorPosition = editor.getCursorPosition()
         if session.$bracketHighlightRight || session.$bracketHighlightLeft
             session.removeMarker(session.$bracketHighlightLeft)
             session.removeMarker(session.$bracketHighlightRight)
             session.$bracketHighlightLeft = null
             session.$bracketHighlightRight = null
-        if pos.mismatch && session.getLine(cursorPosition.row).charAt(cursorPosition.column - 1) of session.$brackets
-            pos.mismatch = false
-            pos.right = 
-                row: cursorPosition.row
-                column: cursorPosition.column - 1
+            return
         if !pos.mismatch
             rangeLeft = new Range(pos.left.row, pos.left.column, pos.left.row, pos.left.column + 1)
             rangeRight = new Range(pos.right.row, pos.right.column, pos.right.row, pos.right.column + 1)
@@ -77,9 +72,13 @@ define((require, exports, module) ->
             left: leftNearest
             right: rightNearest
             mismatch: true
+        if result.mismatch && session.getLine(position.row).charAt(position.column - 1) of session.$brackets
+            result.right = 
+                row: position.row
+                column: position.column - 1
         if result.left and result.right
-            expectedRightBracket = session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)]
-            rightBracket = session.getLine(rightNearest.row).charAt(rightNearest.column)
+            expectedRightBracket = session.$brackets[session.getLine(result.left.row).charAt(result.left.column)]
+            rightBracket = session.getLine(result.right.row).charAt(result.right.column)
             if  expectedRightBracket == rightBracket
                 result.mismatch = false
         return result
