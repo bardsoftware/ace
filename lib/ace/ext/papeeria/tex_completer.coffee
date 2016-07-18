@@ -1,96 +1,95 @@
 define (require, exports, module) ->
-    equationEnvironments = [
-      'equation'
-      'equation*'
-    ]
-    listEnvironments = [
-      'itemize'
-      'enumerate'
-    ]
+  equationEnvironments = [
+    'equation'
+    'equation*'
+  ]
+  listEnvironments = [
+    'itemize'
+    'enumerate'
+  ]
 
-    basicSnippets = [
-      {
-        caption: "\\usepackage[]{..."
-        snippet: """
+  basicSnippets = [
+    {
+      caption: "\\usepackage[]{..."
+      snippet: """
             \\usepackage{${1  :package}}\n\
         """
-        meta: "base"
-      }
-      {
-        caption: "\\usepackage[]{..."
-        snippet: """
+      meta: "base"
+    }
+    {
+      caption: "\\usepackage[]{..."
+      snippet: """
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
-        meta: "base"
-      }
-      {
-        caption: "\\newcommand{..."
-        snippet: """
+      meta: "base"
+    }
+    {
+      caption: "\\newcommand{..."
+      snippet: """
             \\newcommand{\\${1:cmd}}[${2:opt}]{${3:realcmd}}${4}\n\
         """
-        meta: "base"
-      }
-    ]
-    listSnippets = for env in listEnvironments
-        {
-            caption: "\\begin{#{env}}..."
-            snippet: """
+      meta: "base"
+    }
+  ]
+  listSnippets = for env in listEnvironments
+    {
+      caption: "\\begin{#{env}}..."
+      snippet: """
                 \\begin{#{env}}
                 \t\\item $1
                 \\end{#{env}}
             """
-            meta: "list"
-        }
-    equationSnippets = for env in equationEnvironments
-      {
-        caption: "\\begin{#{env}}..."
-        snippet: """
+      meta: "list"
+    }
+  equationSnippets = for env in equationEnvironments
+    {
+      caption: "\\begin{#{env}}..."
+      snippet: """
                   \\begin{#{env}}
                   \t$1
                   \\end{#{env}}
               """
-        meta: "equation"
-      }
-    formulasSnippets = [
-      {
-        caption: "\\frac{num}{denom}"
-        snippet: """
+      meta: "equation"
+    }
+  formulasSnippets = [
+    {
+      caption: "\\frac{num}{denom}"
+      snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
-        meta: "equation"
-      }
-      {
-        caption: "\\sum{n}{i=..}{..}"
-        snippet: """
-                  \\sum^{${1:n}}_{${2:i=1}}{${3}}";
+      meta: "equation"
+    }
+    {
+      caption: "\\sum{n}{i=..}{..}"
+      snippet: """
+                  \\sum^{${1:n}}_{${2:i=1}}{${3}}
             """
-        meta: "equation"
-      }
-    ]
+      meta: "equation"
+    }
+  ]
 
-    equationKeywords = [ '\\alpha' ]
-    listKeywords = [ '\\item' ]
+  equationKeywords = ['\\alpha']
+  listKeywords = ['\\item']
 
-    listKeywords_ = listKeywords.map((word) ->
-      caption: word,
-      value: word
-      meta: 'list'
+  listKeywords_ = listKeywords.map((word) ->
+    caption: word,
+    value: word
+    meta: 'list'
+  )
+  equationKeywords_ = equationKeywords.map((word) ->
+    caption: word,
+    value: word
+    meta: 'equation'
+  )
 
-    )
-    equationKeywords_ = equationKeywords.map((word) ->
-      caption: word,
-      value: word
-      meta: 'equation'
-    )
+  exports.getCompletions = (editor, session, pos, prefix, callback) ->
+    context = session.getContext(pos.row)
+    if context == "start"
+      callback(null, listSnippets.concat equationSnippets.concat basicSnippets)
 
-    exports.getCompletions = (editor, session, pos, prefix, callback) ->
-        context = session.getContext(pos.row)
-        if context == "start"
-            callback(null,  listSnippets.concat equationSnippets)
+    if context == 'list'
+      callback(null, listKeywords_.concat listSnippets.concat equationSnippets)
 
-        if context == 'list'
-            callback(null, listKeywords_.concat listSnippets.concat equationSnippets)
-
-        if context == "equation"
-            callback(null, formulasSnippets.concat equationKeywords_)
-    return
+    if context == "equation"
+      callback(null, formulasSnippets.concat equationKeywords_)
+  return
