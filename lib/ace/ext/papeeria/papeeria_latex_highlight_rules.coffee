@@ -5,8 +5,11 @@ define((require, exports, module) ->
 
   PapeeriaLatexHighlightRules = ->
     ###*
-    * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list") to be able to provide context for 
-    * autocompletion and other functions. Stack is constructed by the background highlighter; its elements are then propagated to * the editor session and become available through getContext method.
+    * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
+    * to be able to provide context for autocompletion and other functions. 
+    * Stack is constructed by the background highlighter;
+    * its elements are then propagated to * the editor session and become 
+    * available through getContext method.
 
     * @param {destination} string
     * @return {function} function, which correctly puts new type(destination) on stack
