@@ -211,7 +211,8 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlightingBrackets"], function(ace, langTools, katexPreviewer, highlighter) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlightBrackets"], 
+  function(ace, langTools, katexPreviewer, highlighter) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -243,10 +244,9 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         langTools.addCompleter(texCompleter);
         console.log("Simple Latex Completer successfully added");
     });
-
     
     document.getElementById("editor").addEventListener("click", function() {
-        highlighter.highlightingBrackets(editor);
+        highlighter.highlightBrackets(editor);
     });
 
     langTools.snippetCompleter.getDocTooltip = null;
@@ -254,6 +254,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     katexPreviewer.setupPreviewer(editor);
 });
 </script>
+
+<script type="text/javascript">
 
 </body>
 </html>

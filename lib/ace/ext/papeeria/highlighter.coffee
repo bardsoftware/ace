@@ -2,7 +2,7 @@ define((require, exports, module) ->
 
     Range = require("ace/range").Range;
 
-    highlightingBrackets = (editor) ->
+    highlightBrackets = (editor) ->
         pos = findSurroundingBrackets(editor)
         session = editor.getSession()
         if session.$bracketHighlightRight || session.$bracketHighlightLeft
@@ -72,12 +72,12 @@ define((require, exports, module) ->
             right: rightNearest
             mismatch: true
         if result.left and result.right
-            leftBracket = session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)]
+            expectedRightBracket = session.$brackets[session.getLine(leftNearest.row).charAt(leftNearest.column)]
             rightBracket = session.getLine(rightNearest.row).charAt(rightNearest.column)
-            if  leftBracket == rightBracket
+            if  expectedRightBracket == rightBracket
                 result.mismatch = false
         return result
 
     exports.highlighter = 
-        highlightingBrackets: highlightingBrackets
+        highlightBrackets: highlightBrackets
 )
