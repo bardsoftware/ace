@@ -253,30 +253,38 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     }
     editor.commands.addCommand(keyboardHandler);
 
-    function isChangePosition() {
+
+    function removeHighlightBracket() {
       if (session.$bracketHighlightRight || session.$bracketHighlightLeft) {
         session.removeMarker(session.$bracketHighlightLeft);
         session.removeMarker(session.$bracketHighlightRight);
+        session.$highlightMode = false;
         session.$bracketHighlightLeft = null;
         session.$bracketHighlightRight = null;
       }
     }
 
-    document.getElementById("editor").addEventListener("click", function(){
-      //TODO: need a crossed check whether a highlight border
-
-    });
-    document.getElementById("editor").addEventListener("keyup", function(event){
-      if (event.keyCode <= 40 && event.keyCode >= 37) {
-        //TODO: need a crossed check whether a highlight border
-      } else if (!(event.keyCode == 57 && event.ctrlKey)) {
-        console.log("in else");
-        isChangePosition();
-        highlighter.highlightBrackets(editor);
-      }
+    session.getSelection().on("changeCursor", function() {
+      if (session.$highlightMode)
+        if (isOutFromAreaOfHighlight())
+          removeHighlightBracket();
+        else {
+          removeHighlightBracket();
+          highlighter.highlightBrackets(editor);
+        }
     });
 
-
+    function isOutFromAreaOfHighlight() {
+      var oldPosition = {};
+      for(var key in session.$positionOfHighlight)
+        oldPosition[key] = session.$positionOfHighlight[key];
+      var newPosition = highlighter.findSurroundingBrackets(editor);
+      for(var key in newPosition)
+        if(oldPosition[key] !== newPosition[key])
+          return false;
+      return true;
+    }
+  
 
     langTools.snippetCompleter.getDocTooltip = null;
 

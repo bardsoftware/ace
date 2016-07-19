@@ -10,22 +10,27 @@ define((require, exports, module) ->
             session.removeMarker(session.$bracketHighlightRight)
             session.$bracketHighlightLeft = null
             session.$bracketHighlightRight = null
+            session.$highlightMode = false
             return
         if !pos.mismatch
             rangeLeft = new Range(pos.left.row, pos.left.column, pos.left.row, pos.left.column + 1)
             rangeRight = new Range(pos.right.row, pos.right.column, pos.right.row, pos.right.column + 1)
             session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_bracket", "text")
             session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_bracket", "text")
+            session.$highlightMode = true
         else
             if pos.left && pos.right 
                 range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightLeft = session.addMarker(range, "ace_error-marker", "text")
+                session.$highlightMode = true
             if pos.left && !pos.right
                 rangeLeft = new Range(pos.left.row, pos.left.column, Infinity, Infinity)
                 session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_error-marker", "text")
+                session.$highlightMode = true
             if pos.right && !pos.left
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
+                session.$highlightMode = true
         return
 
     findSurroundingBrackets = (editor) ->
@@ -71,17 +76,33 @@ define((require, exports, module) ->
             left: leftNearest
             right: rightNearest
             mismatch: true
-        if result.mismatch && session.getLine(position.row).charAt(position.column - 1) of session.$brackets
+        closingBrackets = 
+            ")": "("
+            "]": "["
+            "}": "{"
+        openingBrackets = 
+            "(": ")"
+            "[": "]"
+            "{": "}"
+
+        # Next two 'if' needs to avoid conflict with the standard highlight
+        if result.mismatch && session.getLine(position.row).charAt(position.column - 1) of closingBrackets
             result.right = 
                 row: position.row
                 column: position.column - 1
-        if result.left and result.right
+        if result.mismatch && session.getLine(position.row).charAt(position.column - 1) of openingBrackets
+            result.left = 
+                row: position.row
+                column: position.column - 1
+        if result.left && result.right
             expectedRightBracket = session.$brackets[session.getLine(result.left.row).charAt(result.left.column)]
             rightBracket = session.getLine(result.right.row).charAt(result.right.column)
             if  expectedRightBracket == rightBracket
                 result.mismatch = false
+        session.$positionOfHighlight = result
         return result
 
     exports.highlighter = 
         highlightBrackets: highlightBrackets
+        findSurroundingBrackets: findSurroundingBrackets
 )
