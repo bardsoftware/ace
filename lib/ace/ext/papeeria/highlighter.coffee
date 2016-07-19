@@ -17,7 +17,7 @@ define((require, exports, module) ->
             session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_bracket", "text")
             session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_bracket", "text")
         else
-            if pos.left && pos.right 
+            if pos.left && pos.right
                 range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightLeft = session.addMarker(range, "ace_error-marker", "text")
             if pos.left && !pos.right
@@ -29,20 +29,26 @@ define((require, exports, module) ->
         return
 
     findSurroundingBrackets = (editor) ->
-        position = editor.getCursorPosition()
+        positionRightwards = editor.getCursorPosition()
+        # if Tokeniterator is created from the cursor position, its first token
+        # will be the one which immediately precedes the position (its start+length>=position)
+        # The first token is skipped when stepping backwards, so if cursor is positioned immediately
+        # after closing bracket } then this bracket will be ignored and ultimately findOpeningBracket
+        # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
+        # To fix it we increment columnin the position for searching leftwards.
+        positionLeftwards = editor.getCursorPosition()
+        positionLeftwards.column += 1
         session = editor.getSession()
-        if session.getLine(position.row).charAt(position.column - 1) of session.$brackets
-            position.column++
         allBrackets =
             left: [
-                session.$findOpeningBracket('}', position, /(\.?.paren)+/)
-                session.$findOpeningBracket(']', position, /(\.?.paren)+/)
-                session.$findOpeningBracket(')', position, /(\.?.paren)+/)
+                session.$findOpeningBracket('}', positionLeftwards, /(\.?.paren)+/)
+                session.$findOpeningBracket(']', positionLeftwards, /(\.?.paren)+/)
+                session.$findOpeningBracket(')', positionLeftwards, /(\.?.paren)+/)
             ]
             right: [
-                session.$findClosingBracket('{', position, /(\.?.paren)+/)
-                session.$findClosingBracket('[', position, /(\.?.paren)+/)
-                session.$findClosingBracket('(', position, /(\.?.paren)+/)
+                session.$findClosingBracket('{', positionRightwards, /(\.?.paren)+/)
+                session.$findClosingBracket('[', positionRightwards, /(\.?.paren)+/)
+                session.$findClosingBracket('(', positionRightwards, /(\.?.paren)+/)
             ]
         leftNearest = null
         rightNearest = null
@@ -73,27 +79,27 @@ define((require, exports, module) ->
             left: leftNearest
             right: rightNearest
             mismatch: true
-            equals: (object) -> 
+            equals: (object) ->
                 for key of @
                     if object[key] != @[key]
                         return false;
                 return true;
-        ###closingBrackets = 
+        ###closingBrackets =
             ")": "("
             "]": "["
             "}": "{"
-        openingBrackets = 
+        openingBrackets =
             "(": ")"
             "[": "]"
             "{": "}"
 
         # Next two 'if' needs to avoid conflict with the standard highlight
         if result.mismatch && session.getLine(position.row).charAt(position.column - 1) of closingBrackets
-            result.right = 
+            result.right =
                 row: position.row
                 column: position.column - 1
         if result.mismatch && session.getLine(position.row).charAt(position.column - 1) of openingBrackets
-            result.left = 
+            result.left =
                 row: position.row
                 column: position.column - 1###
         if result.left && result.right
@@ -104,7 +110,7 @@ define((require, exports, module) ->
         session.$positionOfHighlight = result
         return result
 
-    exports.highlighter = 
+    exports.highlighter =
         highlightBrackets: highlightBrackets
         findSurroundingBrackets: findSurroundingBrackets
 )
