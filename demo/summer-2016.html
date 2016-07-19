@@ -247,18 +247,32 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
 
     var keyboardHandler = {
       name: 'highlightBrackets',
-      bindKey: {win: 'Ctrl-Shift-0', mac: 'Command-Shift-0'},
-      exec: function(editor) { return highlighter.highlightBrackets(editor)},
+      bindKey: {win: 'Ctrl-0', mac: 'Command-Shift-0'},
+      exec: function(editor) {return highlighter.highlightBrackets(editor)},
       readOnly: true
     }
     editor.commands.addCommand(keyboardHandler);
 
-    document.getElementById("editor").addEventListener("click", function(editor){
+    function isChangePosition() {
       if (session.$bracketHighlightRight || session.$bracketHighlightLeft) {
         session.removeMarker(session.$bracketHighlightLeft);
         session.removeMarker(session.$bracketHighlightRight);
         session.$bracketHighlightLeft = null;
         session.$bracketHighlightRight = null;
+      }
+    }
+
+    document.getElementById("editor").addEventListener("click", function(){
+      //TODO: need a crossed check whether a highlight border
+       
+    });
+    document.getElementById("editor").addEventListener("keyup", function(event){
+      if (event.keyCode <= 40 && event.keyCode >= 37) {
+        //TODO: need a crossed check whether a highlight border
+      } else if (!(event.keyCode == 48 && event.ctrlKey)) {
+        console.log("in else");
+        isChangePosition();
+        highlighter.highlightBrackets(editor);
       }
     });
 

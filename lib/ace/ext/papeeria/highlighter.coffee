@@ -20,14 +20,13 @@ define((require, exports, module) ->
             if pos.left && pos.right 
                 range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightLeft = session.addMarker(range, "ace_error-marker", "text")
-
             if pos.left && !pos.right
                 rangeLeft = new Range(pos.left.row, pos.left.column, Infinity, Infinity)
                 session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_error-marker", "text")
-
             if pos.right && !pos.left
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
+        return
 
     findSurroundingBrackets = (editor) ->
         position = editor.getCursorPosition()
