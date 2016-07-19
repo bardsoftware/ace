@@ -254,22 +254,20 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     editor.commands.addCommand(keyboardHandler);
 
 
-    function removeHighlightBracket() {
-      if (session.$bracketHighlightRight || session.$bracketHighlightLeft) {
+    function removeHighlightBracket() {     
         session.removeMarker(session.$bracketHighlightLeft);
         session.removeMarker(session.$bracketHighlightRight);
-        session.$highlightMode = false;
         session.$bracketHighlightLeft = null;
         session.$bracketHighlightRight = null;
-      }
     }
 
     session.getSelection().on("changeCursor", function() {
-      if (session.$highlightMode) {
+      if (session.$bracketHighlightLeft || session.$bracketHighlightRight) {
         removeHighlightBracket();
-        if (!isOutFromAreaOfHighlight())
-          highlighter.highlightBrackets(editor);
-      }
+        if(!session.$bracketHighlight)
+            if (!isOutFromAreaOfHighlight() && !session.$bracketHighlight)
+            highlighter.highlightBrackets(editor);
+      }   
     });
 
     function isOutFromAreaOfHighlight() {
@@ -277,10 +275,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       for (var key in session.$positionOfHighlight)
         oldPosition[key] = session.$positionOfHighlight[key];
       var newPosition = highlighter.findSurroundingBrackets(editor);
-      for (var key in newPosition)
-        if (oldPosition[key] !== newPosition[key])
-          return false;
-      return true;
+      return (oldPosition.equals(newPosition));
     }
   
 
