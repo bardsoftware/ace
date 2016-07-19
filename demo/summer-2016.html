@@ -265,22 +265,20 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     }
 
     session.getSelection().on("changeCursor", function() {
-      if (session.$highlightMode)
-        if (isOutFromAreaOfHighlight())
-          removeHighlightBracket();
-        else {
-          removeHighlightBracket();
+      if (session.$highlightMode) {
+        removeHighlightBracket();
+        if (!isOutFromAreaOfHighlight())
           highlighter.highlightBrackets(editor);
-        }
+      }
     });
 
     function isOutFromAreaOfHighlight() {
       var oldPosition = {};
-      for(var key in session.$positionOfHighlight)
+      for (var key in session.$positionOfHighlight)
         oldPosition[key] = session.$positionOfHighlight[key];
       var newPosition = highlighter.findSurroundingBrackets(editor);
-      for(var key in newPosition)
-        if(oldPosition[key] !== newPosition[key])
+      for (var key in newPosition)
+        if (oldPosition[key] !== newPosition[key])
           return false;
       return true;
     }
