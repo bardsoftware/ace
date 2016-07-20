@@ -26,7 +26,7 @@ define((require, exports, module) ->
             if pos.right && !pos.left
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
-        session.$positionOfHighlight = pos
+        session.$positionRange = pos
         return
 
     findSurroundingBrackets = (editor) ->
@@ -97,7 +97,7 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-    highlightInitBind = (editor, bindKey) ->
+    init = (editor, bindKey) ->
         session = editor.getSession()
         keyboardHandler = 
             name: 'highlightBrackets'
@@ -120,7 +120,7 @@ define((require, exports, module) ->
         )
 
         isInsideCurrentHighlight = -> 
-            oldPosition = session.$positionOfHighlight;
+            oldPosition = session.$positionRange;
             newPosition = findSurroundingBrackets(editor)
             return oldPosition.equals(newPosition);
         return
@@ -128,5 +128,5 @@ define((require, exports, module) ->
     exports.highlighter =
         highlightBrackets: highlightBrackets
         findSurroundingBrackets: findSurroundingBrackets
-        highlightInitBind: highlightInitBind
+        init: init
 )

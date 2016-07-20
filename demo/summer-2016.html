@@ -246,7 +246,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     });
 
     //Initialization bind for highlight brackets.
-    highlighter.highlightInitBind(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
+    highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
   
 
     langTools.snippetCompleter.getDocTooltip = null;
