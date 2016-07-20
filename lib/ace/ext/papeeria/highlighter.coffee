@@ -80,6 +80,7 @@ define((require, exports, module) ->
             right: rightNearest
             mismatch: true
             equals: (object) ->
+
                 if object.left != @.left
                     return false
                 if object.right != @.right
