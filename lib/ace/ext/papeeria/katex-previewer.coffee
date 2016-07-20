@@ -1,6 +1,7 @@
 define((require, exports, module) ->
   exports.setupPreviewer = (editor) ->
     require("ace/ext/jquery")
+    require("ace/ext/bootstrap")
     katex = null
 
     initKaTeX = (onLoaded) ->
@@ -13,8 +14,12 @@ define((require, exports, module) ->
       $("head").append(linkDemo)
 
       # Adding DOM element to place formula into
-      span = $("<span>").attr(id: "formula")
-      $("body").append(span)
+      a = $("<a>").attr(
+        href: "#"
+        id: "formula"
+        "data-toggle": "popover"
+      )
+      $("body").append(a)
 
       require(["ace/ext/katex"], (katexInner) ->
         katex = katexInner
@@ -23,25 +28,50 @@ define((require, exports, module) ->
       )
       return
 
+    options = {
+      html: true
+      placement: "bottom"
+      trigger: "manual"
+      title: "Formula"
+      content: -> katex.renderToString(editor.getSelectedText())
+      container: "#editor"
+    }
+
     onLoaded = ->
-      selectedText = editor.getSelectedText()
       try
-        katex.render(selectedText, $("#formula")[0])
+        popoverPosition = $("textarea.ace_text-input").position()
+        popoverPosition.top += 16
+        $("#formula").css(popoverPosition)
+        $("#formula").popover(options)
+        $("#formula").popover("show")
       catch e
-        $("#formula").text(e.message)
+        console.log(e.message)
       return
 
+    popoverShown = false
+
     callback = (editor) ->
+      if popoverShown
+        destroyPopover()
+        popoverShown = false
+      else
+        createPopover(editor)
+        popoverShown = true
+      return
+
+    destroyPopover = -> $("#formula").popover("destroy")
+
+    createPopover = (editor) ->
       unless katex?
         initKaTeX(onLoaded)
         return
       onLoaded()
 
-    editor.commands.addCommand({
+    editor.commands.addCommand(
       name: "previewLaTeXFormula"
       bindKey: {win: "Alt-p", mac: "Alt-p"}
       exec: callback
-    })
+    )
     return
   return
 )
