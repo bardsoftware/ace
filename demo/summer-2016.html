@@ -246,10 +246,10 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         langTools.addCompleter(texCompleter);
         console.log("Simple Latex Completer successfully added");
     });
-    
-    document.getElementById("editor").addEventListener("click", function() {
-        highlighter.highlightBrackets(editor);
-    });
+
+    //Initialization bind for highlight brackets.
+    highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
+  
 
     langTools.snippetCompleter.getDocTooltip = null;
 
