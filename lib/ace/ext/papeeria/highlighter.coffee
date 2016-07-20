@@ -82,11 +82,11 @@ define((require, exports, module) ->
             mismatch: true
             equals: (object) ->
 
-                if object.left != @.left
+                if object.left != @left
                     return false
-                if object.right != @.right
+                if object.right != @right
                     return false
-                if object.mismatch != @.mismatch
+                if object.mismatch != @mismatch
                     return false
                 return true
         
@@ -97,7 +97,39 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
+    higlightInitBind = (editor) ->
+        session = editor.getSession()
+        keyboardHandler = 
+            name: 'highlightBrackets'
+            bindKey: {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}
+            exec: (editor)  -> return highlightBrackets(editor)
+            readOnly: true
+
+
+        editor.commands.addCommand(keyboardHandler);
+
+        session.getSelection().on("changeCursor", () -> 
+            if (session.$bracketHighlightLeft || session.$bracketHighlightRight) 
+                session.removeMarker(session.$bracketHighlightLeft)
+                session.removeMarker(session.$bracketHighlightRight)
+                session.$bracketHighlightLeft = null
+                session.$bracketHighlightRight = null
+            if (!isOutFromAreaOfHighlight())
+                highlightBrackets(editor)
+            return
+        )
+
+        isOutFromAreaOfHighlight =  () -> 
+            oldPosition = session.$positionOfHighlight;
+            newPosition = findSurroundingBrackets(editor)
+            if oldPosition
+                return (oldPosition.equals(newPosition));
+            else 
+                return true
+        return
+
     exports.highlighter =
         highlightBrackets: highlightBrackets
         findSurroundingBrackets: findSurroundingBrackets
+        higlightInitBind: higlightInitBind
 )

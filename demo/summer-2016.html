@@ -245,30 +245,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         console.log("Simple Latex Completer successfully added");
     });
 
-    var keyboardHandler = {
-      name: 'highlightBrackets',
-      bindKey: {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'},
-      exec: function(editor) {return highlighter.highlightBrackets(editor)},
-      readOnly: true
-    }
-    editor.commands.addCommand(keyboardHandler);
-
-    session.getSelection().on("changeCursor", function() {
-      if (session.$bracketHighlightLeft || session.$bracketHighlightRight) {
-        session.removeMarker(session.$bracketHighlightLeft);
-        session.removeMarker(session.$bracketHighlightRight);
-        session.$bracketHighlightLeft = null;
-        session.$bracketHighlightRight = null;
-        if (!isOutFromAreaOfHighlight())
-            highlighter.highlightBrackets(editor);
-      }   
-    });
-
-    function isOutFromAreaOfHighlight() {
-      oldPosition = session.$positionOfHighlight;
-      newPosition = highlighter.findSurroundingBrackets(editor)
-      return (oldPosition.equals(newPosition));
-    }
+    //Initialization bind for highlight brackets. Hotkey is 'Ctrl+('
+    highlighter.higlightInitBind(editor);
   
 
     langTools.snippetCompleter.getDocTooltip = null;
