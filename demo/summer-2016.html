@@ -245,8 +245,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         console.log("Simple Latex Completer successfully added");
     });
 
-    //Initialization bind for highlight brackets. Hotkey is 'Ctrl+('
-    highlighter.higlightInitBind(editor);
+    //Initialization bind for highlight brackets.
+    highlighter.highlightInitBind(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
   
 
     langTools.snippetCompleter.getDocTooltip = null;

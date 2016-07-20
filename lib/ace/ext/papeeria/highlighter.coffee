@@ -97,19 +97,19 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-    higlightInitBind = (editor) ->
+    highlightInitBind = (editor, bindKey) ->
         session = editor.getSession()
         keyboardHandler = 
             name: 'highlightBrackets'
-            bindKey: {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}
+            bindKey: bindKey
             exec: (editor)  -> return highlightBrackets(editor)
             readOnly: true
 
 
         editor.commands.addCommand(keyboardHandler);
 
-        session.getSelection().on("changeCursor", () -> 
-            if (session.$bracketHighlightLeft || session.$bracketHighlightRight) 
+        session.getSelection().on("changeCursor", -> 
+            if session.$bracketHighlightLeft || session.$bracketHighlightRight 
                 session.removeMarker(session.$bracketHighlightLeft)
                 session.removeMarker(session.$bracketHighlightRight)
                 session.$bracketHighlightLeft = null
@@ -119,14 +119,14 @@ define((require, exports, module) ->
             return
         )
 
-        isOutFromAreaOfHighlight =  () -> 
+        isOutFromAreaOfHighlight = -> 
             oldPosition = session.$positionOfHighlight;
             newPosition = findSurroundingBrackets(editor)
-            return (oldPosition.equals(newPosition));
+            return oldPosition.equals(newPosition);
         return
 
     exports.highlighter =
         highlightBrackets: highlightBrackets
         findSurroundingBrackets: findSurroundingBrackets
-        higlightInitBind: higlightInitBind
+        highlightInitBind: highlightInitBind
 )
