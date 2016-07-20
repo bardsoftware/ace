@@ -26,6 +26,7 @@ define((require, exports, module) ->
             if pos.right && !pos.left
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
+        session.$positionOfHighlight = pos
         return
 
     findSurroundingBrackets = (editor) ->
@@ -94,7 +95,6 @@ define((require, exports, module) ->
             rightBracket = session.getLine(result.right.row).charAt(result.right.column)
             if  expectedRightBracket == rightBracket
                 result.mismatch = false
-        session.$positionOfHighlight = result
         return result
 
     exports.highlighter =

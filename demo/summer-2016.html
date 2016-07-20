@@ -265,10 +265,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     });
 
     function isOutFromAreaOfHighlight() {
-      var oldPosition = {};
-      for (var key in session.$positionOfHighlight)
-        oldPosition[key] = session.$positionOfHighlight[key];
-      var newPosition = highlighter.findSurroundingBrackets(editor);
+      oldPosition = session.$positionOfHighlight;
+      newPosition = highlighter.findSurroundingBrackets(editor)
       return (oldPosition.equals(newPosition));
     }
   
