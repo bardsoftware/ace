@@ -26,7 +26,7 @@ define((require, exports, module) ->
             if pos.right && !pos.left
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
-        session.$positionRange = pos
+        session.$highlightRange = pos
         return
 
     findSurroundingBrackets = (editor) ->
@@ -120,7 +120,7 @@ define((require, exports, module) ->
         )
 
         isInsideCurrentHighlight = -> 
-            oldPosition = session.$positionRange;
+            oldPosition = session.$highlightRange;
             newPosition = findSurroundingBrackets(editor)
             return oldPosition.equals(newPosition);
         return
