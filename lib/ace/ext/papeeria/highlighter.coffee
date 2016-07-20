@@ -120,9 +120,9 @@ define((require, exports, module) ->
         )
 
         isInsideCurrentHighlight = -> 
-            oldPosition = session.$highlightRange;
-            newPosition = findSurroundingBrackets(editor)
-            return oldPosition.equals(newPosition);
+            oldRange = session.$highlightRange;
+            newRange = findSurroundingBrackets(editor)
+            return oldRange.equals(newRange);
         return
 
     exports.highlighter =
