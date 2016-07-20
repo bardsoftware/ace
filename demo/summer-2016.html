@@ -253,19 +253,13 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     }
     editor.commands.addCommand(keyboardHandler);
 
-
-    function removeHighlightBracket() {     
+    session.getSelection().on("changeCursor", function() {
+      if (session.$bracketHighlightLeft || session.$bracketHighlightRight) {
         session.removeMarker(session.$bracketHighlightLeft);
         session.removeMarker(session.$bracketHighlightRight);
         session.$bracketHighlightLeft = null;
         session.$bracketHighlightRight = null;
-    }
-
-    session.getSelection().on("changeCursor", function() {
-      if (session.$bracketHighlightLeft || session.$bracketHighlightRight) {
-        removeHighlightBracket();
-        if(!session.$bracketHighlight)
-            if (!isOutFromAreaOfHighlight() && !session.$bracketHighlight)
+        if (!isOutFromAreaOfHighlight())
             highlighter.highlightBrackets(editor);
       }   
     });
