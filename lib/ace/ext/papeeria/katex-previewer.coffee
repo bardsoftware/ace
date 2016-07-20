@@ -4,14 +4,6 @@ define((require, exports, module) ->
     katex = null
 
     initKaTeX = (onLoaded) ->
-      # Adding KaTeX CSS
-      cssKatexPath = require.toUrl("../katex/katex.min.css")
-      linkKatex = $("<link>").attr(
-        rel: "stylesheet"
-        href: cssKatexPath
-      )
-      $("head").append(linkKatex)
-
       # Adding CSS for demo formula
       cssDemoPath = require.toUrl("./katex-demo.css")
       linkDemo = $("<link>").attr(
@@ -24,7 +16,7 @@ define((require, exports, module) ->
       span = $("<span>").attr(id: "formula")
       $("body").append(span)
 
-      require(["ace/ext/katex/katex"], (katexInner) ->
+      require(["ace/ext/katex"], (katexInner) ->
         katex = katexInner
         onLoaded()
         return
