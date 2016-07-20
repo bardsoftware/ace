@@ -114,12 +114,12 @@ define((require, exports, module) ->
                 session.removeMarker(session.$bracketHighlightRight)
                 session.$bracketHighlightLeft = null
                 session.$bracketHighlightRight = null
-                if (!isOutFromAreaOfHighlight())
+                if (!isInsideCurrentHighlight())
                     highlightBrackets(editor)
             return
         )
 
-        isOutFromAreaOfHighlight = -> 
+        isInsideCurrentHighlight = -> 
             oldPosition = session.$positionOfHighlight;
             newPosition = findSurroundingBrackets(editor)
             return oldPosition.equals(newPosition);
