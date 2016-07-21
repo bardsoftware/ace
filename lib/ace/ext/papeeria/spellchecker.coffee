@@ -13,8 +13,9 @@ define((require, exports, module) ->
         ]
     }
 
+
     # Class by now provides highlighting of words that takes from JSON.
-    exports.SpellChecker = class SpellChecker
+    class SpellChecker
         # By now it's just a stub, but I guess this function will take data from server somehow in future.
         # TODO
         # @return {Object} JSON-list of incorrect words.
@@ -28,6 +29,7 @@ define((require, exports, module) ->
             correctionsList = @getJson()
             # New json structure makes it possible to search for token just like this
             return !correctionsList[token]
+
 
     # Implements some routines to show popup for spellchecker (to choose a proper substitution for a typo).
     # Also binds popup to an editor's shortcut.
@@ -43,7 +45,7 @@ define((require, exports, module) ->
             HashHandler = require("ace/keyboard/hash_handler").HashHandler
             event = require("ace/lib/event")
 
-            @popup = new AcePopup(document.body ? document.documentElement)
+            @popup = new AcePopup(document.body)
             @popup.setData(options)
             @popup.setTheme(editor.getTheme())
             @popup.setFontSize(editor.getFontSize())
@@ -89,9 +91,9 @@ define((require, exports, module) ->
             session = editor.session
             row = editor.getCursorPosition().row
             col = editor.getCursorPosition().column
-            wordPosition = session.getAWordRange(row, col)
-            start = wordPosition.start.column
-            end = wordPosition.end.column
+            wordRange = session.getAWordRange(row, col)
+            start = wordRange.start.column
+            end = wordRange.end.column
             # getAWordRange returns start and end positions with a trailing
             # whitespace at the end (if there's a one), that's why replace is used
             return session.getLine(row).substring(start, end).replace(/\s\s*$/, '')
@@ -101,9 +103,8 @@ define((require, exports, module) ->
         tryPopup = ->
             word = extractWord()
             spellChecker = new SpellChecker()
-            correctionsList = spellChecker.getJson()
-            if correctionsList[word]
-                showPopup(convertCorrectionList(correctionsList[word]))
+            if not spellChecker.check(word)
+                showPopup(convertCorrectionList(spellChecker.getJson()[word]))
             return
 
         # Bind a shortcut to tryPopup callback.
@@ -115,5 +116,7 @@ define((require, exports, module) ->
 
         return
 
+
+    exports.SpellChecker = SpellChecker;
     return
 )
