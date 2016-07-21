@@ -1,7 +1,5 @@
 define((require, exports, module) ->
   exports.setupPreviewer = (editor) ->
-    require("ace/ext/jquery")
-    require("ace/ext/bootstrap")
     katex = null
 
     initKaTeX = (onLoaded) ->
