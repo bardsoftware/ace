@@ -79,10 +79,10 @@ define((require, exports, module) ->
         regex: '\\\\[^a-zA-Z]?'
       }
     ]
-    listType = 'itemize|enumerate'
-    equationType = 'equation|equation\\*'
-    listState = 'list'
-    equationState = 'equation'
+    LIST_REGEX = 'itemize|enumerate'
+    EQUATIOТ_REGEX = 'equation|equation\\*'
+    LIST_STATE = 'list'
+    EQUATION_STATE = 'equation'
 
     beginRule = (text = '\\w*', pushedState = 'start') ->
       return {
@@ -111,27 +111,27 @@ define((require, exports, module) ->
 
     @$rules =
       'start': [
-        beginRule(listType, listState)
-        beginRule(equationType, equationState)
+        beginRule(LIST_REGEX, LIST_STATE)
+        beginRule(EQUATIOТ_REGEX, EQUATION_STATE)
 
-        endRule(equationType)
-        endRule(listType)
-
-      ]
-      equationState: [
-        beginRule(equationType, equationState)
-        beginRule(listType, listState)
-
-        endRule(equationType)
-        endRule(listType)
+        endRule(EQUATIOТ_REGEX)
+        endRule(LIST_REGEX)
 
       ]
-      listState: [
-        beginRule(listType, listState)
-        beginRule(equationType, equationState)
+      EQUATION_STATE: [
+        beginRule(EQUATIOТ_REGEX, EQUATION_STATE)
+        beginRule(LIST_REGEX, LIST_STATE)
 
-        endRule(equationType)
-        endRule(listType)
+        endRule(EQUATIOТ_REGEX)
+        endRule(LIST_REGEX)
+
+      ]
+      LIST_STATE: [
+        beginRule(LIST_REGEX, LIST_STATE)
+        beginRule(EQUATIOТ_REGEX, EQUATION_STATE)
+
+        endRule(EQUATIOТ_REGEX)
+        endRule(LIST_REGEX)
       ]
 
 
