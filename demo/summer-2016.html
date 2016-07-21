@@ -242,7 +242,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     var HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
     keyboardHandler = new HashHandler();
     keyboardHandler.addCommand({
-      name: 'item.',
+      name: 'add item in list mode',
       bindKey: {win: 'Enter', mac: 'Enter'},
       exec: function(editor) {
         var pos = editor.getCursorPosition()
