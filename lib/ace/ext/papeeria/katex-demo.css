@@ -9,3 +9,7 @@
     right: 0.4cm;
     z-index: 1;
 }
+
+.popover {
+    max-width: 100%;
+}

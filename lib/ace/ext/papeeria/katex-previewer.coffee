@@ -31,14 +31,14 @@ define((require, exports, module) ->
       placement: "bottom"
       trigger: "manual"
       title: "Formula"
-      content: -> katex.renderToString(editor.getSelectedText())
+      content: -> katex.renderToString(editor.getSelectedText(), {displayMode: true})
       container: "#editor"
     }
 
     onLoaded = ->
       try
         popoverPosition = $("textarea.ace_text-input").position()
-        popoverPosition.top += 16
+        popoverPosition.top += 24
         $("#formula").css(popoverPosition)
         $("#formula").popover(options)
         $("#formula").popover("show")
