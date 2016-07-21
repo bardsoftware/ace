@@ -2,7 +2,12 @@ define((require, exports, module) ->
   'use strict'
   oop = require('../../lib/oop')
   TextHighlightRules = require('../../mode/text_highlight_rules').TextHighlightRules
-
+  LIST_REGEX = 'itemize|enumerate'
+  EQUATIOТ_REGEX = 'equation|equation\\*'
+  LIST_STATE = 'list'
+  EQUATION_STATE = 'equation'
+  exports.EQUATION_STATE = EQUATION_STATE
+  exports.LIST_STATE = LIST_STATE
   PapeeriaLatexHighlightRules = ->
     ###*
     * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
@@ -79,10 +84,7 @@ define((require, exports, module) ->
         regex: '\\\\[^a-zA-Z]?'
       }
     ]
-    LIST_REGEX = 'itemize|enumerate'
-    EQUATIOТ_REGEX = 'equation|equation\\*'
-    LIST_STATE = 'list'
-    EQUATION_STATE = 'equation'
+    
 
     beginRule = (text = '\\w*', pushedState = 'start') ->
       return {

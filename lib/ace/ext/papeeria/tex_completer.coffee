@@ -1,4 +1,6 @@
 define (require, exports, module) ->
+  EQUATION_STATE = require('./papeeria_latex_highlight_rules').EQUATION_STATE
+  LIST_STATE = require('./papeeria_latex_highlight_rules').LIST_STATE
   equationEnvironments = [
     'equation'
     'equation*'
@@ -87,9 +89,9 @@ define (require, exports, module) ->
     if context == "start"
       callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
 
-    if context == 'list'
+    if context == LIST_STATE
       callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
 
-    if context == "equation"
+    if context == EQUATION_STATE
       callback(null, formulasSnippets.concat(equationKeywords_))
   return
