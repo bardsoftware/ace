@@ -239,6 +239,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         enableLiveAutocompletion: true
     });
 
+    //we will move this code into tex_completer in next pull request and well make this beautiful
     var HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
     keyboardHandler = new HashHandler();
     keyboardHandler.addCommand({
@@ -247,7 +248,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       exec: function(editor) {
         var pos = editor.getCursorPosition()
         var curLine = editor.session.getLine(pos.row);
-
+        // it's temporary fix bug with added \item before \begin{itemize|enumerate}
         if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) {
           editor.insert("\n\t\\item ")
           return true;
