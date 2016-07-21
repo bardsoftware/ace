@@ -211,8 +211,14 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter"], 
-  function(ace, langTools, katexPreviewer, highlighter) {
+require([
+        "ace/ace",
+        "ace/ext/language_tools",
+        "ace/ext/papeeria/katex-previewer",
+        "ace/ext/papeeria/highlighter",
+        "ace/ext/papeeria/spellchecker"
+        ],
+  function(ace, langTools, katexPreviewer, highlighter, spellChecker) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -220,7 +226,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
 
     var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
-        alphabet: 'abcdefghijklmnopqrstuvwxyz1234567890',
+        alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
         language: "en_US",
         dicPath: "/demo/typojs/dictionaries/en_US/en_US.dic",
@@ -234,6 +240,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       });
     };
     session.on("changeMode", initSpellCheck);
+    spellChecker.setupSpellCheckerPopup(editor);
 
     editor.setOptions({
         enableBasicAutocompletion: true,
