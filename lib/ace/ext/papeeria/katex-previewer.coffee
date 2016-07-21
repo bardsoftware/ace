@@ -31,19 +31,23 @@ define((require, exports, module) ->
       placement: "bottom"
       trigger: "manual"
       title: "Formula"
-      content: -> katex.renderToString(editor.getSelectedText(), {displayMode: true})
       container: "#editor"
     }
 
     onLoaded = ->
+      popoverPosition = $("textarea.ace_text-input").position()
+      popoverPosition.top += 24
+      $("#formula").css(popoverPosition)
       try
-        popoverPosition = $("textarea.ace_text-input").position()
-        popoverPosition.top += 24
-        $("#formula").css(popoverPosition)
+        options.content = katex.renderToString(
+          editor.getSelectedText(),
+          {displayMode: true}
+        )
+      catch e
+        options.content = e
+      finally
         $("#formula").popover(options)
         $("#formula").popover("show")
-      catch e
-        console.log(e.message)
       return
 
     popoverShown = false
