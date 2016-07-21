@@ -212,12 +212,12 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
 require([
-        "ace/ace",
-        "ace/ext/language_tools",
-        "ace/ext/papeeria/katex-previewer",
-        "ace/ext/papeeria/highlighter",
-        "ace/ext/papeeria/spellchecker"
-        ],
+  "ace/ace",
+  "ace/ext/language_tools",
+  "ace/ext/papeeria/katex-previewer",
+  "ace/ext/papeeria/highlighter",
+  "ace/ext/papeeria/spellchecker"
+],
   function(ace, langTools, katexPreviewer, highlighter, spellChecker) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
