@@ -1,6 +1,6 @@
 define((require, exports, module) ->
 
-    Range = require("ace/range").Range;
+    Range = require("../../range").Range;
 
     highlightBrackets = (editor) ->
         pos = findSurroundingBrackets(editor)
