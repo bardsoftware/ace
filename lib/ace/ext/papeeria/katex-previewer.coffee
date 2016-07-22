@@ -1,6 +1,7 @@
 define((require, exports, module) ->
-  exports.setupPreviewer = (editor) ->
+  exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
+    popoverHandler = popoverHandler ? new require("ace/ext/papeeria/popover-handler")
 
     initKaTeX = (onLoaded) ->
       # Adding CSS for demo formula
@@ -26,18 +27,14 @@ define((require, exports, module) ->
       )
       return
 
-    options = {
-      html: true
-      placement: "bottom"
-      trigger: "manual"
-      title: "Formula"
-      container: "#editor"
-    }
-
     onLoaded = ->
-      popoverPosition = $("textarea.ace_text-input").position()
-      popoverPosition.top += 24
-      $("#formula").css(popoverPosition)
+      options = {
+        html: true
+        placement: "bottom"
+        trigger: "manual"
+        title: "Formula"
+        container: "#editor"
+      }
       try
         options.content = katex.renderToString(
           editor.getSelectedText(),
@@ -46,9 +43,8 @@ define((require, exports, module) ->
       catch e
         options.content = e
       finally
-        $("#formula").popover(options)
-        $("#formula").popover("show")
-      return
+        popoverHandler.show($("#formula", options))
+        return
 
     callback = (editor) ->
       if $("#editor > .popover").is(":visible")
@@ -57,7 +53,7 @@ define((require, exports, module) ->
         createPopover(editor)
       return
 
-    destroyPopover = -> $("#formula").popover("destroy")
+    destroyPopover = -> popoverHandler.hide($("#formula"))
 
     createPopover = (editor) ->
       unless katex?
