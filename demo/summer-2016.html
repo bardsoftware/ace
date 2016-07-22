@@ -211,8 +211,8 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="kitchen-sink/require.js"></script>
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter"], 
-  function(ace, langTools, katexPreviewer, highlighter) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter", "ace/ext/papeeria/highlighter_test", "ace/test/asyncjs/test"], 
+  function(ace, langTools, katexPreviewer, highlighter, caseTest, asyncjs) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -249,7 +249,8 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
 
     //Initialization bind for highlight brackets.
     highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
-  
+
+    asyncjs.testcase(caseTest).exec();
 
     langTools.snippetCompleter.getDocTooltip = null;
 
