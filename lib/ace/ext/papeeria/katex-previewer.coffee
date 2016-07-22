@@ -50,15 +50,11 @@ define((require, exports, module) ->
         $("#formula").popover("show")
       return
 
-    popoverShown = false
-
     callback = (editor) ->
-      if popoverShown
+      if $("#editor > .popover").is(":visible")
         destroyPopover()
-        popoverShown = false
       else
         createPopover(editor)
-        popoverShown = true
       return
 
     destroyPopover = -> $("#formula").popover("destroy")
