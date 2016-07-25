@@ -38,7 +38,8 @@ define((require, exports, module) ->
         # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
         # To fix it we increment columnin the position for searching leftwards.
         positionLeftwards = editor.getCursorPosition()
-        positionLeftwards.column += 1
+        positionLeftwards.column += 1 
+
         session = editor.getSession()
         allBrackets =
             left: [
@@ -76,6 +77,20 @@ define((require, exports, module) ->
                     else
                         rightNearest = rightCandidate
             key++
+
+        #Special case related to positionLeftwards has not next char and positionLeftWards.column += 1 does nothing.
+        if session.getLine(positionRightwards.row + 1) == '' 
+            line = session.getLine(positionRightwards.row)
+            closingBrackets = 
+                "(": ")"
+                "[": "]"
+                "}": "{"
+            if rightNearest == null
+                if line.charAt(positionRightwards.column) == ''
+                    if line.charAt(positionRightwards.column - 1) of closingBrackets
+                        rightNearest = 
+                            row: positionRightwards.row
+                            column: positionRightwards.column - 1            
         result =
             left: leftNearest
             right: rightNearest
