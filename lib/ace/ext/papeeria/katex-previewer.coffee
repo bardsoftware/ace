@@ -41,7 +41,7 @@ define((require, exports, module) ->
       )
       return
 
-    callbackHidePopover = () ->
+    callbackHidePopover = ->
       popoverHandler.hide($("#formula"))
       editor.off("changeSelection", callbackHidePopover)
       editor.session.off("changeScrollTop", callbackHidePopover)
