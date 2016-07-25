@@ -38,22 +38,14 @@ define((require, exports, module) ->
         # after closing bracket } then this bracket will be ignored and ultimately findOpeningBracket
         # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
         # To fix it we increment columnin the position for searching leftwards.
-        closingBrackets = 
-                "(": ")"
-                "[": "]"
-                "{": "}"
         positionLeftwards = editor.getCursorPosition()
-        if session.getLine(positionLeftwards.row).charAt(positionLeftwards.column - 1) of closingBrackets
+        if session.getLine(positionLeftwards.row).length == positionLeftwards.column
+            positionLeftwards.row += 1
+            positionLeftwards.column = 0
+        else
             positionLeftwards.column += 1
 
-        openingBrackets = 
-                ")": "("
-                "]": "["
-                "}": "{"
         positionRightwards = editor.getCursorPosition()        
-        if session.getLine(positionRightwards.row).charAt(positionRightwards.column - 1) of openingBrackets
-            positionRightwards.column -= 1
-
 
         allBrackets =
             left: [
