@@ -1,6 +1,7 @@
 define((require, exports, module) ->
-  class PopoverHandler
+  {
     show: (jqPopoverContainer, options) ->
+      jqPopoverContainer.css($("textarea.ace_text-input").position())
       popoverPosition = jqPopoverContainer.position()
       popoverPosition.top += 24
       jqPopoverContainer.css(popoverPosition)
@@ -10,4 +11,5 @@ define((require, exports, module) ->
 
     hide: (jqPopoverContainer) ->
       jqPopoverContainer.popover("destroy")
+  }
 )
