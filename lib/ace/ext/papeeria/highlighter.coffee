@@ -30,17 +30,31 @@ define((require, exports, module) ->
         return
 
     findSurroundingBrackets = (editor) ->
-        positionRightwards = editor.getCursorPosition()
+
+        session = editor.getSession();
         # if Tokeniterator is created from the cursor position, its first token
         # will be the one which immediately precedes the position (its start+length>=position)
         # The first token is skipped when stepping backwards, so if cursor is positioned immediately
         # after closing bracket } then this bracket will be ignored and ultimately findOpeningBracket
         # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
         # To fix it we increment columnin the position for searching leftwards.
+        closingBrackets = 
+                "(": ")"
+                "[": "]"
+                "{": "}"
         positionLeftwards = editor.getCursorPosition()
-        positionLeftwards.column += 1 
+        if session.getLine(positionLeftwards.row).charAt(positionLeftwards.column - 1) of closingBrackets
+            positionLeftwards.column += 1
 
-        session = editor.getSession()
+        openingBrackets = 
+                ")": "("
+                "]": "["
+                "}": "{"
+        positionRightwards = editor.getCursorPosition()        
+        if session.getLine(positionRightwards.row).charAt(positionRightwards.column - 1) of openingBrackets
+            positionRightwards.column -= 1
+
+
         allBrackets =
             left: [
                 session.$findOpeningBracket('}', positionLeftwards, /(\.?.paren)+/)
@@ -78,19 +92,6 @@ define((require, exports, module) ->
                         rightNearest = rightCandidate
             key++
 
-        #Special case related to positionLeftwards has not next char and positionLeftWards.column += 1 does nothing.
-        if session.getLine(positionRightwards.row + 1) == '' 
-            line = session.getLine(positionRightwards.row)
-            closingBrackets = 
-                "(": ")"
-                "[": "]"
-                "}": "{"
-            if rightNearest == null
-                if line.charAt(positionRightwards.column) == ''
-                    if line.charAt(positionRightwards.column - 1) of closingBrackets
-                        rightNearest = 
-                            row: positionRightwards.row
-                            column: positionRightwards.column - 1            
         result =
             left: leftNearest
             right: rightNearest
