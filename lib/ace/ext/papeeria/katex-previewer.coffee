@@ -3,10 +3,11 @@ define((require, exports, module) ->
     katex = null
     popoverHandler = popoverHandler ? {
       show: (jqPopoverContainer, options) ->
-        jqPopoverContainer.css($("textarea.ace_text-input").position())
-        popoverPosition = jqPopoverContainer.position()
-        popoverPosition.top += 24
-        jqPopoverContainer.css(popoverPosition)
+        cursorPosition = $("textarea.ace_text-input").position()
+        cursorPosition.top += 24
+        cursorPosition.top += "px"
+        cursorPosition.left += "px"
+        jqPopoverContainer.css(cursorPosition)
         jqPopoverContainer.popover(options)
         jqPopoverContainer.popover("show")
         return
