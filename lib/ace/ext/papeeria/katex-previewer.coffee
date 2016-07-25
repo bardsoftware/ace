@@ -13,6 +13,9 @@ define((require, exports, module) ->
 
       hide: (jqPopoverContainer) ->
         jqPopoverContainer.popover("destroy")
+
+      isVisible: (popoverElement) ->
+        popoverElement.children(".popover").is(":visible")
     }
 
     initKaTeX = (onLoaded) ->
@@ -39,6 +42,13 @@ define((require, exports, module) ->
       )
       return
 
+    callbackHidePopover = () ->
+      popoverHandler.hide($("#formula"))
+      editor.off("changeSelection", callbackHidePopover)
+      editor.session.off("changeScrollTop", callbackHidePopover)
+      editor.session.off("changeScrollLeft", callbackHidePopover)
+      return
+
     onLoaded = ->
       options = {
         html: true
@@ -55,15 +65,13 @@ define((require, exports, module) ->
       catch e
         options.content = e
       finally
-        popoverHandler.show($("#formula", options))
+        popoverHandler.show($("#formula"), options)
+        editor.on("changeSelection", callbackHidePopover)
+        editor.session.on("changeScrollTop", callbackHidePopover)
+        editor.session.on("changeScrollLeft", callbackHidePopover)
         return
 
-    callback = (editor) ->
-      if $("#editor > .popover").is(":visible")
-        destroyPopover()
-      else
-        createPopover(editor)
-      return
+    callback = (editor) -> createPopover(editor)
 
     destroyPopover = -> popoverHandler.hide($("#formula"))
 
