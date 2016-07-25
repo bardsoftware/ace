@@ -3,7 +3,7 @@ define((require, exports, module) ->
   oop = require('../../lib/oop')
   TextHighlightRules = require('../../mode/text_highlight_rules').TextHighlightRules
   LIST_REGEX = 'itemize|enumerate'
-  EQUATIOТ_REGEX = 'equation|equation\\*'
+  EQUATION_REGEX = 'equation|equation\\*'
   LIST_STATE = 'list'
   EQUATION_STATE = 'equation'
   exports.EQUATION_STATE = EQUATION_STATE
@@ -114,25 +114,25 @@ define((require, exports, module) ->
     @$rules =
       'start': [
         beginRule(LIST_REGEX, LIST_STATE)
-        beginRule(EQUATIOТ_REGEX, EQUATION_STATE)
+        beginRule(EQUATION_REGEX, EQUATION_STATE)
 
-        endRule(EQUATIOТ_REGEX)
+        endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
 
       ]
-      EQUATION_STATE: [
-        beginRule(EQUATIOТ_REGEX, EQUATION_STATE)
+      'equation': [
+        beginRule(EQUATION_REGEX, EQUATION_STATE)
         beginRule(LIST_REGEX, LIST_STATE)
 
-        endRule(EQUATIOТ_REGEX)
+        endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
 
       ]
-      LIST_STATE: [
+      'list': [
         beginRule(LIST_REGEX, LIST_STATE)
-        beginRule(EQUATIOТ_REGEX, EQUATION_STATE)
+        beginRule(EQUATION_REGEX, EQUATION_STATE)
 
-        endRule(EQUATIOТ_REGEX)
+        endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
       ]
 
