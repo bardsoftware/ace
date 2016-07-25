@@ -29,10 +29,8 @@ define((require, exports, module) ->
       $("head").append(linkDemo)
 
       # Adding DOM element to place formula into
-      a = $("<a>").attr(
-        href: "#"
+      a = $("<span>").attr(
         id: "formula"
-        "data-toggle": "popover"
       )
       $("body").append(a)
 
