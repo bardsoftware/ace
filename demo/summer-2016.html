@@ -30,7 +30,6 @@
 
 <pre id="editor">
 $xxx$
-   \begin{enumerate}
 \length
 blablabla
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -247,6 +246,26 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         enableLiveAutocompletion: true
     });
 
+    //we will move this code into tex_completer in next pull request and well make this beautiful
+    var HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
+    keyboardHandler = new HashHandler();
+    keyboardHandler.addCommand({
+      name: 'add item in list mode',
+      bindKey: {win: 'Enter', mac: 'Enter'},
+      exec: function(editor) {
+        var pos = editor.getCursorPosition()
+        var curLine = editor.session.getLine(pos.row);
+        // it's temporary fix bug with added \item before \begin{itemize|enumerate}
+        if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) {
+          editor.insert("\n\t\\item ")
+          return true;
+        }
+        else {
+          return false;
+        }}
+    });
+    editor.keyBinding.addKeyboardHandler(keyboardHandler);
+
     require(["ace/ext/papeeria/tex_completer"], function(completer) {
         var texCompleter = completer;
         langTools.addCompleter(texCompleter);
@@ -257,7 +276,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
 
     langTools.snippetCompleter.getDocTooltip = null;
-
     katexPreviewer.setupPreviewer(editor);
 });
 </script>
