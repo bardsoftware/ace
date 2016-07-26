@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Editor</title>
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css">
   <style type="text/css" media="screen">
     body {
         overflow: hidden;
@@ -171,7 +172,8 @@ Richard & Miles & $2$ \\
 
 \begin{equation}
 \label{eq:emc}
-e = mc^2
+  \sum_{n=1}^{N} \gamma(z_{np}) \frac {\mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \frac{\alpha_{pt} - 1}{\pi_{pt}} = \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1) \sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1 = \pi_{pt} \Big(\sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)\Big) \frac{\sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1} { \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)} = \pi_{pt}
+
 \end{equation}
 
 \lipsum[6] % Dummy text
@@ -209,6 +211,10 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 \end{document}</pre>
 
 <script src="kitchen-sink/require.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
+
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
 require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter"], 
