@@ -1,6 +1,6 @@
 define((require, exports, module) ->
 
-    Range = require("ace/range").Range;
+    Range = require("../../range").Range;
 
     highlightBrackets = (editor) ->
         pos = findSurroundingBrackets(editor)
@@ -30,7 +30,8 @@ define((require, exports, module) ->
         return
 
     findSurroundingBrackets = (editor) ->
-        positionRightwards = editor.getCursorPosition()
+
+        session = editor.getSession();
         # if Tokeniterator is created from the cursor position, its first token
         # will be the one which immediately precedes the position (its start+length>=position)
         # The first token is skipped when stepping backwards, so if cursor is positioned immediately
@@ -38,8 +39,14 @@ define((require, exports, module) ->
         # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
         # To fix it we increment columnin the position for searching leftwards.
         positionLeftwards = editor.getCursorPosition()
-        positionLeftwards.column += 1
-        session = editor.getSession()
+        if session.getLine(positionLeftwards.row).length == positionLeftwards.column
+            positionLeftwards.row += 1
+            positionLeftwards.column = 0
+        else
+            positionLeftwards.column += 1
+
+        positionRightwards = editor.getCursorPosition()        
+
         allBrackets =
             left: [
                 session.$findOpeningBracket('}', positionLeftwards, /(\.?.paren)+/)
@@ -76,6 +83,7 @@ define((require, exports, module) ->
                     else
                         rightNearest = rightCandidate
             key++
+
         result =
             left: leftNearest
             right: rightNearest
