@@ -2,21 +2,30 @@ define((require, exports, module) ->
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
     popoverHandler = popoverHandler ? {
-      show: (jqPopoverContainer, options) ->
+      options: {
+        html: true
+        placement: "bottom"
+        trigger: "manual"
+        title: "Formula"
+        container: "#editor"
+      }
+
+      show: (jqPopoverContainer, content) ->
         cursorPosition = $("textarea.ace_text-input").position()
-        cursorPosition.top += 24
-        cursorPosition.top += "px"
-        cursorPosition.left += "px"
-        jqPopoverContainer.css(cursorPosition)
-        jqPopoverContainer.popover(options)
+        jqPopoverContainer.css({
+          top: "#{cursorPosition.top + 24}px"
+          left: "#{cursorPosition.left}px"
+        })
+        popoverHandler.options.content = content
+        jqPopoverContainer.popover(popoverHandler.options)
         jqPopoverContainer.popover("show")
         return
 
       hide: (jqPopoverContainer) ->
         jqPopoverContainer.popover("destroy")
 
-      isVisible: (popoverElement) ->
-        popoverElement.children(".popover").is(":visible")
+      isVisible: (jqPopoverElement) ->
+        jqPopoverElement.children(".popover").is(":visible")
     }
 
     initKaTeX = (onLoaded) ->
@@ -29,10 +38,10 @@ define((require, exports, module) ->
       $("head").append(linkDemo)
 
       # Adding DOM element to place formula into
-      a = $("<span>").attr(
+      span = $("<span>").attr(
         id: "formula"
       )
-      $("body").append(a)
+      $("body").append(span)
 
       require(["ace/ext/katex"], (katexInner) ->
         katex = katexInner
@@ -49,22 +58,15 @@ define((require, exports, module) ->
       return
 
     onLoaded = ->
-      options = {
-        html: true
-        placement: "bottom"
-        trigger: "manual"
-        title: "Formula"
-        container: "#editor"
-      }
       try
-        options.content = katex.renderToString(
+        content = katex.renderToString(
           editor.getSelectedText(),
           {displayMode: true}
         )
       catch e
-        options.content = e
+        content = e
       finally
-        popoverHandler.show($("#formula"), options)
+        popoverHandler.show($("#formula"), content)
         editor.on("changeSelection", callbackHidePopover)
         editor.session.on("changeScrollTop", callbackHidePopover)
         editor.session.on("changeScrollLeft", callbackHidePopover)
