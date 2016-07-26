@@ -1,7 +1,7 @@
 define( (require, exports, module) ->
-  papeeria_latex_highlight_rules = require('./papeeria_latex_highlight_rules')
-  EQUATION_STATE = papeeria_latex_highlight_rules.EQUATION_STATE
-  LIST_STATE = require('./papeeria_latex_highlight_rules').LIST_STATE
+  PapeeriaLatexHighlightRules = require('./papeeria_latex_highlight_rules')
+  EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
+  LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [
     'equation'
     'equation*'
