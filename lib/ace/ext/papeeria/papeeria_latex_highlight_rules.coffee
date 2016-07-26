@@ -111,6 +111,9 @@ define((require, exports, module) ->
         next: popState
       }
 
+    # 	For unknown reasons  we can't use constants in block below, because background_tokenizer 
+    # doesn't like constants. It wants string literal
+    # 
     @$rules =
       'start': [
         beginRule(LIST_REGEX, LIST_STATE)
