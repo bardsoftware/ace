@@ -12,10 +12,8 @@ define((require, exports, module) ->
             session.$bracketHighlightRight = null
             return
         if !pos.mismatch
-            rangeLeft = new Range(pos.left.row, pos.left.column, pos.left.row, pos.left.column + 1)
-            rangeRight = new Range(pos.right.row, pos.right.column, pos.right.row, pos.right.column + 1)
-            session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_bracket", "text")
-            session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_bracket", "text")
+            range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
+            session.$bracketHighlightLeft = session.addMarker(range, "ace_selection", "text")
         else
             if pos.left && pos.right
                 range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
@@ -27,10 +25,13 @@ define((require, exports, module) ->
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
         session.$highlightRange = pos
+        if pos.left && pos.right
+            if (pos.right.row - pos.left.row) > 70
+                content = "line " + pos.left.row + ": " + session.getLine(pos.left.row) + "    line " + pos.right.row + ": " + session.getLine(pos.right.row)
+                popoverHandler.show($("#line"), content)
         return
 
     findSurroundingBrackets = (editor) ->
-
         session = editor.getSession();
         # if Tokeniterator is created from the cursor position, its first token
         # will be the one which immediately precedes the position (its start+length>=position)
@@ -105,7 +106,49 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
+
+    popoverHandler = popoverHandler ? {
+        options: {
+            html: true
+            placement: "bottom"
+            trigger: "manual"
+            container: "#editor"
+        }
+
+        show: (jqPopoverContainer, content) ->
+            setTimeout(->
+                cursorPosition = $("textarea.ace_text-input").position()
+                jqPopoverContainer.css({
+                  top: cursorPosition.top + 24 + "px"
+                  left: cursorPosition.left + "px"
+                })
+                popoverHandler.options.content = content
+                jqPopoverContainer.popover(popoverHandler.options)
+                jqPopoverContainer.popover("show")
+                return
+            , 100)
+
+        hide: (jqPopoverContainer) ->
+            jqPopoverContainer.popover("destroy")
+    }
+
+    initPopover = (editor) ->
+        cssPath = require.toUrl("./highlighter.css")
+        linkDemo = $("<link>").attr(
+            rel: "stylesheet"
+            href: cssPath
+        )
+        $("head").append(linkDemo)
+
+        span = $("<span>").attr(
+            id: "line"
+        )
+
+        $("body").append(span)
+        return
+
     init = (editor, bindKey) ->
+        initPopover(editor)
         session = editor.getSession()
         keyboardHandler = 
             name: 'highlightBrackets'
@@ -124,7 +167,16 @@ define((require, exports, module) ->
                 session.$bracketHighlightRight = null
                 if (!isInsideCurrentHighlight())
                     highlightBrackets(editor)
+            popoverHandler.hide($("#line"))      
             return
+        )
+
+        session.on("changeScrollTop", ->
+            popoverHandler.hide($("#line"))
+        )
+
+        session.on("changeScrollLeft", ->
+            popoverHandler.hide($("#line"))
         )
 
         isInsideCurrentHighlight = -> 
