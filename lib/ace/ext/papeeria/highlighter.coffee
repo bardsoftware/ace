@@ -10,6 +10,7 @@ define((require, exports, module) ->
 			session.removeMarker(session.$bracketMismatchHighlight)
 			session.$bracketMatchHighlight = null
 			session.$bracketMismatchHighlight = null
+			popoverHandler.hide()
 			return
 		if !pos.mismatch
 			range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
@@ -28,7 +29,7 @@ define((require, exports, module) ->
 		if pos.left && pos.right
 			if pos.right.row > editor.getLastVisibleRow() || pos.left.row < editor.getFirstVisibleRow()
 				content = "line " + pos.left.row + ": " + session.getLine(pos.left.row) + "    line " + pos.right.row + ": " + session.getLine(pos.right.row)
-				popoverHandler.show($("#line"), content)
+				popoverHandler.show(content)
 		return
 
 	findSurroundingBrackets = (editor) ->
@@ -107,48 +108,31 @@ define((require, exports, module) ->
 		return result
 
 
-	popoverHandler = popoverHandler ? {
-		options: {
+	popoverHandler = 
+		options: 
 			html: true
 			placement: "bottom"
 			trigger: "manual"
 			container: "#editor"
-		}
+		
 
-		show: (jqPopoverContainer, content) ->
+		show: (content) ->
 			setTimeout(->
 				cursorPosition = $("textarea.ace_text-input").position()
-				jqPopoverContainer.css({
+				$("#highlightInfo").css({
 				  top: cursorPosition.top + 24 + "px"
 				  left: cursorPosition.left + "px"
 				})
 				popoverHandler.options.content = content
-				jqPopoverContainer.popover(popoverHandler.options)
-				jqPopoverContainer.popover("show")
+				$("#highlightInfo").popover(popoverHandler.options)
+				$("#highlightInfo").popover("show")
 				return
 			, 100)
 
-		hide: (jqPopoverContainer) ->
-			jqPopoverContainer.popover("destroy")
-	}
-
-	initPopover = (editor) ->
-		cssPath = require.toUrl("./highlighter.css")
-		linkDemo = $("<link>").attr(
-			rel: "stylesheet"
-			href: cssPath
-		)
-		$("head").append(linkDemo)
-
-		span = $("<span>").attr(
-			id: "line"
-		)
-
-		$("body").append(span)
-		return
+		hide:  ->
+			$("#highlightInfo").popover("destroy")
 
 	init = (editor, bindKey) ->
-		initPopover(editor)
 		session = editor.getSession()
 		keyboardHandler = 
 			name: 'highlightBrackets'
@@ -167,16 +151,16 @@ define((require, exports, module) ->
 				session.$bracketMismatchHighlight = null
 				if (!isInsideCurrentHighlight())
 					highlightBrackets(editor)
-			popoverHandler.hide($("#line"))      
+			popoverHandler.hide()      
 			return
 		)
 
 		session.on("changeScrollTop", ->
-			popoverHandler.hide($("#line"))
+			popoverHandler.hide()
 		)
 
 		session.on("changeScrollLeft", ->
-			popoverHandler.hide($("#line"))
+			popoverHandler.hide();
 		)
 
 		isInsideCurrentHighlight = -> 

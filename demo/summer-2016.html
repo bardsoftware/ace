@@ -24,10 +24,24 @@
       position: absolute;
       z-index: 1;
     }
+    #highlightInfo {
+    width: 0;
+    height: 0;
+    text-align: center;
+    font-size: 1.5em;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    right: 0.4cm;
+    z-index: 1;
+    background-color: rgb(103, 105, 102);
+    }
+    .popover {
+        max-width: 100%;
+    }
   </style>
 </head>
 <body>
-
 <pre id="editor">
 $xxx$
    \begin{enumerate}
@@ -223,6 +237,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
+    //editor.setTheme("ace/theme/twilight");
 
     var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
@@ -261,6 +276,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     katexPreviewer.setupPreviewer(editor);
 });
 </script>
+<span id = "highlightInfo"></span>
 
 </body>
 </html>
