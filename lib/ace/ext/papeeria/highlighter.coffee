@@ -104,32 +104,32 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-        infoHighlight = (editor, posLeft, posRight) -> 
-            session = editor.getSession()
-            if (posLeft && posRight)
-                if posRight.row > editor.getLastVisibleRow() || posLeft.row < editor.getFirstVisibleRow()
-                    content = "line " + (posLeft.row + 1) + ": " + session.getLine(posLeft.row) + "    line " + (posRight.row + 1) + ": " + session.getLine(posRight.row)
+    infoHighlight = (editor, posLeft, posRight) -> 
+        session = editor.getSession()
+        if (posLeft && posRight)
+            if posRight.row > editor.getLastVisibleRow() || posLeft.row < editor.getFirstVisibleRow()
+                content = "line " + (posLeft.row + 1) + ": " + session.getLine(posLeft.row) + "    line " + (posRight.row + 1) + ": " + session.getLine(posRight.row)
 
-                    options =
-                        html: true
-                        placement: "bottom"
-                        trigger: "manual"
-                        container: "#editor"
-                        content: content
-                    
-                    setTimeout(->
-                        cursorPosition = $("textarea.ace_text-input").position()
-                        $("#highlightInfo").css({
-                          top: cursorPosition.top + 24 + "px"
-                          left: cursorPosition.left + "px"
-                        })
-                        $("#highlightInfo").popover(options)
-                        $("#highlightInfo").popover("show")
-                        return
-                    , 100)
-                return
-            $("#highlightInfo").popover("destroy")
+                options =
+                    html: true
+                    placement: "bottom"
+                    trigger: "manual"
+                    container: "#editor"
+                    content: content
+                
+                setTimeout(->
+                    cursorPosition = $("textarea.ace_text-input").position()
+                    $("#highlightInfo").css({
+                      top: cursorPosition.top + 24 + "px"
+                      left: cursorPosition.left + "px"
+                    })
+                    $("#highlightInfo").popover(options)
+                    $("#highlightInfo").popover("show")
+                    return
+                , 100)
             return
+        $("#highlightInfo").popover("destroy")
+        return
 
     init = (editor, bindKey) ->
         session = editor.getSession()
