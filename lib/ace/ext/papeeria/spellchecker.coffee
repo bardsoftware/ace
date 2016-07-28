@@ -35,10 +35,7 @@ define((require, exports, module) ->
     # @param {String} token: token to search in corrections list from server.
     # @return {Array}: list of corrections.
     getCorrections: (token) ->
-      if not @check(token)
-        return @getJson()[token]
-      else
-        return
+      return if not @check(token) then @getJson()[token]
 
   # Implements some routines to show popup for spellchecker (to choose a
   # proper substitution for a typo). Also binds popup to an editor's shortcut
