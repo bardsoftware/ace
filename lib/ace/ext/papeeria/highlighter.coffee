@@ -10,7 +10,8 @@ define((require, exports, module) ->
             session.removeMarker(session.$bracketMismatchHighlight)
             session.$bracketMatchHighlight = null
             session.$bracketMismatchHighlight = null
-            toggleSurroundingBracketsPopup(editor)
+            if toggleSurroundingBracketsPopup
+                toggleSurroundingBracketsPopup(editor)
             return
         if !pos.mismatch
             range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
@@ -26,7 +27,8 @@ define((require, exports, module) ->
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketMismatchHighlight = session.addMarker(rangeRight, "ace_error-marker", "text")
         session.$highlightRange = pos
-        toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
+        if toggleSurroundingBracketsPopup
+            toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
         return
 
     findSurroundingBrackets = (editor) ->
@@ -104,34 +106,8 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-    toggleSurroundingBracketsPopup = (editor, posLeft, posRight) -> 
-        session = editor.getSession()
-        if (posLeft && posRight)
-            if posRight.row > editor.getLastVisibleRow() || posLeft.row < editor.getFirstVisibleRow()
-                content = "line " + (posLeft.row + 1) + ": " + session.getLine(posLeft.row) + "    line " + (posRight.row + 1) + ": " + session.getLine(posRight.row)
 
-                options =
-                    html: true
-                    placement: "bottom"
-                    trigger: "manual"
-                    container: "#editor"
-                    content: content
-                
-                setTimeout(->
-                    cursorPosition = $("textarea.ace_text-input").position()
-                    $("#highlightInfo").css({
-                      top: cursorPosition.top + 24 + "px"
-                      left: cursorPosition.left + "px"
-                    })
-                    $("#highlightInfo").popover(options)
-                    $("#highlightInfo").popover("show")
-                    return
-                , 100)
-            return
-        $("#highlightInfo").popover("destroy")
-        return
-
-    init = (editor, bindKey) ->
+    init = (editor, bindKey, toggleSurroundingBracketsPopup) ->
         session = editor.getSession()
         keyboardHandler = 
             name: 'highlightBrackets'
@@ -150,17 +126,19 @@ define((require, exports, module) ->
                 session.$bracketMismatchHighlight = null
                 if (!isInsideCurrentHighlight())
                     highlightBrackets(editor)
-            toggleSurroundingBracketsPopup(editor)     
+            if toggleSurroundingBracketsPopup
+                toggleSurroundingBracketsPopup(editor)     
             return
         )
 
-        session.on("changeScrollTop", ->
-            toggleSurroundingBracketsPopup(editor)
-        )
+        if toggleSurroundingBracketsPopup
 
-        session.on("changeScrollLeft", ->
-            toggleSurroundingBracketsPopup(editor)
-        )
+            session.on("changeScrollTop", ->
+                toggleSurroundingBracketsPopup(editor)
+            )
+            session.on("changeScrollLeft", ->
+                toggleSurroundingBracketsPopup(editor)
+            )
 
         isInsideCurrentHighlight = -> 
             oldRange = session.$highlightRange;
