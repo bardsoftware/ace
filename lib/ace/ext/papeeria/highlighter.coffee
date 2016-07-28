@@ -10,7 +10,7 @@ define((require, exports, module) ->
 			session.removeMarker(session.$bracketMismatchHighlight)
 			session.$bracketMatchHighlight = null
 			session.$bracketMismatchHighlight = null
-			popoverHandler.hide()
+			infoHighlight(editor)
 			return
 		if !pos.mismatch
 			range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
@@ -26,10 +26,7 @@ define((require, exports, module) ->
 				rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
 				session.$bracketMismatchHighlight = session.addMarker(rangeRight, "ace_error-marker", "text")
 		session.$highlightRange = pos
-		if pos.left && pos.right
-			if pos.right.row > editor.getLastVisibleRow() || pos.left.row < editor.getFirstVisibleRow()
-				content = "line " + pos.left.row + ": " + session.getLine(pos.left.row) + "    line " + pos.right.row + ": " + session.getLine(pos.right.row)
-				popoverHandler.show(content)
+		infoHighlight(editor, pos.left, pos.right)
 		return
 
 	findSurroundingBrackets = (editor) ->
@@ -107,30 +104,32 @@ define((require, exports, module) ->
 				result.mismatch = false
 		return result
 
+	infoHighlight = (editor, posLeft, posRight) -> 
+		session = editor.getSession()
+		if (posLeft && posRight)
+			if posRight.row > editor.getLastVisibleRow() || posLeft.row < editor.getFirstVisibleRow()
+				content = "line " + (posLeft.row + 1) + ": " + session.getLine(posLeft.row) + "    line " + (posRight.row + 1) + ": " + session.getLine(posRight.row)
 
-	popoverHandler = 
-		options: 
-			html: true
-			placement: "bottom"
-			trigger: "manual"
-			container: "#editor"
-		
-
-		show: (content) ->
-			setTimeout(->
-				cursorPosition = $("textarea.ace_text-input").position()
-				$("#highlightInfo").css({
-				  top: cursorPosition.top + 24 + "px"
-				  left: cursorPosition.left + "px"
-				})
-				popoverHandler.options.content = content
-				$("#highlightInfo").popover(popoverHandler.options)
-				$("#highlightInfo").popover("show")
-				return
-			, 100)
-
-		hide:  ->
-			$("#highlightInfo").popover("destroy")
+				options =
+					html: true
+					placement: "bottom"
+					trigger: "manual"
+					container: "#editor"
+					content: content
+				
+				setTimeout(->
+					cursorPosition = $("textarea.ace_text-input").position()
+					$("#highlightInfo").css({
+					  top: cursorPosition.top + 24 + "px"
+					  left: cursorPosition.left + "px"
+					})
+					$("#highlightInfo").popover(options)
+					$("#highlightInfo").popover("show")
+					return
+				, 100)
+			return
+		$("#highlightInfo").popover("destroy")
+		return
 
 	init = (editor, bindKey) ->
 		session = editor.getSession()
@@ -151,22 +150,22 @@ define((require, exports, module) ->
 				session.$bracketMismatchHighlight = null
 				if (!isInsideCurrentHighlight())
 					highlightBrackets(editor)
-			popoverHandler.hide()      
+			infoHighlight(editor)     
 			return
 		)
 
 		session.on("changeScrollTop", ->
-			popoverHandler.hide()
+			infoHighlight(editor)
 		)
 
 		session.on("changeScrollLeft", ->
-			popoverHandler.hide();
+			infoHighlight(editor)
 		)
 
 		isInsideCurrentHighlight = -> 
 			oldRange = session.$highlightRange;
 			newRange = findSurroundingBrackets(editor)
-			return oldRange.equals(newRange);
+			return oldRange.equals(newRange)
 		return
 
 	exports.highlighter =
