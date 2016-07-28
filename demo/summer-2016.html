@@ -236,7 +236,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-    //editor.setTheme("ace/theme/twilight");
 
     var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
