@@ -10,8 +10,7 @@ define((require, exports, module) ->
             session.removeMarker(session.$bracketMismatchHighlight)
             session.$bracketMatchHighlight = null
             session.$bracketMismatchHighlight = null
-            if toggleSurroundingBracketsPopup
-                toggleSurroundingBracketsPopup(editor)
+            toggleSurroundingBracketsPopup(editor)
             return
         if !pos.mismatch
             range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
@@ -27,8 +26,7 @@ define((require, exports, module) ->
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketMismatchHighlight = session.addMarker(rangeRight, "ace_error-marker", "text")
         session.$highlightRange = pos
-        if toggleSurroundingBracketsPopup
-            toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
+        toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
         return
 
     findSurroundingBrackets = (editor) ->
@@ -106,8 +104,13 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
+    toggleSurroundingBracketsPopup = (editor) -> 
+        return
 
-    init = (editor, bindKey, toggleSurroundingBracketsPopup) ->
+
+    init = (editor, bindKey, candidateToggleSurroundingBracketsPopup) ->
+        if candidateToggleSurroundingBracketsPopup
+            toggleSurroundingBracketsPopup = candidateToggleSurroundingBracketsPopup
         session = editor.getSession()
         keyboardHandler = 
             name: 'highlightBrackets'
@@ -126,19 +129,18 @@ define((require, exports, module) ->
                 session.$bracketMismatchHighlight = null
                 if (!isInsideCurrentHighlight())
                     highlightBrackets(editor)
-            if toggleSurroundingBracketsPopup
-                toggleSurroundingBracketsPopup(editor)     
+            toggleSurroundingBracketsPopup(editor)     
             return
         )
 
-        if toggleSurroundingBracketsPopup
-
-            session.on("changeScrollTop", ->
-                toggleSurroundingBracketsPopup(editor)
-            )
-            session.on("changeScrollLeft", ->
-                toggleSurroundingBracketsPopup(editor)
-            )
+        session.on("changeScrollTop", ->
+            toggleSurroundingBracketsPopup(editor)
+            return
+        )
+        session.on("changeScrollLeft", ->
+            toggleSurroundingBracketsPopup(editor)
+            return
+        )
 
         isInsideCurrentHighlight = -> 
             oldRange = session.$highlightRange;

@@ -266,7 +266,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         console.log("Simple Latex Completer successfully added");
     });
 
-    toggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
+    candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
       var content, options, session;
       session = editor.getSession();
       if (posLeft && posRight) {
@@ -296,7 +296,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
     };
 
     //Initialization bind for highlight brackets.
-    highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, toggleSurroundingBracketsPopup);
+    highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
 
     langTools.snippetCompleter.getDocTooltip = null;
 
