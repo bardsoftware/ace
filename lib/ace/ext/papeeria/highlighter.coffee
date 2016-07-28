@@ -10,7 +10,7 @@ define((require, exports, module) ->
             session.removeMarker(session.$bracketMismatchHighlight)
             session.$bracketMatchHighlight = null
             session.$bracketMismatchHighlight = null
-            infoHighlight(editor)
+            toggleSurroundingBracketsPopup(editor)
             return
         if !pos.mismatch
             range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
@@ -26,7 +26,7 @@ define((require, exports, module) ->
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
                 session.$bracketMismatchHighlight = session.addMarker(rangeRight, "ace_error-marker", "text")
         session.$highlightRange = pos
-        infoHighlight(editor, pos.left, pos.right)
+        toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
         return
 
     findSurroundingBrackets = (editor) ->
@@ -104,7 +104,7 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-    infoHighlight = (editor, posLeft, posRight) -> 
+    toggleSurroundingBracketsPopup = (editor, posLeft, posRight) -> 
         session = editor.getSession()
         if (posLeft && posRight)
             if posRight.row > editor.getLastVisibleRow() || posLeft.row < editor.getFirstVisibleRow()
@@ -150,16 +150,16 @@ define((require, exports, module) ->
                 session.$bracketMismatchHighlight = null
                 if (!isInsideCurrentHighlight())
                     highlightBrackets(editor)
-            infoHighlight(editor)     
+            toggleSurroundingBracketsPopup(editor)     
             return
         )
 
         session.on("changeScrollTop", ->
-            infoHighlight(editor)
+            toggleSurroundingBracketsPopup(editor)
         )
 
         session.on("changeScrollLeft", ->
-            infoHighlight(editor)
+            toggleSurroundingBracketsPopup(editor)
         )
 
         isInsideCurrentHighlight = -> 
