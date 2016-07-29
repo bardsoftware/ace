@@ -246,7 +246,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         enableLiveAutocompletion: true
     });
 
-    console.log(texCompleter)
     langTools.addCompleter(texCompleter)
     //Initialization bind for highlight brackets.
     texCompleter.init(editor, {win: 'Enter', mac: 'Enter'})
