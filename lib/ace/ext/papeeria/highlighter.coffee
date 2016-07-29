@@ -5,32 +5,31 @@ define((require, exports, module) ->
     highlightBrackets = (editor) ->
         pos = findSurroundingBrackets(editor)
         session = editor.getSession()
-        if session.$bracketHighlightRight || session.$bracketHighlightLeft
-            session.removeMarker(session.$bracketHighlightLeft)
-            session.removeMarker(session.$bracketHighlightRight)
-            session.$bracketHighlightLeft = null
-            session.$bracketHighlightRight = null
+        if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
+            session.removeMarker(session.$bracketMatchHighlight)
+            session.removeMarker(session.$bracketMismatchHighlight)
+            session.$bracketMatchHighlight = null
+            session.$bracketMismatchHighlight = null
+            toggleSurroundingBracketsPopup(editor)
             return
         if !pos.mismatch
-            rangeLeft = new Range(pos.left.row, pos.left.column, pos.left.row, pos.left.column + 1)
-            rangeRight = new Range(pos.right.row, pos.right.column, pos.right.row, pos.right.column + 1)
-            session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_bracket", "text")
-            session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_bracket", "text")
+            range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
+            session.$bracketMatchHighlight = session.addMarker(range, "ace_selection", "text")
         else
             if pos.left && pos.right
                 range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
-                session.$bracketHighlightLeft = session.addMarker(range, "ace_error-marker", "text")
+                session.$bracketMismatchHighlight = session.addMarker(range, "ace_error-marker", "text")
             if pos.left && !pos.right
                 rangeLeft = new Range(pos.left.row, pos.left.column, Infinity, Infinity)
-                session.$bracketHighlightLeft = session.addMarker(rangeLeft, "ace_error-marker", "text")
+                session.$bracketMismatchHighlight = session.addMarker(rangeLeft, "ace_error-marker", "text")
             if pos.right && !pos.left
                 rangeRight = new Range(0, 0, pos.right.row, pos.right.column + 1)
-                session.$bracketHighlightRight = session.addMarker(rangeRight, "ace_error-marker", "text")
+                session.$bracketMismatchHighlight = session.addMarker(rangeRight, "ace_error-marker", "text")
         session.$highlightRange = pos
+        toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
         return
 
     findSurroundingBrackets = (editor) ->
-
         session = editor.getSession();
         # if Tokeniterator is created from the cursor position, its first token
         # will be the one which immediately precedes the position (its start+length>=position)
@@ -105,7 +104,13 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-    init = (editor, bindKey) ->
+    toggleSurroundingBracketsPopup = (editor) -> 
+        return
+
+
+    init = (editor, bindKey, candidateToggleSurroundingBracketsPopup) ->
+        if candidateToggleSurroundingBracketsPopup
+            toggleSurroundingBracketsPopup = candidateToggleSurroundingBracketsPopup
         session = editor.getSession()
         keyboardHandler = 
             name: 'highlightBrackets'
@@ -117,20 +122,30 @@ define((require, exports, module) ->
         editor.commands.addCommand(keyboardHandler);
 
         session.getSelection().on("changeCursor", -> 
-            if session.$bracketHighlightLeft || session.$bracketHighlightRight 
-                session.removeMarker(session.$bracketHighlightLeft)
-                session.removeMarker(session.$bracketHighlightRight)
-                session.$bracketHighlightLeft = null
-                session.$bracketHighlightRight = null
+            if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
+                session.removeMarker(session.$bracketMatchHighlight)
+                session.removeMarker(session.$bracketMismatchHighlight)
+                session.$bracketMatchHighlight = null
+                session.$bracketMismatchHighlight = null
                 if (!isInsideCurrentHighlight())
                     highlightBrackets(editor)
+            toggleSurroundingBracketsPopup(editor)     
+            return
+        )
+
+        session.on("changeScrollTop", ->
+            toggleSurroundingBracketsPopup(editor)
+            return
+        )
+        session.on("changeScrollLeft", ->
+            toggleSurroundingBracketsPopup(editor)
             return
         )
 
         isInsideCurrentHighlight = -> 
             oldRange = session.$highlightRange;
             newRange = findSurroundingBrackets(editor)
-            return oldRange.equals(newRange);
+            return oldRange.equals(newRange)
         return
 
     exports.highlighter =
