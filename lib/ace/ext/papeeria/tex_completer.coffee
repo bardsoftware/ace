@@ -1,4 +1,5 @@
 define( (require, exports, module) ->
+
   PapeeriaLatexHighlightRules = require('./papeeria_latex_highlight_rules')
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
@@ -84,8 +85,26 @@ define( (require, exports, module) ->
     value: word
     meta: 'equation'
   )
+  
+  init = (editor, bindKey) ->
+    HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
+    keyboardHandler = new HashHandler();
+    keyboardHandler.addCommand(
+      name: 'add item in list mode',
+      bindKey: bindKey,
+      exec: (editor) ->
+        pos = editor.getCursorPosition()
+        curLine = editor.session.getLine(pos.row);
+        # it's temporary fix bug with added \item before \begin{itemize|enumerate}
+        if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) 
+          editor.insert("\n\t\\item ")
+          return true
+        else 
+          return false
+    )
+    editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
-  exports.getCompletions = (editor, session, pos, prefix, callback) ->
+  getCompletions = (editor, session, pos, prefix, callback) ->
     context = session.getContext(pos.row)
     if context == "start"
       callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
@@ -95,5 +114,9 @@ define( (require, exports, module) ->
 
     if context == EQUATION_STATE
       callback(null, formulasSnippets.concat(equationKeywords_))
-  return
-) 
+  
+
+  exports.texCompleter = 
+    getCompletions: getCompletions
+    init: init
+)

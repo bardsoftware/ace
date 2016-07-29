@@ -216,8 +216,8 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter"], 
-  function(ace, langTools, katexPreviewer, highlighter) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter", 'ace/ext/papeeria/tex_completer'], 
+  function(ace, langTools, katexPreviewer, highlighter, texCompleter) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -246,36 +246,11 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         enableLiveAutocompletion: true
     });
 
-    //we will move this code into tex_completer in next pull request and well make this beautiful
-    var HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
-    keyboardHandler = new HashHandler();
-    keyboardHandler.addCommand({
-      name: 'add item in list mode',
-      bindKey: {win: 'Enter', mac: 'Enter'},
-      exec: function(editor) {
-        var pos = editor.getCursorPosition()
-        var curLine = editor.session.getLine(pos.row);
-        // it's temporary fix bug with added \item before \begin{itemize|enumerate}
-        if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) {
-          editor.insert("\n\t\\item ")
-          return true;
-        }
-        else {
-          return false;
-        }}
-    });
-    editor.keyBinding.addKeyboardHandler(keyboardHandler);
-
-    require(["ace/ext/papeeria/tex_completer"], function(completer) {
-        var texCompleter = completer;
-        langTools.addCompleter(texCompleter);
-        console.log("Simple Latex Completer successfully added");
-    });
-
+    console.log(texCompleter)
+    langTools.addCompleter(texCompleter)
     //Initialization bind for highlight brackets.
+    texCompleter.init(editor, {win: 'Enter', mac: 'Enter'})
     highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'});
-
-    langTools.snippetCompleter.getDocTooltip = null;
     katexPreviewer.setupPreviewer(editor);
 });
 </script>
