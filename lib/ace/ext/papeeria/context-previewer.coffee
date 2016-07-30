@@ -53,10 +53,12 @@ define((require, exports, module) ->
       )
       return
 
-    editorContainer = $(editor.container)
+    jqEditorContainer = $(editor.container)
+    jqFormula = -> $("#formula")
 
     [curStart, curEnd] = [null, null]
     prevContext = editor.session.getContext(editor.getCursorPosition().row)
+    currentDelayedUpdateId = null
 
     getEquationRange = (cursorRow) ->
       i = cursorRow
@@ -76,14 +78,14 @@ define((require, exports, module) ->
       return wholeEquation
 
     getTopmostRowNumber = ->
-      parseInt(editorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
+      parseInt(jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
 
     getPopoverPosition = (row) ->
       rowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(#{row + 2 - getTopmostRowNumber()})"
-      cursorRowPosition = editorContainer.find(rowSelector).position()
+      cursorRowPosition = jqEditorContainer.find(rowSelector).position()
       top = "#{cursorRowPosition.top + 24 + 8}px"
 
-      gutter = editorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled")
+      gutter = jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled")
       left = gutter.position().left + gutter.width() + 10
 
       return { top: top, left: left }
@@ -103,7 +105,7 @@ define((require, exports, module) ->
       catch e
         content = e
       finally
-        popoverHandler.show($("#formula"), content, popoverPosition)
+        popoverHandler.show(jqFormula(), content, popoverPosition)
 
     updatePopover = ->
       {row: cursorRow} = editor.getCursorPosition()
@@ -112,7 +114,12 @@ define((require, exports, module) ->
       catch e
         content = e
       finally
-        popoverHandler.setContent($("#formula"), content)
+        popoverHandler.setContent(jqFormula(), content)
+
+    delayedUpdateContext = ->
+      if delayedUpdateContext?
+        clearTimeout(delayedUpdateContext)
+      delayedUpdateContext = setTimeout((-> updatePopover; delayedUpdateContext = null), 1000)
 
     handleCurrentContext = ->
       currentContext = editor.session.getContext(editor.getCursorPosition().row)
@@ -124,50 +131,10 @@ define((require, exports, module) ->
         editor.on("change", updatePopover)
       else if prevContext == "equation" and currentContext != "equation"
         editor.off("change", updatePopover)
-        popoverHandler.destroy($("#formula"))
+        popoverHandler.destroy(jqFormula())
 
       prevContext = currentContext
 
     editor.on("changeSelection", handleCurrentContext)
-
-    # callbackHidePopover = ->
-    #   popoverHandler.destroy($("#formula"))
-    #   editor.off("changeSelection", callbackHidePopover)
-    #   editor.session.off("changeScrollTop", callbackHidePopover)
-    #   editor.session.off("changeScrollLeft", callbackHidePopover)
-    #   return
-
-    # renderFormulaToPopoverUnderCursor = ->
-    #   try
-    #     cursorPosition = $("textarea.ace_text-input").position()
-    #     popoverPosition = {
-    #       top: "#{cursorPosition.top + 24}px"
-    #       left: "#{cursorPosition.left}px"
-    #     }
-    #     content = katex.renderToString(
-    #       editor.getSelectedText(),
-    #       {displayMode: true}
-    #     )
-    #   catch e
-    #     content = e
-    #   finally
-    #     popoverHandler.show($("#formula"), content, popoverPosition)
-    #     editor.on("changeSelection", callbackHidePopover)
-    #     editor.session.on("changeScrollTop", callbackHidePopover)
-    #     editor.session.on("changeScrollLeft", callbackHidePopover)
-    #     return
-
-    # createPopover = (editor) ->
-    #   unless katex?
-    #     initKaTeX(renderFormulaToPopoverUnderCursor)
-    #     return
-    #   renderFormulaToPopoverUnderCursor()
-
-    # editor.commands.addCommand(
-    #   name: "previewLaTeXFormula"
-    #   bindKey: {win: "Alt-p", mac: "Alt-p"}
-    #   exec: createPopover
-    # )
-    # return
   return
 )
