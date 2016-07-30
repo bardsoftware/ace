@@ -129,45 +129,5 @@ define((require, exports, module) ->
       prevContext = currentContext
 
     editor.on("changeSelection", handleCurrentContext)
-
-    # callbackHidePopover = ->
-    #   popoverHandler.destroy($("#formula"))
-    #   editor.off("changeSelection", callbackHidePopover)
-    #   editor.session.off("changeScrollTop", callbackHidePopover)
-    #   editor.session.off("changeScrollLeft", callbackHidePopover)
-    #   return
-
-    # renderFormulaToPopoverUnderCursor = ->
-    #   try
-    #     cursorPosition = $("textarea.ace_text-input").position()
-    #     popoverPosition = {
-    #       top: "#{cursorPosition.top + 24}px"
-    #       left: "#{cursorPosition.left}px"
-    #     }
-    #     content = katex.renderToString(
-    #       editor.getSelectedText(),
-    #       {displayMode: true}
-    #     )
-    #   catch e
-    #     content = e
-    #   finally
-    #     popoverHandler.show($("#formula"), content, popoverPosition)
-    #     editor.on("changeSelection", callbackHidePopover)
-    #     editor.session.on("changeScrollTop", callbackHidePopover)
-    #     editor.session.on("changeScrollLeft", callbackHidePopover)
-    #     return
-
-    # createPopover = (editor) ->
-    #   unless katex?
-    #     initKaTeX(renderFormulaToPopoverUnderCursor)
-    #     return
-    #   renderFormulaToPopoverUnderCursor()
-
-    # editor.commands.addCommand(
-    #   name: "previewLaTeXFormula"
-    #   bindKey: {win: "Alt-p", mac: "Alt-p"}
-    #   exec: createPopover
-    # )
-    # return
   return
 )
