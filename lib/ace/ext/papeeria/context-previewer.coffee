@@ -80,7 +80,6 @@ define((require, exports, module) ->
 
     getPopoverPosition = (row) ->
       rowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(#{row + 2 - getTopmostRowNumber()})"
-      console.log(rowSelector)
       cursorRowPosition = editorContainer.find(rowSelector).position()
       top = "#{cursorRowPosition.top + 24 + 8}px"
 
@@ -107,7 +106,6 @@ define((require, exports, module) ->
         popoverHandler.show($("#formula"), content, popoverPosition)
 
     updatePopover = ->
-      console.log("heyooo")
       {row: cursorRow} = editor.getCursorPosition()
       try
         content = getCurrentFormula()
