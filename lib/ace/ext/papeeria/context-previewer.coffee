@@ -55,14 +55,34 @@ define((require, exports, module) ->
 
     editorContainer = $(editor.container)
 
+    [curStart, curEnd] = [null, null]
+    prevContext = editor.session.getContext(editor.getCursorPosition().row)
+
+    getEquationRange = (cursorRow) ->
+      i = cursorRow
+      removeRegex = /\\begin{equation}|\\label{.*}|\\begin{equation*}/g
+      while editor.session.getContext(i - 1) == "equation"
+        i -= 1
+      start = i
+      while editor.session.getContext(i + 1) == "equation"
+        i += 1
+      end = i
+      wholeEquation = editor.session.getLines(start, end).join(" ").replace(removeRegex, "")
+      return [start, end]
+
+    getWholeEquation = (start, end) ->
+      removeRegex =/\\begin\{equation\}|\\label\{[^\}]*\}/g
+      wholeEquation = editor.session.getLines(start, end).join(" ").replace(removeRegex, "")
+      return wholeEquation
+
     getTopmostRowNumber = ->
       parseInt(editorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
 
-    getPopoverPosition = (cursorRow) ->
-      rowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(#{cursorRow + 2 - getTopmostRowNumber()})"
+    getPopoverPosition = (row) ->
+      rowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(#{row + 2 - getTopmostRowNumber()})"
       console.log(rowSelector)
       cursorRowPosition = editorContainer.find(rowSelector).position()
-      top = "#{cursorRowPosition.top + 24}px"
+      top = "#{cursorRowPosition.top + 24 + 8}px"
 
       gutter = editorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled")
       left = gutter.position().left + gutter.width() + 10
@@ -71,25 +91,24 @@ define((require, exports, module) ->
 
     initPopover = ->
       {row: cursorRow} = editor.getCursorPosition()
-      popoverPosition = getPopoverPosition(cursorRow)
+      [curStart, curEnd] = getEquationRange(cursorRow)
+      popoverPosition = getPopoverPosition(curEnd)
       try
         content = katex.renderToString(
-          editor.session.getLine(cursorRow),
+          getWholeEquation(curStart, curEnd)
           {displayMode: true}
         )
-      # catch e
-        # throw e
+      catch e
+        content = e
       finally
         popoverHandler.show($("#formula"), content, popoverPosition)
 
     updatePopover = ->
       console.log("heyooo")
       {row: cursorRow} = editor.getCursorPosition()
-      console.log(cursorRow)
       try
-        console.log("here's the content " + editor.session.getLine(cursorRow))
         content = katex.renderToString(
-          editor.session.getLine(cursorRow),
+          getWholeEquation(curStart, curEnd),
           {displayMode: true}
         )
       catch e
@@ -97,22 +116,21 @@ define((require, exports, module) ->
       finally
         popoverHandler.setContent($("#formula"), content)
 
-    handleCurrentFormula = ->
-      {row: cursorRow} = editor.getCursorPosition()
-      currentContext = editor.session.getContext(cursorRow)
-      if currentContext != "equation"
-        if popoverHandler.popoverExists($("#formula"))
-          popoverHandler.destroy($("#formula"))
-      else
-        if popoverHandler.popoverExists($("#formula"))
-          updatePopover()
+    handleCurrentContext = ->
+      currentContext = editor.session.getContext(editor.getCursorPosition().row)
+      if prevContext != "equation" and currentContext == "equation"
+        if not katex?
+          initKaTeX(initPopover)
         else
-          if not katex?
-            initKaTeX(initPopover)
-          else
-            initPopover()
+          initPopover()
+        editor.on("change", updatePopover)
+      else if prevContext == "equation" and currentContext != "equation"
+        editor.off("change", updatePopover)
+        popoverHandler.destroy($("#formula"))
 
-    editor.on("changeSelection", handleCurrentFormula)
+      prevContext = currentContext
+
+    editor.on("changeSelection", handleCurrentContext)
 
     # callbackHidePopover = ->
     #   popoverHandler.destroy($("#formula"))
