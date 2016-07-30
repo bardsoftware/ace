@@ -89,15 +89,18 @@ define((require, exports, module) ->
 
       return { top: top, left: left }
 
+    getCurrentFormula = ->
+      katex.renderToString(
+        getWholeEquation(curStart, curEnd)
+        {displayMode: true}
+      )
+
     initPopover = ->
       {row: cursorRow} = editor.getCursorPosition()
       [curStart, curEnd] = getEquationRange(cursorRow)
       popoverPosition = getPopoverPosition(curEnd)
       try
-        content = katex.renderToString(
-          getWholeEquation(curStart, curEnd)
-          {displayMode: true}
-        )
+        content = getCurrentFormula()
       catch e
         content = e
       finally
@@ -107,10 +110,7 @@ define((require, exports, module) ->
       console.log("heyooo")
       {row: cursorRow} = editor.getCursorPosition()
       try
-        content = katex.renderToString(
-          getWholeEquation(curStart, curEnd),
-          {displayMode: true}
-        )
+        content = getCurrentFormula()
       catch e
         content = e
       finally
