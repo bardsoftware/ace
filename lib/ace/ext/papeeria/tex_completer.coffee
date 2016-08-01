@@ -131,8 +131,8 @@ define( (require, exports, module) ->
             meta: elem.type + "-ref" 
           }
     )
-    getReferences: (url, callback) -> 
-      if (url != @lastFetchedUrl)
+    getReferences: (url, callback) => 
+      if url != @lastFetchedUrl
         $.getJSON(url).done((data) => 
           @processData(data)
           callback(null, @cache)
