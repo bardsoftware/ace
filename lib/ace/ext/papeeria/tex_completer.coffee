@@ -92,11 +92,13 @@ define( (require, exports, module) ->
     value: word
     meta: 'equation'
   )
+  
+  #Specific for token's system of type in ace
+  #We saw such a realization in html_completions.js
   istype = (token, type) -> 
     return token.type.lastIndexOf(type) > -1
   
 
-  #we will move this code into tex_completer in next pull request and well make this beautiful
   init = (editor, bindKey) -> 
     HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
     keyboardHandler = new HashHandler();
