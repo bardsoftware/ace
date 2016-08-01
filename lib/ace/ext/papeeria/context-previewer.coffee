@@ -116,7 +116,7 @@ define((require, exports, module) ->
       finally
         popoverHandler.setContent(jqFormula(), content)
 
-    delayedUpdateContext = ->
+    delayedUpdatePopover = ->
       if currentDelayedUpdateId?
         clearTimeout(currentDelayedUpdateId)
       currentDelayedUpdateId = setTimeout((-> updatePopover(); currentDelayedUpdateId = null), 1000)
@@ -128,9 +128,9 @@ define((require, exports, module) ->
           initKaTeX(initPopover)
         else
           initPopover()
-        editor.on("change", delayedUpdateContext)
+        editor.on("change", delayedUpdatePopover)
       else if prevContext == "equation" and currentContext != "equation"
-        editor.off("change", delayedUpdateContext)
+        editor.off("change", delayedUpdatePopover)
         popoverHandler.destroy(jqFormula())
 
       prevContext = currentContext
