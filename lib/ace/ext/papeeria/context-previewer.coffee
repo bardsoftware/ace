@@ -26,9 +26,13 @@ define((require, exports, module) ->
       popoverExists: (jqPopoverContainer) ->
         jqPopoverContainer.data()? and jqPopoverContainer.data().popover?
 
-      setContent: (jqPopoverContainer, content, position) ->
+      setContent: (jqPopoverContainer, content) ->
         jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content")
         jqPopoverElement.html(content)
+
+      setPosition: (jqPopoverContainer, position) ->
+        jqPopoverElement = jqPopoverContainer.data().popover.tip()
+        jqPopoverElement.css(position)
     }
 
     initKaTeX = (onLoaded) ->
