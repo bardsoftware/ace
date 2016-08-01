@@ -234,13 +234,11 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
   function(ace, langTools, katexPreviewer, highlighter, completionTools) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
-
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
     TexCompleter = new completionTools.TexCompleter()
     langTools.setCompleters([TexCompleter]);
     console.log("Simple Latex Completer successfully added");
-
     var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
         alphabet: 'abcdefghijklmnopqrstuvwxyz1234567890',
@@ -257,13 +255,11 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       });
     };
     session.on("changeMode", initSpellCheck);
-
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: true
     });
-
     candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
       var content, options, session;
       session = editor.getSession();
@@ -292,7 +288,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       }
       $("#highlightInfo").popover("destroy");
     };
-
     //Initialization bind for highlight brackets.
     highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
     completionTools.init(editor,  {win: 'enter', mac: 'enter'})
