@@ -16,14 +16,13 @@ define( (require, exports, module) ->
 
     getNestedListDepth = (session, row) -> 
         states = session.getState(row)
-        console.log(states)
         count = 0
-        arrayLength = states.length
-        i = arrayLength - 1
-        while i >= 0 and states[i] == LIST_STATE
-            i--
-            count++
-        return count
+        for state in states
+            if state == LIST_STATE 
+                count++
+        #because we have 2 LIST_STATE for 1 level of nested 
+        #and 3 LIST_STATE for more level
+        return count - 1
 
 
     exports.ContextHelper = 
