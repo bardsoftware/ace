@@ -87,7 +87,7 @@ define( (require, exports, module) ->
     value: word
     meta: 'list'
   )
-  equationKeywords_ = equationKeywords.map((word) ->
+  equationKeywords = equationKeywords.map((word) ->
     caption: word,
     value: word
     meta: 'equation'
@@ -115,15 +115,15 @@ define( (require, exports, module) ->
           editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
           return true
         else 
-          return false   
+          return false
     )
     editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
-  class ReferenceGetter
+   class ReferenceGetter
     constructor: ->
       @lastFetchedUrl =  ""
       @cache = []
-    processData: (data) -> 
+    processData: (data) => 
       @cache = data.map((elem) => 
           return {
             name: elem.caption
@@ -154,7 +154,7 @@ define( (require, exports, module) ->
         else if context == LIST_STATE
           callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
         else if context == EQUATION_STATE
-          callback(null, formulasSnippets.concat(equationKeywords_))
+          callback(null, formulasSnippets.concat(equationKeywords))
 
   exports.CompletionTools = 
     TexCompleter: TexCompleter
