@@ -14,8 +14,9 @@ define( (require, exports, module) ->
         else 
             return states
 
-    getNestingOfList = (session, row) -> 
+    getNestedListDepth = (session, row) -> 
         states = session.getState(row)
+        console.log(states)
         count = 0
         arrayLength = states.length
         i = arrayLength - 1
@@ -27,6 +28,6 @@ define( (require, exports, module) ->
 
     exports.ContextHelper = 
         getContext: getContext
-        getNestingOfList: getNestingOfList
+        getNestedListDepth: getNestedListDepth
 )
       

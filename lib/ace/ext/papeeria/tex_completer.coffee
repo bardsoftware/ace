@@ -106,7 +106,7 @@ define( (require, exports, module) ->
       exec: (editor) ->  
         pos = editor.getCursorPosition()
         curLine = editor.session.getLine(pos.row);
-        intendCount = ContextHelper.getNestingOfList(editor.session, pos.row)
+        intendCount = ContextHelper.getNestedListDepth(editor.session, pos.row)
         # it's temporary fix bug with added \item before \begin{itemize|enumerate}
         if ContextHelper.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
           editor.insert("\n" + "    ".repeat(intendCount) + "\\item ")
