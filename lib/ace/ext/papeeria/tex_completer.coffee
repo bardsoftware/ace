@@ -109,9 +109,10 @@ define( (require, exports, module) ->
         pos = editor.getCursorPosition()
         curLine = editor.session.getLine(pos.row)
         indentCount = ContextHelper.getNestedListDepth(editor.session, pos.row)
+        tabString = editor.getSession().getTabString()
         # it's temporary fix bug with added \item before \begin{itemize|enumerate}
         if ContextHelper.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
-          editor.insert("\n" + "    ".repeat(indentCount) + "\\item ")
+          editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
           return true
         else 
           return false   
