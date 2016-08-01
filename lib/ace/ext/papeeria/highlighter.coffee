@@ -1,17 +1,18 @@
-define((require, exports, module) ->
-
-    Range = require("../../range").Range;
-
-    highlightBrackets = (editor) ->
-        pos = findSurroundingBrackets(editor)
-        session = editor.getSession()
+define([], ->
+    Range = null
+    clearCurrentHighlight = (session) ->
         if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
             session.removeMarker(session.$bracketMatchHighlight)
             session.removeMarker(session.$bracketMismatchHighlight)
             session.$bracketMatchHighlight = null
             session.$bracketMismatchHighlight = null
-            toggleSurroundingBracketsPopup(editor)
-            return
+            session.$highlightRange = null
+
+    highlightBrackets = (editor, pos) ->
+        session = editor.getSession()
+        clearCurrentHighlight(session)
+
+        pos ?= findSurroundingBrackets(editor)
         if !pos.mismatch
             range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
             session.$bracketMatchHighlight = session.addMarker(range, "ace_selection", "text")
@@ -44,7 +45,7 @@ define((require, exports, module) ->
         else
             positionLeftwards.column += 1
 
-        positionRightwards = editor.getCursorPosition()        
+        positionRightwards = editor.getCursorPosition()
 
         allBrackets =
             left: [
@@ -96,7 +97,8 @@ define((require, exports, module) ->
                 if object.mismatch != @mismatch
                     return false
                 return true
-        
+            isDefined: -> @left? or @right?
+
         if result.left && result.right
             expectedRightBracket = session.$brackets[session.getLine(result.left.row).charAt(result.left.column)]
             rightBracket = session.getLine(result.right.row).charAt(result.right.column)
@@ -104,32 +106,35 @@ define((require, exports, module) ->
                 result.mismatch = false
         return result
 
-    toggleSurroundingBracketsPopup = (editor) -> 
+    toggleSurroundingBracketsPopup = (editor) ->
         return
 
 
-    init = (editor, bindKey, candidateToggleSurroundingBracketsPopup) ->
+    init = (ace, editor, bindKey, candidateToggleSurroundingBracketsPopup) ->
+        Range = ace.require("ace/range").Range
         if candidateToggleSurroundingBracketsPopup
             toggleSurroundingBracketsPopup = candidateToggleSurroundingBracketsPopup
         session = editor.getSession()
-        keyboardHandler = 
+        keyboardHandler =
             name: 'highlightBrackets'
             bindKey: bindKey
-            exec: (editor)  -> return highlightBrackets(editor)
+            exec: (editor)  ->
+                session = editor.getSession()
+                if session.$highlightRange
+                    clearCurrentHighlight(session)
+                else
+                    highlightBrackets(editor)
             readOnly: true
 
 
         editor.commands.addCommand(keyboardHandler);
 
-        session.getSelection().on("changeCursor", -> 
-            if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
-                session.removeMarker(session.$bracketMatchHighlight)
-                session.removeMarker(session.$bracketMismatchHighlight)
-                session.$bracketMatchHighlight = null
-                session.$bracketMismatchHighlight = null
-                if (!isInsideCurrentHighlight())
-                    highlightBrackets(editor)
-            toggleSurroundingBracketsPopup(editor)     
+        session.getSelection().on("changeCursor", ->
+            currentRange = session.$highlightRange
+            if currentRange?
+                candidateRange = findSurroundingBrackets(editor)
+                if (!currentRange.equals(candidateRange) and candidateRange?.isDefined())
+                    highlightBrackets(editor, candidateRange)
             return
         )
 
@@ -141,15 +146,11 @@ define((require, exports, module) ->
             toggleSurroundingBracketsPopup(editor)
             return
         )
-
-        isInsideCurrentHighlight = -> 
-            oldRange = session.$highlightRange;
-            newRange = findSurroundingBrackets(editor)
-            return oldRange.equals(newRange)
         return
 
-    exports.highlighter =
+    return {
         highlightBrackets: highlightBrackets
         findSurroundingBrackets: findSurroundingBrackets
         init: init
+    }
 )
