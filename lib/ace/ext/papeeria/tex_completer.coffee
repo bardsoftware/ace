@@ -1,5 +1,6 @@
 define( (require, exports, module) ->
   PapeeriaLatexHighlightRules = require('./papeeria_latex_highlight_rules')
+  ContextHelper = require('./context_helper')
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [
@@ -94,6 +95,28 @@ define( (require, exports, module) ->
   istype = (token, type) -> 
     return token.type.lastIndexOf(type) > -1
   
+
+  #we will move this code into tex_completer in next pull request and well make this beautiful
+  init = (editor, bindKey) -> 
+    HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
+    keyboardHandler = new HashHandler();
+    keyboardHandler.addCommand(
+      name: 'add item in list mode',
+      bindKey: bindKey,
+      exec: (editor) ->  
+        pos = editor.getCursorPosition()
+        curLine = editor.session.getLine(pos.row);
+        intendCount = ContextHelper.getNestingOfList(editor.session, pos.row)
+        # it's temporary fix bug with added \item before \begin{itemize|enumerate}
+        if ContextHelper.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
+          editor.insert("\n" + "    ".repeat(intendCount) + "\\item ")
+          return true
+        else 
+          return false
+        
+    );
+    editor.keyBinding.addKeyboardHandler(keyboardHandler);
+
   class ReferenceGetter
     constructor: ->
       @cachedURL =  ""
@@ -111,29 +134,31 @@ define( (require, exports, module) ->
 
         return @cache
 
-  exports = class TexCompleter
-    constructor: ->
-      @r = new ReferenceGetter()
-    getCompletions: (editor, session, pos, prefix, callback) ->
-      context = session.getContext(pos.row)
-      token = session.getTokenAt(pos.row, pos.column)
-      console.log(token)
-      if istype(token, "ref")
-        callback(null, @r.getReference("example.json", (data, r) -> 
-          r.cache = data.map((elem) -> 
-                          return {
-                            name: elem.caption
-                            value: elem.caption
-                            score: Number.MAX_VALUE
-                            meta: "ref"}
-                    )
-          ))
-      else if context == "start"
-        callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
+  exports.CompletionTools = 
+    TexCompleter: class TexCompleter
+      constructor: ->
+        @r = new ReferenceGetter()
+      getCompletions: (editor, session, pos, prefix, callback) ->
+        context = ContextHelper.getContext(session, pos.row)
+        token = session.getTokenAt(pos.row, pos.column)
+        console.log(token)
+        if istype(token, "ref")
+          callback(null, @r.getReference("example.json", (data, r) -> 
+            r.cache = data.map((elem) -> 
+                            return {
+                              name: elem.caption
+                              value: elem.caption
+                              score: Number.MAX_VALUE
+                              meta: "ref"}
+                      )
+            ))
+        else if context == "start"
+          callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
 
-      else if context == LIST_STATE
-        callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
+        else if context == LIST_STATE
+          callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
 
-      else if context == EQUATION_STATE
-        callback(null, formulasSnippets.concat(equationKeywords_))
+        else if context == EQUATION_STATE
+          callback(null, formulasSnippets.concat(equationKeywords_))
+    init: init
 ) 

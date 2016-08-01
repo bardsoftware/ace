@@ -231,14 +231,14 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 require.config({ paths : { "ace" : "../lib/ace" } });
 require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter", 
          "ace/ext/papeeria/tex_completer"], 
-  function(ace, langTools, katexPreviewer, highlighter, completer) {
+  function(ace, langTools, katexPreviewer, highlighter, completionTools) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
 
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-
-    langTools.setCompleters([new completer()] );
+    TexCompleter = new completionTools.TexCompleter()
+    langTools.setCompleters([TexCompleter]);
     console.log("Simple Latex Completer successfully added");
 
     var initSpellCheck = function() {
@@ -263,39 +263,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         enableSnippets: true,
         enableLiveAutocompletion: true
     });
-
-    //will be move in new context module
-    var getCountOfDeepList = function(row) {
-      var states = session.getState(row)
-      var count = 0
-      var arrayLength = states.length;
-      for (var i = arrayLength - 1; i >= 0; i--) {
-        if (states[i] == 'list')
-          count++
-        else 
-          return count
-      }
-    }
-    //we will move this code into tex_completer in next pull request and well make this beautiful
-    var HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
-    keyboardHandler = new HashHandler();
-    keyboardHandler.addCommand({
-      name: 'add item in list mode',
-      bindKey: {win: 'Enter', mac: 'Enter'},
-      exec: function(editor) {
-        var pos = editor.getCursorPosition()
-        var curLine = editor.session.getLine(pos.row);
-        var intendCount = getCountOfDeepList(pos.row)
-        // it's temporary fix bug with added \item before \begin{itemize|enumerate}
-        if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) {
-          editor.insert("\n" + "    ".repeat(intendCount) + "\\item ")
-          return true;
-        }
-        else {
-          return false;
-        }}
-    });
-    editor.keyBinding.addKeyboardHandler(keyboardHandler);
 
     candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
       var content, options, session;
@@ -328,7 +295,7 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
 
     //Initialization bind for highlight brackets.
     highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
-
+    completionTools.init(editor,  {win: 'enter', mac: 'enter'})
     langTools.snippetCompleter.getDocTooltip = null;
     katexPreviewer.setupPreviewer(editor);
 });
