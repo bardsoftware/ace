@@ -57,12 +57,20 @@ define((require, exports, module) ->
         ]
         regex: '(\\\\(?:begin|end))({)(\\w*)(})'
       }
-
+      {
+        token: [
+          'storage.type'
+          'lparen.ref'
+          'variable.parameter.ref'
+          'rparen'
+        ]
+        regex: '(\\\\(?:ref))({)(\\w*)(})'
+      }
       {
         token: [
           'keyword'
-          'lparen.ref'
-          'variable.parameter.ref'
+          'lparen'
+          'variable.parameter'
           'rparen'
         ]
         regex: '(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?'

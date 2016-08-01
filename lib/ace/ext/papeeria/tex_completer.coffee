@@ -117,6 +117,7 @@ define( (require, exports, module) ->
     getCompletions: (editor, session, pos, prefix, callback) ->
       context = session.getContext(pos.row)
       token = session.getTokenAt(pos.row, pos.column)
+      console.log(token)
       if istype(token, "ref")
         callback(null, @r.getReference("example.json", (data, r) -> 
           r.cache = data.map((elem) -> 
