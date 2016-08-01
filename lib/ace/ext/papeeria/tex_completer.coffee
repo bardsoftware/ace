@@ -121,44 +121,40 @@ define( (require, exports, module) ->
     constructor: ->
       @cachedURL =  ""
       @cache = []
-    getReference: (url, callback) -> 
-      if (url == @cashedURL)
-        return @cashe
-      else 
+    processData: (data) => 
+      @cache = data.map((elem) -> 
+                  return {
+                    name: elem.caption
+                    value: elem.caption
+                    score: Number.MAX_VALUE
+                    meta: "ref"
+                  }
+            )
+
+    getReference: (url) => 
+      if (url != @cashedURL)
         @cachedURL = url
-        json = $.getJSON(url)
-        thisRef = @
-        json.success((data) ->
-          callback(data, thisRef)
-        )
+        $.getJSON(url).done(@processData)
+        
+      return @cache
 
-        return @cache
-
-  exports.CompletionTools = 
-    TexCompleter: class TexCompleter
+  class TexCompleter
       constructor: ->
-        @r = new ReferenceGetter()
+        @refGetter = new ReferenceGetter()
       getCompletions: (editor, session, pos, prefix, callback) ->
         context = ContextHelper.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
-        console.log(token)
+
         if istype(token, "ref")
-          callback(null, @r.getReference("example.json", (data, r) -> 
-            r.cache = data.map((elem) -> 
-                            return {
-                              name: elem.caption
-                              value: elem.caption
-                              score: Number.MAX_VALUE
-                              meta: "ref"}
-                      )
-            ))
+          callback(null, @refGetter.getReference("example.json"))
         else if context == "start"
           callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
-
         else if context == LIST_STATE
           callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
-
         else if context == EQUATION_STATE
           callback(null, formulasSnippets.concat(equationKeywords_))
+
+  exports.CompletionTools = 
+    TexCompleter: TexCompleter
     init: init
 ) 
