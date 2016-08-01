@@ -13,6 +13,13 @@ define( (require, exports, module) ->
 
   basicSnippets = [
     {
+      caption: "\\ref{..."
+      snippet: """
+            \\ref{${1}}
+        """
+      meta: "base"
+    }
+    {
       caption: "\\usepackage[]{..."
       snippet: """
             \\usepackage{${1  :package}}\n\
@@ -84,16 +91,48 @@ define( (require, exports, module) ->
     value: word
     meta: 'equation'
   )
+  istype = (token, type) -> 
+    return token.type.lastIndexOf(type) > -1
+  
+  class ReferenceGetter
+    constructor: ->
+      @cachedURL =  ""
+      @cache = []
+    getReference: (url, callback) -> 
+      if (url == @cashedURL)
+        return @cashe
+      else 
+        @cachedURL = url
+        json = $.getJSON(url)
+        thisRef = @
+        json.success((data) ->
+          callback(data, thisRef)
+        )
 
-  exports.getCompletions = (editor, session, pos, prefix, callback) ->
-    context = session.getContext(pos.row)
-    if context == "start"
-      callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
+        return @cache
 
-    if context == LIST_STATE
-      callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
+  exports = class TexCompleter
+    constructor: ->
+      @r = new ReferenceGetter()
+    getCompletions: (editor, session, pos, prefix, callback) ->
+      context = session.getContext(pos.row)
+      token = session.getTokenAt(pos.row, pos.column)
+      if istype(token, "ref")
+        callback(null, @r.getReference("ace.json", (data, r) -> 
+          r.cache = data.map((elem) -> 
+                          return {
+                            name: elem.caption
+                            value: elem.caption
+                            score: Number.MAX_VALUE
+                            meta: "ref"}
+                    )
+          ))
+      else if context == "start"
+        callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
 
-    if context == EQUATION_STATE
-      callback(null, formulasSnippets.concat(equationKeywords_))
-  return
+      else if context == LIST_STATE
+        callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
+
+      else if context == EQUATION_STATE
+        callback(null, formulasSnippets.concat(equationKeywords_))
 ) 

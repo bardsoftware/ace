@@ -229,12 +229,17 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter"], 
-  function(ace, langTools, katexPreviewer, highlighter) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter", 
+         "ace/ext/papeeria/tex_completer"], 
+  function(ace, langTools, katexPreviewer, highlighter, completer) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
+
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
+
+    langTools.setCompleters([new completer()] );
+    console.log("Simple Latex Completer successfully added");
 
     var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
@@ -278,12 +283,6 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         }}
     });
     editor.keyBinding.addKeyboardHandler(keyboardHandler);
-
-    require(["ace/ext/papeeria/tex_completer"], function(completer) {
-        var texCompleter = completer;
-        langTools.addCompleter(texCompleter);
-        console.log("Simple Latex Completer successfully added");
-    });
 
     candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
       var content, options, session;
