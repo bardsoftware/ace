@@ -121,22 +121,24 @@ define( (require, exports, module) ->
 
   class ReferenceGetter
     constructor: ->
-      @cachedURL =  ""
+      @lastFetchedUrl =  ""
       @cache = []
     processData: (data) -> 
       @cache = data.map((elem) => 
           return {
             name: elem.caption
             value: elem.caption
-            score: Number.MAX_VALUE
-            meta: "ref"
+            meta: elem.type + "-ref" 
           }
     )
-
     getReferences: (url, callback) -> 
-      if (url != @cashedURL)
-        json = $.getJSON(url).done((data) => @processData(data); callback(null, @cache))
-        json.success(() -> @cachedURL = url)
+      if (url != @lastFetchedUrl)
+        $.getJSON(url).done((data) => 
+          @processData(data)
+          callback(null, @cache)
+          @lastFetchedUrl = url
+        )
+
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
