@@ -118,7 +118,7 @@ define( (require, exports, module) ->
       context = session.getContext(pos.row)
       token = session.getTokenAt(pos.row, pos.column)
       if istype(token, "ref")
-        callback(null, @r.getReference("ace.json", (data, r) -> 
+        callback(null, @r.getReference("example.json", (data, r) -> 
           r.cache = data.map((elem) -> 
                           return {
                             name: elem.caption

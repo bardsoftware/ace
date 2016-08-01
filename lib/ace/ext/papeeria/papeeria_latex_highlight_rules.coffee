@@ -48,7 +48,6 @@ define((require, exports, module) ->
         ]
         regex: '(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})'
       }
-
       {
         token: [
           'storage.type'
@@ -58,11 +57,12 @@ define((require, exports, module) ->
         ]
         regex: '(\\\\(?:begin|end))({)(\\w*)(})'
       }
+
       {
         token: [
           'keyword'
-          'lparen'
-          'variable.parameter'
+          'lparen.ref'
+          'variable.parameter.ref'
           'rparen'
         ]
         regex: '(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?'
