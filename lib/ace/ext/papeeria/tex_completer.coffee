@@ -134,14 +134,13 @@ define( (require, exports, module) ->
 
     getReferences: (url, callback) -> 
       if (url != @cashedURL)
-        @cachedURL = url
-        $.getJSON(url).done((data) => @processData(data); callback(null, @cache))
-
+        json = $.getJSON(url).done((data) => @processData(data); callback(null, @cache))
+        json.success(() -> @cachedURL = url)
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
       #callback -- add items in popup
-      getCompletions: (editor, session, pos, prefix, callback) ->
+      getCompletions: (editor, session, pos, prefix, callback) =>
         context = ContextHelper.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
 
