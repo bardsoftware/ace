@@ -20,8 +20,8 @@ define( (require, exports, module) ->
         for state in states
             if state == LIST_STATE 
                 count++
-        #because we have 2 LIST_STATE for 1 level of nested 
-        #and 3 LIST_STATE for more level
+        # because we have 2 LIST_STATE for 1 level of nested 
+        # and 3 LIST_STATE for more level
         return count - 1
 
 

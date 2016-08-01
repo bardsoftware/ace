@@ -93,8 +93,8 @@ define( (require, exports, module) ->
     meta: 'equation'
   )
   
-  #Specific for token's system of type in ace
-  #We saw such a realization in html_completions.js
+  # Specific for token's system of type in ace
+  # We saw such a realization in html_completions.js
   istype = (token, type) -> 
     return token.type.lastIndexOf(type) > -1
   
