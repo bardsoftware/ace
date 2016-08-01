@@ -90,10 +90,11 @@ define((require, exports, module) ->
       secondRowPosition = jqSecondRow.position()
       pxRowHeight = jqSecondRow.height()
       relativeRow = row + 1 - getTopmostRowNumber()
-      top = "#{secondRowPosition.top + pxRowHeight * relativeRow + 8}px"
+      top = "#{secondRowPosition.top + pxRowHeight * (relativeRow + 1)}px"
 
       gutter = jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled")
       left = gutter.position().left + gutter.width() + 10
+      console.log(left)
 
       return { top: top, left: left }
 
@@ -115,7 +116,6 @@ define((require, exports, module) ->
         popoverHandler.show(jqFormula(), content, popoverPosition)
 
     updatePopover = ->
-      {row: cursorRow} = editor.getCursorPosition()
       try
         content = getCurrentFormula()
       catch e
