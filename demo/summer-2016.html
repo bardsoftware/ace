@@ -264,6 +264,18 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
         enableLiveAutocompletion: true
     });
 
+    //will be move in new context module
+    var getCountOfDeepList = function(row) {
+      var states = session.getState(row)
+      var count = 0
+      var arrayLength = states.length;
+      for (var i = arrayLength - 1; i >= 0; i--) {
+        if (states[i] == 'list')
+          count++
+        else 
+          return count
+      }
+    }
     //we will move this code into tex_completer in next pull request and well make this beautiful
     var HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
     keyboardHandler = new HashHandler();
@@ -273,9 +285,10 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       exec: function(editor) {
         var pos = editor.getCursorPosition()
         var curLine = editor.session.getLine(pos.row);
+        var intendCount = getCountOfDeepList(pos.row)
         // it's temporary fix bug with added \item before \begin{itemize|enumerate}
         if (editor.getSession().getContext(pos.row) == "list" && curLine.indexOf("begin") < pos.column) {
-          editor.insert("\n\t\\item ")
+          editor.insert("\n" + "    ".repeat(intendCount) + "\\item ")
           return true;
         }
         else {
