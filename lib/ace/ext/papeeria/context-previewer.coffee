@@ -81,9 +81,12 @@ define((require, exports, module) ->
       parseInt(jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
 
     getPopoverPosition = (row) ->
-      rowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(#{row + 2 - getTopmostRowNumber()})"
-      cursorRowPosition = jqEditorContainer.find(rowSelector).position()
-      top = "#{cursorRowPosition.top + 24 + 8}px"
+      secondRowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(2)"
+      jqSecondRow = jqEditorContainer.find(secondRowSelector)
+      secondRowPosition = jqSecondRow.position()
+      pxRowHeight = jqSecondRow.height()
+      relativeRow = row + 1 - getTopmostRowNumber()
+      top = "#{secondRowPosition.top + pxRowHeight * relativeRow + 8}px"
 
       gutter = jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled")
       left = gutter.position().left + gutter.width() + 10
