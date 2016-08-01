@@ -121,8 +121,8 @@ define( (require, exports, module) ->
     constructor: ->
       @cachedURL =  ""
       @cache = []
-    processData: (data) => 
-      @cache = data.map((elem) -> 
+    processData: (data) -> 
+      @cache = data.map((elem) => 
                   return {
                     name: elem.caption
                     value: elem.caption
@@ -131,12 +131,10 @@ define( (require, exports, module) ->
                   }
             )
 
-    getReference: (url) => 
+    getReference: (url, callback) -> 
       if (url != @cashedURL)
         @cachedURL = url
-        $.getJSON(url).done(@processData)
-        
-      return @cache
+        $.getJSON(url).done((data) => @processData(data); callback(null, @cache))
 
   class TexCompleter
       constructor: ->
@@ -146,7 +144,7 @@ define( (require, exports, module) ->
         token = session.getTokenAt(pos.row, pos.column)
 
         if istype(token, "ref")
-          callback(null, @refGetter.getReference("example.json"))
+          @refGetter.getReference("example.json", callback)
         else if context == "start"
           callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
         else if context == LIST_STATE
