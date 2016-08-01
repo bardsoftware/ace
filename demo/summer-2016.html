@@ -289,9 +289,10 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
       $("#highlightInfo").popover("destroy");
     };
     //Initialization bind for highlight brackets.
-    highlighter.init(editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
+    highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
     completionTools.init(editor,  {win: 'enter', mac: 'enter'})
     langTools.snippetCompleter.getDocTooltip = null;
+
     katexPreviewer.setupPreviewer(editor);
 });
 </script>
