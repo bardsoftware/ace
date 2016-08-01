@@ -100,24 +100,23 @@ define( (require, exports, module) ->
   
 
   init = (editor, bindKey) -> 
-    HashHandler = require("ace/keyboard/hash_handler").HashHandler; 
-    keyboardHandler = new HashHandler();
+    HashHandler = require("ace/keyboard/hash_handler").HashHandler
+    keyboardHandler = new HashHandler()
     keyboardHandler.addCommand(
-      name: 'add item in list mode',
-      bindKey: bindKey,
+      name: 'add item in list mode'
+      bindKey: bindKey
       exec: (editor) ->  
         pos = editor.getCursorPosition()
-        curLine = editor.session.getLine(pos.row);
-        intendCount = ContextHelper.getNestedListDepth(editor.session, pos.row)
+        curLine = editor.session.getLine(pos.row)
+        indentCount = ContextHelper.getNestedListDepth(editor.session, pos.row)
         # it's temporary fix bug with added \item before \begin{itemize|enumerate}
         if ContextHelper.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
-          editor.insert("\n" + "    ".repeat(intendCount) + "\\item ")
+          editor.insert("\n" + "    ".repeat(indentCount) + "\\item ")
           return true
         else 
-          return false
-        
-    );
-    editor.keyBinding.addKeyboardHandler(keyboardHandler);
+          return false   
+    )
+    editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
   class ReferenceGetter
     constructor: ->
@@ -125,15 +124,15 @@ define( (require, exports, module) ->
       @cache = []
     processData: (data) -> 
       @cache = data.map((elem) => 
-                  return {
-                    name: elem.caption
-                    value: elem.caption
-                    score: Number.MAX_VALUE
-                    meta: "ref"
-                  }
-            )
+          return {
+            name: elem.caption
+            value: elem.caption
+            score: Number.MAX_VALUE
+            meta: "ref"
+          }
+    )
 
-    getReference: (url, callback) -> 
+    getReferences: (url, callback) -> 
       if (url != @cashedURL)
         @cachedURL = url
         $.getJSON(url).done((data) => @processData(data); callback(null, @cache))
@@ -141,12 +140,13 @@ define( (require, exports, module) ->
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
+      #callback -- add items in popup
       getCompletions: (editor, session, pos, prefix, callback) ->
         context = ContextHelper.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
 
         if istype(token, "ref")
-          @refGetter.getReference("example.json", callback)
+          @refGetter.getReferences("example.json", callback)
         else if context == "start"
           callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
         else if context == LIST_STATE
