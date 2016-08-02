@@ -1,6 +1,6 @@
 define( (require, exports, module) ->
   PapeeriaLatexHighlightRules = require('./papeeria_latex_highlight_rules')
-  ContextHelper = require('./context_helper')
+  LatexParsingContext = require('./latex_parsing_context')
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [
@@ -95,7 +95,7 @@ define( (require, exports, module) ->
 
   # Specific for token's system of type in ace
   # We saw such a realization in html_completions.js
-  istype = (token, type) ->
+  isType = (token, type) ->
     return token.type.lastIndexOf(type) > -1
 
 
@@ -108,10 +108,10 @@ define( (require, exports, module) ->
       exec: (editor) ->
         pos = editor.getCursorPosition()
         curLine = editor.session.getLine(pos.row)
-        indentCount = ContextHelper.getNestedListDepth(editor.session, pos.row)
+        indentCount = LatexParsingContext.getNestedListDepth(editor.session, pos.row)
         tabString = editor.getSession().getTabString()
         # it's temporary fix bug with added \item before \begin{itemize|enumerate}
-        if ContextHelper.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
+        if LatexParsingContext.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
           editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
           return true
         else
@@ -145,10 +145,10 @@ define( (require, exports, module) ->
       @init: (editor) ->  init(editor,  {win: 'enter', mac: 'enter'})
       #callback -- add items in popup
       getCompletions: (editor, session, pos, prefix, callback) =>
-        context = ContextHelper.getContext(session, pos.row)
+        context = LatexParsingContext.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
 
-        if istype(token, "ref")
+        if isType(token, "ref")
           @refGetter.getReferences("example.json", callback)
         else if context == "start"
           callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
