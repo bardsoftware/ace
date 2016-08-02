@@ -1,4 +1,4 @@
-define(["./papeeria_latex_highlight_rules", './latex_parsing_context'],  (PapeeriaLatexHighlightRules, LatexParsingContext) ->
+define(["./papeeria_latex_highlight_rules", "./latex_parsing_context"],  (PapeeriaLatexHighlightRules, LatexParsingContext) ->
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [

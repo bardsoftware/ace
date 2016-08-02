@@ -1,4 +1,4 @@
-define( ['./papeeria_latex_highlight_rules'], (PapeeriaLatexHighlightRules) ->
+define( ["./papeeria_latex_highlight_rules"], (PapeeriaLatexHighlightRules) ->
     #PapeeriaLatexHighlightRules = require()
     EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
     LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
