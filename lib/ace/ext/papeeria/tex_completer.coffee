@@ -153,12 +153,10 @@ define(["./papeeria_latex_highlight_rules", './latex_parsing_context'],  (Papeer
 
         if isType(token, "ref")
           @refGetter.getReferences("example.json", callback)
-        else if context == "start"
-          callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
-        else if context == LIST_STATE
-          callback(null, listKeywords.concat(listSnippets.concat(equationSnippets)))
-        else if context == EQUATION_STATE
-          callback(null, formulasSnippets.concat(equationKeywords))
+        else switch context
+          when "start" then callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
+          when LIST_STATE then callback(null, listKeywords.concat(listSnippets.concat(equationSnippets)))
+          when EQUATION_STATE then callback(null, formulasSnippets.concat(equationKeywords))
 
   return TexCompleter
 )
