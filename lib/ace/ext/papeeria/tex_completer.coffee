@@ -82,7 +82,7 @@ define( (require, exports, module) ->
   equationKeywords = ['\\alpha']
   listKeywords = ['\\item']
 
-  listKeywords_ = listKeywords.map((word) ->
+  listKeywords = listKeywords.map((word) ->
     caption: word,
     value: word
     meta: 'list'
@@ -152,7 +152,7 @@ define( (require, exports, module) ->
         else if context == "start"
           callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
         else if context == LIST_STATE
-          callback(null, listKeywords_.concat(listSnippets.concat(equationSnippets)))
+          callback(null, listKeywords.concat(listSnippets.concat(equationSnippets)))
         else if context == EQUATION_STATE
           callback(null, formulasSnippets.concat(equationKeywords))
 
