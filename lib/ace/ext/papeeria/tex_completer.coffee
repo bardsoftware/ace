@@ -94,7 +94,7 @@ define(["./papeeria_latex_highlight_rules", './latex_parsing_context'],  (Papeer
   # Specific for token's system of type in ace
   # We saw such a realization in html_completions.js
   isType = (token, type) ->
-    return token.type.lastIndexOf(type) > -1
+    return token.type.split('.').indexOf(type) > -1
 
 
   init = (editor, bindKey) ->
@@ -136,6 +136,8 @@ define(["./papeeria_latex_highlight_rules", './latex_parsing_context'],  (Papeer
           callback(null, @cache)
           @lastFetchedUrl = url
         )
+      else
+        callback(null, @cache)
 
   class TexCompleter
       constructor: ->
@@ -152,6 +154,7 @@ define(["./papeeria_latex_highlight_rules", './latex_parsing_context'],  (Papeer
         token = session.getTokenAt(pos.row, pos.column)
 
         if isType(token, "ref")
+          console.log("sure")
           @refGetter.getReferences("example.json", callback)
         else switch context
           when "start" then callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
