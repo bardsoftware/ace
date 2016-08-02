@@ -1,4 +1,5 @@
 define([], ->
+    TokenIterator = null
     Range = null
     clearCurrentHighlight = (session) ->
         if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
@@ -30,33 +31,61 @@ define([], ->
         toggleSurroundingBracketsPopup(editor, pos.left, pos.right)
         return
 
+    newFakeToken = (pos) ->
+        token: ""
+        row: pos.row
+        column: pos.column
+        contains: (pos) ->
+            return @row == pos.row && @column == pos.column
+
+
+    newFilteringIterator = (session, pos, isForward) ->
+        tokenIterator = new TokenIterator(session, pos.row, pos.column)
+        token = tokenIterator.getCurrentToken();
+        token ?= tokenIterator.stepForward();
+        if not token?
+            return null
+        typeRe = /(\.?.paren)+/
+        result = session.$newFilteringIterator(
+            tokenIterator,
+            (filteringIterator) ->
+                token = tokenIterator.getCurrentToken()
+                while token and !typeRe.test(token.type)
+                    token = if isForward then tokenIterator.stepForward() else tokenIterator.stepBackward()
+                if token?
+                    filteringIterator.$updateCurrent()
+                    if isForward then tokenIterator.stepForward() else tokenIterator.stepBackward()
+                    return true
+                else
+                    filteringIterator.$current = null
+                    return false
+        )
+        if isForward
+            if not result.next() then return null
+        else
+            # if Tokeniterator is created from the cursor position, its first token
+            # will be the one which immediately precedes the position (its start+length>=position)
+            # Code in session.$findOpeningBracket effectively skips this token, so if cursor is positioned immediately
+            # after closing bracket } then this bracket will be ignored and ultimately findOpeningBracket
+            # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
+            # To fix it we initialize filtering iterator with a fake empty token.
+            result.$current = newFakeToken(pos)
+        return result
+
     findSurroundingBrackets = (editor) ->
         session = editor.getSession();
-        # if Tokeniterator is created from the cursor position, its first token
-        # will be the one which immediately precedes the position (its start+length>=position)
-        # The first token is skipped when stepping backwards, so if cursor is positioned immediately
-        # after closing bracket } then this bracket will be ignored and ultimately findOpeningBracket
-        # will return wrong result (e.g. for this text: {\foo}_  it will return { as the result)
-        # To fix it we increment columnin the position for searching leftwards.
-        positionLeftwards = editor.getCursorPosition()
-        if session.getLine(positionLeftwards.row).length == positionLeftwards.column
-            positionLeftwards.row += 1
-            positionLeftwards.column = 0
-        else
-            positionLeftwards.column += 1
-
-        positionRightwards = editor.getCursorPosition()
+        pos = editor.getCursorPosition()
 
         allBrackets =
             left: [
-                session.$findOpeningBracket('}', positionLeftwards, /(\.?.paren)+/)
-                session.$findOpeningBracket(']', positionLeftwards, /(\.?.paren)+/)
-                session.$findOpeningBracket(')', positionLeftwards, /(\.?.paren)+/)
+                session.$findOpeningBracket('}', pos, newFilteringIterator(session, pos, false))
+                session.$findOpeningBracket(']', pos, newFilteringIterator(session, pos, false))
+                session.$findOpeningBracket(')', pos, newFilteringIterator(session, pos, false))
             ]
             right: [
-                session.$findClosingBracket('{', positionRightwards, /(\.?.paren)+/)
-                session.$findClosingBracket('[', positionRightwards, /(\.?.paren)+/)
-                session.$findClosingBracket('(', positionRightwards, /(\.?.paren)+/)
+                session.$findClosingBracket('{', pos, newFilteringIterator(session, pos, true))
+                session.$findClosingBracket('[', pos, newFilteringIterator(session, pos, true))
+                session.$findClosingBracket('(', pos, newFilteringIterator(session, pos, true))
             ]
         leftNearest = null
         rightNearest = null
@@ -112,6 +141,7 @@ define([], ->
 
     init = (ace, editor, bindKey, candidateToggleSurroundingBracketsPopup) ->
         Range = ace.require("ace/range").Range
+        TokenIterator = ace.require("ace/token_iterator").TokenIterator
         if candidateToggleSurroundingBracketsPopup
             toggleSurroundingBracketsPopup = candidateToggleSurroundingBracketsPopup
         session = editor.getSession()
