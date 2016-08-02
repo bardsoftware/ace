@@ -143,7 +143,12 @@ define( (require, exports, module) ->
       constructor: ->
         @refGetter = new ReferenceGetter()
       @init: (editor) ->  init(editor,  {win: 'enter', mac: 'enter'})
-      #callback -- add items in popup
+      ###
+      # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
+      # @param {object} error -- convention in node, the first argument to a callback
+      # is usually used to indicate an error
+      # @param {array} response -- list of completions for adding to popup
+      ###
       getCompletions: (editor, session, pos, prefix, callback) =>
         context = LatexParsingContext.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
