@@ -92,20 +92,20 @@ define( (require, exports, module) ->
     value: word
     meta: 'equation'
   )
-  
+
   # Specific for token's system of type in ace
   # We saw such a realization in html_completions.js
-  istype = (token, type) -> 
+  istype = (token, type) ->
     return token.type.lastIndexOf(type) > -1
-  
 
-  init = (editor, bindKey) -> 
+
+  init = (editor, bindKey) ->
     HashHandler = require("ace/keyboard/hash_handler").HashHandler
     keyboardHandler = new HashHandler()
     keyboardHandler.addCommand(
       name: 'add item in list mode'
       bindKey: bindKey
-      exec: (editor) ->  
+      exec: (editor) ->
         pos = editor.getCursorPosition()
         curLine = editor.session.getLine(pos.row)
         indentCount = ContextHelper.getNestedListDepth(editor.session, pos.row)
@@ -114,26 +114,26 @@ define( (require, exports, module) ->
         if ContextHelper.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
           editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
           return true
-        else 
+        else
           return false
     )
     editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
-   class ReferenceGetter
+   class  ReferenceGetter
     constructor: ->
       @lastFetchedUrl =  ""
       @cache = []
-    processData: (data) => 
-      @cache = data.map((elem) => 
+    processData: (data) =>
+      @cache = data.map((elem) =>
           return {
             name: elem.caption
             value: elem.caption
-            meta: elem.type + "-ref" 
+            meta: elem.type + "-ref"
           }
     )
-    getReferences: (url, callback) => 
+    getReferences: (url, callback) =>
       if url != @lastFetchedUrl
-        $.getJSON(url).done((data) => 
+        $.getJSON(url).done((data) =>
           @processData(data)
           callback(null, @cache)
           @lastFetchedUrl = url
@@ -156,7 +156,7 @@ define( (require, exports, module) ->
         else if context == EQUATION_STATE
           callback(null, formulasSnippets.concat(equationKeywords))
 
-  exports.CompletionTools = 
+  exports.CompletionTools =
     TexCompleter: TexCompleter
     init: init
-) 
+)
