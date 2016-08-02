@@ -142,6 +142,7 @@ define( (require, exports, module) ->
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
+      @init: (editor) ->  init(editor,  {win: 'enter', mac: 'enter'})
       #callback -- add items in popup
       getCompletions: (editor, session, pos, prefix, callback) =>
         context = ContextHelper.getContext(session, pos.row)
@@ -156,7 +157,5 @@ define( (require, exports, module) ->
         else if context == EQUATION_STATE
           callback(null, formulasSnippets.concat(equationKeywords))
 
-  exports.CompletionTools =
-    TexCompleter: TexCompleter
-    init: init
+  exports = TexCompleter
 )
