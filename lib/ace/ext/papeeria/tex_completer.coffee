@@ -2,12 +2,12 @@ define(["./papeeria_latex_highlight_rules", "./latex_parsing_context"],  (Papeer
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [
-    'equation'
-    'equation*'
+    "equation"
+    "equation*"
   ]
   listEnvironments = [
-    'itemize'
-    'enumerate'
+    "itemize"
+    "enumerate"
   ]
 
   basicSnippets = [
@@ -77,38 +77,38 @@ define(["./papeeria_latex_highlight_rules", "./latex_parsing_context"],  (Papeer
     }
   ]
 
-  equationKeywords = ['\\alpha']
-  listKeywords = ['\\item']
+  equationKeywords = ["\\alpha"]
+  listKeywords = ["\\item"]
 
   listKeywords = listKeywords.map((word) ->
     caption: word,
     value: word
-    meta: 'list'
+    meta: "list"
   )
   equationKeywords = equationKeywords.map((word) ->
     caption: word,
     value: word
-    meta: 'equation'
+    meta: "equation"
   )
 
-  # Specific for token's system of type in ace
+  # Specific for token"s system of type in ace
   # We saw such a realization in html_completions.js
   isType = (token, type) ->
-    return token.type.split('.').indexOf(type) > -1
+    return token.type.split(".").indexOf(type) > -1
 
 
   init = (editor, bindKey) ->
     HashHandler = require("ace/keyboard/hash_handler").HashHandler
     keyboardHandler = new HashHandler()
     keyboardHandler.addCommand(
-      name: 'add item in list mode'
+      name: "add item in list mode"
       bindKey: bindKey
       exec: (editor) ->
         pos = editor.getCursorPosition()
         curLine = editor.session.getLine(pos.row)
         indentCount = LatexParsingContext.getNestedListDepth(editor.session, pos.row)
         tabString = editor.getSession().getTabString()
-        # it's temporary fix bug with added \item before \begin{itemize|enumerate}
+        # it"s temporary fix bug with added \item before \begin{itemize|enumerate}
         if LatexParsingContext.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
           editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
           return true
@@ -142,7 +142,7 @@ define(["./papeeria_latex_highlight_rules", "./latex_parsing_context"],  (Papeer
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
-      @init: (editor) ->  init(editor,  {win: 'enter', mac: 'enter'})
+      @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
       # @param {object} error -- convention in node, the first argument to a callback

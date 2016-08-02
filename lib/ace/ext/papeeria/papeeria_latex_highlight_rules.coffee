@@ -1,19 +1,19 @@
 define((require, exports, module) ->
-  'use strict'
-  oop = require('../../lib/oop')
-  TextHighlightRules = require('../../mode/text_highlight_rules').TextHighlightRules
-  LIST_REGEX = 'itemize|enumerate'
-  EQUATION_REGEX = 'equation|equation\\*'
-  LIST_STATE = 'list'
-  EQUATION_STATE = 'equation'
+  "use strict"
+  oop = require("../../lib/oop")
+  TextHighlightRules = require("../../mode/text_highlight_rules").TextHighlightRules
+  LIST_REGEX = "itemize|enumerate"
+  EQUATION_REGEX = "equation|equation\\*"
+  LIST_STATE = "list"
+  EQUATION_STATE = "equation"
   exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
   PapeeriaLatexHighlightRules = ->
     ###*
     * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
-    * to be able to provide context for autocompletion and other functions. 
+    * to be able to provide context for autocompletion and other functions.
     * Stack is constructed by the background highlighter;
-    * its elements are then propagated to * the editor session and become 
+    * its elements are then propagated to * the editor session and become
     * available through getContext method.
     *
     * The exact semantics of the rules for the use described in the file tokenizer.js
@@ -22,107 +22,107 @@ define((require, exports, module) ->
    ###
     pushState = (pushedState) ->
       return (currentState, stack) ->
-        if currentState == 'start'
+        if currentState == "start"
           stack.push(currentState, pushedState)
         else
           stack.push(pushedState)
         return pushedState
 
     popState = (currentState, stack) ->
-      return stack.pop() or 'start'
+      return stack.pop() or "start"
 
     basicRules = [
       {
-        token: 'comment'
-        regex: '%.*$'
+        token: "comment"
+        regex: "%.*$"
       }
       {
         token: [
-          'keyword'
-          'lparen'
-          'variable.parameter'
-          'rparen'
-          'lparen'
-          'storage.type'
-          'rparen'
+          "keyword"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+          "lparen"
+          "storage.type"
+          "rparen"
         ]
-        regex: '(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})'
+        regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
       }
       {
         token: [
-          'storage.type'
-          'lparen'
-          'variable.parameter'
-          'rparen'
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
         ]
-        regex: '(\\\\(?:begin|end))({)(\\w*)(})'
+        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
       }
       {
         token: [
-          'storage.type'
-          'lparen.ref'
-          'variable.parameter.ref'
-          'rparen'
+          "storage.type"
+          "lparen.ref"
+          "variable.parameter.ref"
+          "rparen"
         ]
-        regex: '(\\\\(?:ref))({)(\\w*)(})'
+        regex: "(\\\\(?:ref))({)(\\w*)(})"
       }
       {
         token: [
-          'keyword'
-          'lparen'
-          'variable.parameter'
-          'rparen'
+          "keyword"
+          "lparen"
+          "variable.parameter"
+          "rparen"
         ]
-        regex: '(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?'
+        regex: "(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
       {
-        token: 'storage.type'
-        regex: '\\\\[a-zA-Z]+'
+        token: "storage.type"
+        regex: "\\\\[a-zA-Z]+"
       }
       {
-        token: 'lparen'
-        regex: '[[({]'
+        token: "lparen"
+        regex: "[[({]"
       }
       {
-        token: 'rparen'
-        regex: '[\\])}]'
+        token: "rparen"
+        regex: "[\\])}]"
       }
       {
-        token: 'constant.character.escape'
-        regex: '\\\\[^a-zA-Z]?'
+        token: "constant.character.escape"
+        regex: "\\\\[^a-zA-Z]?"
       }
     ]
-    
 
-    beginRule = (text = '\\w*', pushedState = 'start') ->
+
+    beginRule = (text = "\\w*", pushedState = "start") ->
       return {
         token: [
-          'storage.type'
-          'lparen'
-          'variable.parameter'
-          'rparen'
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
         ]
-        regex: '(\\\\(?:begin))({)(' + text + ')(})'
+        regex: "(\\\\(?:begin))({)(" + text + ")(})"
         next: pushState(pushedState)
       }
 
-    endRule = (text = '\\w*') ->
+    endRule = (text = "\\w*") ->
       return {
         token: [
-          'storage.type'
-          'lparen'
-          'variable.parameter'
-          'rparen'
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
         ]
-        regex: '(\\\\(?:end))({)(' + text + ')(})'
+        regex: "(\\\\(?:end))({)(" + text + ")(})"
 
         next: popState
       }
 
-    # For unknown reasons  we can't use constants in block below, because background_tokenizer 
-    # doesn't like constants. It wants string literal
+    # For unknown reasons  we can"t use constants in block below, because background_tokenizer
+    # doesn"t like constants. It wants string literal
     @$rules =
-      'start': [
+      "start": [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
 
@@ -130,7 +130,7 @@ define((require, exports, module) ->
         endRule(LIST_REGEX)
 
       ]
-      'equation': [
+      "equation": [
         beginRule(EQUATION_REGEX, EQUATION_STATE)
         beginRule(LIST_REGEX, LIST_STATE)
 
@@ -138,7 +138,7 @@ define((require, exports, module) ->
         endRule(LIST_REGEX)
 
       ]
-      'list': [
+      "list": [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
 
@@ -156,4 +156,4 @@ define((require, exports, module) ->
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
   exports.PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRules
   return
-) 
+)
