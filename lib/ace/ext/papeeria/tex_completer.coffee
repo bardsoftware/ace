@@ -1,6 +1,4 @@
-define( (require, exports, module) ->
-  PapeeriaLatexHighlightRules = require('./papeeria_latex_highlight_rules')
-  LatexParsingContext = require('./latex_parsing_context')
+define(["./papeeria_latex_highlight_rules", './latex_parsing_context'],  (PapeeriaLatexHighlightRules, LatexParsingContext) ->
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [
@@ -162,5 +160,5 @@ define( (require, exports, module) ->
         else if context == EQUATION_STATE
           callback(null, formulasSnippets.concat(equationKeywords))
 
-  exports = TexCompleter
+  return TexCompleter
 )
