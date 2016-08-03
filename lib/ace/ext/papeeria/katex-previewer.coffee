@@ -59,12 +59,13 @@ define((require, exports, module) ->
 
     jqFormula = -> $("#formula")
 
-    selectionHandler = {
+    # sh stands for Selection Handler
+    sh = {
       hideSelectionPopover: ->
         popoverHandler.destroy(jqFormula())
-        editor.off("changeSelection", selectionHandler.hideSelectionPopover)
-        editor.session.off("changeScrollTop", selectionHandler.hideSelectionPopover)
-        editor.session.off("changeScrollLeft", selectionHandler.hideSelectionPopover)
+        editor.off("changeSelection", sh.hideSelectionPopover)
+        editor.session.off("changeScrollTop", sh.hideSelectionPopover)
+        editor.session.off("changeScrollLeft", sh.hideSelectionPopover)
         return
 
       renderSelectionUnderCursor: ->
@@ -82,22 +83,22 @@ define((require, exports, module) ->
           content = e
         finally
           popoverHandler.show(jqFormula(), content, popoverPosition)
-          editor.on("changeSelection", selectionHandler.hideSelectionPopover)
-          editor.session.on("changeScrollTop", selectionHandler.hideSelectionPopover)
-          editor.session.on("changeScrollLeft", selectionHandler.hideSelectionPopover)
+          editor.on("changeSelection", sh.hideSelectionPopover)
+          editor.session.on("changeScrollTop", sh.hideSelectionPopover)
+          editor.session.on("changeScrollLeft", sh.hideSelectionPopover)
           return
 
       createPopover: (editor) ->
         unless katex?
-          initKaTeX(selectionHandler.renderSelectionUnderCursor)
+          initKaTeX(sh.renderSelectionUnderCursor)
           return
-        selectionHandler.renderSelectionUnderCursor()
+        sh.renderSelectionUnderCursor()
     }
 
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
       bindKey: {win: "Alt-p", mac: "Alt-p"}
-      exec: selectionHandler.createPopover
+      exec: sh.createPopover
     )
     return
   return
