@@ -218,7 +218,7 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script>
 // var editor;
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/context-previewer", "ace/ext/papeeria/highlighter"], function(ace, langTools, katexPreviewer, highlighter) {
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter"], function(ace, langTools, katexPreviewer, highlighter) {
     // TODO: put editor back in local scope when merging this branch
     editor = ace.edit("editor");
     var session = editor.getSession();
