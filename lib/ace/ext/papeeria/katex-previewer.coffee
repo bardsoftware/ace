@@ -57,9 +57,11 @@ define((require, exports, module) ->
       )
       return
 
+    jqFormula = -> $("#formula")
+
     selectionHandler = {
       hideSelectionPopover: ->
-        popoverHandler.destroy($("#formula"))
+        popoverHandler.destroy(jqFormula())
         editor.off("changeSelection", selectionHandler.hideSelectionPopover)
         editor.session.off("changeScrollTop", selectionHandler.hideSelectionPopover)
         editor.session.off("changeScrollLeft", selectionHandler.hideSelectionPopover)
@@ -79,7 +81,7 @@ define((require, exports, module) ->
         catch e
           content = e
         finally
-          popoverHandler.show($("#formula"), content, popoverPosition)
+          popoverHandler.show(jqFormula(), content, popoverPosition)
           editor.on("changeSelection", selectionHandler.hideSelectionPopover)
           editor.session.on("changeScrollTop", selectionHandler.hideSelectionPopover)
           editor.session.on("changeScrollLeft", selectionHandler.hideSelectionPopover)
