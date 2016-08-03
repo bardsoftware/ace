@@ -77,7 +77,7 @@ define((require, exports, module) ->
       return [start, end]
 
     getWholeEquation = (start, end) ->
-      removeRegex =/\\begin\{equation\}|\\label\{[^\}]*\}/g
+      removeRegex =/\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
       wholeEquation = editor.session.getLines(start, end).join(" ").replace(removeRegex, "")
       return wholeEquation
 
@@ -92,11 +92,12 @@ define((require, exports, module) ->
       relativeRow = row + 1 - getTopmostRowNumber()
       top = "#{secondRowPosition.top + pxRowHeight * (relativeRow + 1)}px"
 
-      gutter = jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled")
-      left = gutter.position().left + gutter.width() + 10
-      console.log(left)
+      left = jqEditorContainer.position().left
 
-      return { top: top, left: left }
+      return {
+        top: top
+        left: left
+      }
 
     getCurrentFormula = ->
       katex.renderToString(
@@ -128,6 +129,9 @@ define((require, exports, module) ->
         clearTimeout(currentDelayedUpdateId)
       currentDelayedUpdateId = setTimeout((-> updatePopover(); currentDelayedUpdateId = null), 1000)
 
+    updatePosition = ->
+      popoverHandler.setPosition(jqFormula(), getPopoverPosition(curEnd))
+
     handleCurrentContext = ->
       currentContext = editor.session.getContext(editor.getCursorPosition().row)
       if prevContext != "equation" and currentContext == "equation"
@@ -136,8 +140,10 @@ define((require, exports, module) ->
         else
           initPopover()
         editor.on("change", delayedUpdatePopover)
+        editor.session.on("changeScrollTop", updatePosition)
       else if prevContext == "equation" and currentContext != "equation"
         editor.off("change", delayedUpdatePopover)
+        editor.session.off("changeScrollTop", updatePosition)
         popoverHandler.destroy(jqFormula())
 
       prevContext = currentContext
