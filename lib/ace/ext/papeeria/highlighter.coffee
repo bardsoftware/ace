@@ -1,13 +1,13 @@
 define([], ->
     TokenIterator = null
     Range = null
-    clearCurrentHighlight = (session) ->
+    clearCurrentHighlight = (session, placeholderRange = null) ->
         if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
             session.removeMarker(session.$bracketMatchHighlight)
             session.removeMarker(session.$bracketMismatchHighlight)
             session.$bracketMatchHighlight = null
             session.$bracketMismatchHighlight = null
-            session.$highlightRange = null
+            session.$highlightRange = placeholderRange
 
     highlightBrackets = (editor, pos) ->
         session = editor.getSession()
@@ -159,14 +159,19 @@ define([], ->
 
         editor.commands.addCommand(keyboardHandler);
 
-        session.getSelection().on("changeCursor", ->
+        onEditorChange = ->
             currentRange = session.$highlightRange
             if currentRange?
                 candidateRange = findSurroundingBrackets(editor)
-                if (!currentRange.equals(candidateRange) and candidateRange?.isDefined())
-                    highlightBrackets(editor, candidateRange)
+                if !currentRange.equals(candidateRange)
+                    if candidateRange?.isDefined()
+                        highlightBrackets(editor, candidateRange)
+                    else
+                        clearCurrentHighlight(session, candidateRange)
             return
-        )
+
+        session.getSelection().on("changeCursor", onEditorChange)
+        editor.on("change", onEditorChange)
 
         session.on("changeScrollTop", ->
             toggleSurroundingBracketsPopup(editor)
