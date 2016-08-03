@@ -20,9 +20,6 @@ define((require, exports, module) ->
       destroy: (jqPopoverContainer) ->
         jqPopoverContainer.popover("destroy")
 
-      isVisible: (jqPopoverContainer) ->
-        jqPopoverContainer.data().popover.tip().hasClass("in")
-
       popoverExists: (jqPopoverContainer) ->
         jqPopoverContainer.data()? and jqPopoverContainer.data().popover?
 
