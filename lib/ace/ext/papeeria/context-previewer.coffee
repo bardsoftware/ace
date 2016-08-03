@@ -60,94 +60,91 @@ define((require, exports, module) ->
     jqEditorContainer = $(editor.container)
     jqFormula = -> $("#formula")
 
-    [curStart, curEnd] = [null, null]
-    prevContext = editor.session.getContext(editor.getCursorPosition().row)
-    currentDelayedUpdateId = null
+    # ch stands for Context Handler
+    ch = {
+      removeRegex: /\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
 
-    getEquationRange = (cursorRow) ->
-      i = cursorRow
-      removeRegex = /\\begin{equation}|\\label{.*}|\\begin{equation*}/g
-      while editor.session.getContext(i - 1) == "equation"
-        i -= 1
-      start = i
-      while editor.session.getContext(i + 1) == "equation"
-        i += 1
-      end = i
-      wholeEquation = editor.session.getLines(start, end).join(" ").replace(removeRegex, "")
-      return [start, end]
+      getEquationRange: (cursorRow) ->
+        i = cursorRow
+        while editor.session.getContext(i - 1) == "equation"
+          i -= 1
+        start = i
+        while editor.session.getContext(i + 1) == "equation"
+          i += 1
+        end = i
+        return [start, end]
 
-    getWholeEquation = (start, end) ->
-      removeRegex =/\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
-      wholeEquation = editor.session.getLines(start, end).join(" ").replace(removeRegex, "")
-      return wholeEquation
+      getWholeEquation: (start, end) ->
+        editor.session.getLines(start, end).join(" ").replace(ch.removeRegex, "")
 
-    getTopmostRowNumber = ->
-      parseInt(jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
+      getTopmostRowNumber: ->
+        parseInt(jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
 
-    getPopoverPosition = (row) ->
-      secondRowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(2)"
-      jqSecondRow = jqEditorContainer.find(secondRowSelector)
-      secondRowPosition = jqSecondRow.position()
-      pxRowHeight = jqSecondRow.height()
-      relativeRow = row + 1 - getTopmostRowNumber()
-      top = "#{secondRowPosition.top + pxRowHeight * (relativeRow + 1)}px"
+      getPopoverPosition: (row) ->
+        secondRowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(2)"
+        jqSecondRow = jqEditorContainer.find(secondRowSelector)
+        secondRowPosition = jqSecondRow.position()
+        pxRowHeight = jqSecondRow.height()
+        relativeRow = row + 1 - ch.getTopmostRowNumber()
+        top = "#{secondRowPosition.top + pxRowHeight * (relativeRow + 1)}px"
 
-      left = jqEditorContainer.position().left
+        left = jqEditorContainer.position().left
 
-      return {
-        top: top
-        left: left
-      }
+        return {
+          top: top
+          left: left
+        }
 
-    getCurrentFormula = ->
-      katex.renderToString(
-        getWholeEquation(curStart, curEnd)
-        {displayMode: true}
-      )
+      getCurrentFormula: ->
+        katex.renderToString(
+          ch.getWholeEquation(ch.curStart, ch.curEnd),
+          {displayMode: true}
+        )
 
-    initPopover = ->
-      {row: cursorRow} = editor.getCursorPosition()
-      [curStart, curEnd] = getEquationRange(cursorRow)
-      popoverPosition = getPopoverPosition(curEnd)
-      try
-        content = getCurrentFormula()
-      catch e
-        content = e
-      finally
-        popoverHandler.show(jqFormula(), content, popoverPosition)
+      initPopover: ->
+        {row: cursorRow} = editor.getCursorPosition()
+        [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
+        popoverPosition = ch.getPopoverPosition(ch.curEnd)
+        try
+          content = ch.getCurrentFormula()
+        catch e
+          content = e
+        finally
+          popoverHandler.show(jqFormula(), content, popoverPosition)
 
-    updatePopover = ->
-      try
-        content = getCurrentFormula()
-      catch e
-        content = e
-      finally
-        popoverHandler.setContent(jqFormula(), content)
+      updatePopover: ->
+        try
+          content = ch.getCurrentFormula()
+        catch e
+          content = e
+        finally
+          popoverHandler.setContent(jqFormula(), content)
 
-    delayedUpdatePopover = ->
-      if currentDelayedUpdateId?
-        clearTimeout(currentDelayedUpdateId)
-      currentDelayedUpdateId = setTimeout((-> updatePopover(); currentDelayedUpdateId = null), 1000)
+      delayedUpdatePopover: ->
+        if ch.currentDelayedUpdateId?
+          clearTimeout(ch.currentDelayedUpdateId)
+        ch.currentDelayedUpdateId = setTimeout((-> ch.updatePopover(); currentDelayedUpdateId = null), 1000)
 
-    updatePosition = ->
-      popoverHandler.setPosition(jqFormula(), getPopoverPosition(curEnd))
+      updatePosition: ->
+        popoverHandler.setPosition(jqFormula(), ch.getPopoverPosition(ch.curEnd))
 
-    handleCurrentContext = ->
-      currentContext = editor.session.getContext(editor.getCursorPosition().row)
-      if prevContext != "equation" and currentContext == "equation"
-        if not katex?
-          initKaTeX(initPopover)
-        else
-          initPopover()
-        editor.on("change", delayedUpdatePopover)
-        editor.session.on("changeScrollTop", updatePosition)
-      else if prevContext == "equation" and currentContext != "equation"
-        editor.off("change", delayedUpdatePopover)
-        editor.session.off("changeScrollTop", updatePosition)
-        popoverHandler.destroy(jqFormula())
+      handleCurrentContext: ->
+        currentContext = editor.session.getContext(editor.getCursorPosition().row)
+        if ch.prevContext != "equation" and currentContext == "equation"
+          if not katex?
+            initKaTeX(ch.initPopover)
+          else
+            ch.initPopover()
+          editor.on("change", ch.delayedUpdatePopover)
+          editor.session.on("changeScrollTop", ch.updatePosition)
+        else if ch.prevContext == "equation" and currentContext != "equation"
+          editor.off("change", ch.delayedUpdatePopover)
+          editor.session.off("changeScrollTop", ch.updatePosition)
+          popoverHandler.destroy(jqFormula())
 
-      prevContext = currentContext
+        ch.prevContext = currentContext
+    }
 
-    editor.on("changeSelection", handleCurrentContext)
+    editor.on("changeSelection", ch.handleCurrentContext)
   return
 )
