@@ -76,22 +76,9 @@ define((require, exports, module) ->
       getWholeEquation: (start, end) ->
         editor.session.getLines(start, end).join(" ").replace(ch.removeRegex, "")
 
-      getTopmostRowNumber: ->
-        parseInt(jqEditorContainer.find("div.ace_gutter > div.ace_layer.ace_gutter-layer.ace_folding-enabled > div:nth-child(1)").text())
-
-      getPopoverPosition: (row) ->
-        secondRowSelector = "div.ace_scroller > div > div.ace_layer.ace_text-layer > div:nth-child(2)"
-        jqSecondRow = jqEditorContainer.find(secondRowSelector)
-        secondRowPosition = jqSecondRow.position()
-        pxRowHeight = jqSecondRow.height()
-        relativeRow = row + 1 - ch.getTopmostRowNumber()
-        top = "#{secondRowPosition.top + pxRowHeight * (relativeRow + 1)}px"
-
-        left = jqEditorContainer.position().left
-
-        return {
-          top: top
-          left: left
+      getPopoverPosition: (row) -> {
+          top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
+          left: "#{jqEditorContainer.position().left}px"
         }
 
       getCurrentFormula: ->
@@ -129,7 +116,7 @@ define((require, exports, module) ->
 
       handleCurrentContext: ->
         currentContext = editor.session.getContext(editor.getCursorPosition().row)
-        if ch.prevContext != "equation" and currentContext == "equation"
+        if not ch.contextPreviewExists and currentContext == "equation"
           ch.contextPreviewExists = true
           if not katex?
             initKaTeX(ch.initPopover)
@@ -137,13 +124,11 @@ define((require, exports, module) ->
             ch.initPopover()
           editor.on("change", ch.delayedUpdatePopover)
           editor.session.on("changeScrollTop", ch.updatePosition)
-        else if ch.prevContext == "equation" and currentContext != "equation"
+        else if ch.contextPreviewExists and currentContext != "equation"
           ch.contextPreviewExists = false
           editor.off("change", ch.delayedUpdatePopover)
           editor.session.off("changeScrollTop", ch.updatePosition)
           popoverHandler.destroy(jqFormula())
-
-        ch.prevContext = currentContext
     }
 
     # sh stands for Selection Handler
