@@ -216,7 +216,7 @@ require([
   "ace/ext/language_tools",
   "ace/ext/papeeria/katex-previewer",
   "ace/ext/papeeria/highlighter",
-  "ace/ext/papeeria/spellchecker"
+  "ace/ext/papeeria/spellchecker",
 ],
   function(ace, langTools, katexPreviewer, highlighter, spellChecker) {
     var editor = ace.edit("editor");
@@ -229,18 +229,15 @@ require([
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
         language: "en_US",
-        dicPath: "/demo/typojs/dictionaries/en_US/en_US.dic",
-        affPath: "/demo/typojs/dictionaries/en_US/en_US.aff",
         onSettingsUpdateSuccess: function() {
-          console.log("New settings has just been set");
         },
         onSettingsUpdateError: function(data) {
           console.log("Error: " + data.content);
         }
       });
+      spellChecker.setupSpellCheckerPopup(editor);
     };
     session.on("changeMode", initSpellCheck);
-    spellChecker.setupSpellCheckerPopup(editor);
 
     editor.setOptions({
         enableBasicAutocompletion: true,
