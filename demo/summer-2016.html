@@ -184,7 +184,8 @@ Richard & Miles & $2$ \\
 
 \begin{equation}
 \label{eq:emc}
-  \sum_{n=1}^{N} \gamma(z_{np}) \frac {\mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \frac{\alpha_{pt} - 1}{\pi_{pt}} = \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1) \sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1 = \pi_{pt} \Big(\sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)\Big) \frac{\sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1} { \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)} = \pi_{pt}
+\text{here's a formula! }
+\sum_{n=1}^{N} \gamma(z_{np}) \frac {\mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \frac{\alpha_{pt} - 1}{\pi_{pt}} = \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1) \sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1 = \pi_{pt} \Big(\sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)\Big) \frac{\sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1} { \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)} = \pi_{pt}
 
 \end{equation}
 
@@ -228,11 +229,11 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
 
 <script>
+// var editor;
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter",
-         "ace/ext/papeeria/tex_completer"],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter) {
-    var editor = ace.edit("editor");
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter", "ace/ext/papeeria/tex_completer"], function(ace, langTools, katexPreviewer, highlighter, TexCompleter) {
+    // TODO: put editor back in local scope when merging this branch
+    editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
