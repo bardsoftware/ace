@@ -2,7 +2,7 @@ define((require, exports, module) ->
   getContext = require("ace/ext/papeeria/latex_parsing_context").getContext
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
-    popoverHandler = popoverHandler ? {
+    popoverHandler ?= new class
       options: {
         html: true
         placement: "bottom"
@@ -11,27 +11,27 @@ define((require, exports, module) ->
         container: editor.container
       }
 
-      show: (jqPopoverContainer, content, position) ->
+      show: (jqPopoverContainer, content, position) =>
         jqPopoverContainer.css(position)
-        popoverHandler.options.content = content
+        @options.content = content
         jqPopoverContainer.popover(popoverHandler.options)
         jqPopoverContainer.popover("show")
         return
 
-      destroy: (jqPopoverContainer) ->
+      destroy: (jqPopoverContainer) =>
         jqPopoverContainer.popover("destroy")
 
-      popoverExists: (jqPopoverContainer) ->
+      popoverExists: (jqPopoverContainer) =>
         jqPopoverContainer.data()? and jqPopoverContainer.data().popover?
 
-      setContent: (jqPopoverContainer, content) ->
+      setContent: (jqPopoverContainer, content) =>
         jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content")
         jqPopoverElement.html(content)
 
       setPosition: (jqPopoverContainer, position) ->
         jqPopoverElement = jqPopoverContainer.data().popover.tip()
         jqPopoverElement.css(position)
-    }
+
 
     initKaTeX = (onLoaded) ->
       # Adding CSS for demo formula
@@ -59,12 +59,10 @@ define((require, exports, module) ->
     jqFormula = -> $("#formula")
 
     # ch stands for Context Handler
-    ch = {
-      contextPreviewExists: false
+    contextHandler = new class
+      @removeRegex: /\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
 
-      removeRegex: /\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
-
-      getEquationRange: (cursorRow) ->
+      @getEquationRange: (cursorRow) =>
         i = cursorRow
         while getContext(editor.session, i - 1) == "equation"
           i -= 1
@@ -74,74 +72,78 @@ define((require, exports, module) ->
         end = i
         return [start, end]
 
-      getWholeEquation: (start, end) ->
-        editor.session.getLines(start, end).join(" ").replace(ch.removeRegex, "")
+      @getWholeEquation: (start, end) =>
+        editor.session.getLines(start, end).join(" ").replace(@removeRegex, "")
 
-      getPopoverPosition: (row) -> {
+      @getPopoverPosition: (row) => {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
           left: "#{jqEditorContainer.position().left}px"
         }
 
-      getCurrentFormula: ->
+      constructor: ->
+        [@curStart, @curEnd] = [null, null]
+        @currentDelayedUpdateId = null
+        @contextPreviewExists = false
+
+      getCurrentFormula: =>
         katex.renderToString(
-          ch.getWholeEquation(ch.curStart, ch.curEnd),
+          @constructor.getWholeEquation(@curStart, @curEnd),
           {displayMode: true}
         )
 
-      initPopover: ->
+      initPopover: =>
         {row: cursorRow} = editor.getCursorPosition()
-        [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
-        popoverPosition = ch.getPopoverPosition(ch.curEnd)
+        [@curStart, @curEnd] = @constructor.getEquationRange(cursorRow)
+        popoverPosition = @constructor.getPopoverPosition(@curEnd)
         try
-          content = ch.getCurrentFormula()
+          content = @getCurrentFormula()
         catch e
           content = e
         finally
           popoverHandler.show(jqFormula(), content, popoverPosition)
 
-      updatePopover: ->
+      updatePopover: =>
         try
-          content = ch.getCurrentFormula()
+          content = @getCurrentFormula()
         catch e
           content = e
         finally
           popoverHandler.setContent(jqFormula(), content)
 
-      delayedUpdatePopover: ->
-        if ch.currentDelayedUpdateId?
-          clearTimeout(ch.currentDelayedUpdateId)
-        ch.currentDelayedUpdateId = setTimeout((-> ch.updatePopover(); currentDelayedUpdateId = null), 1000)
+      delayedUpdatePopover: =>
+        if @currentDelayedUpdateId?
+          clearTimeout(@currentDelayedUpdateId)
+        @currentDelayedUpdateId = setTimeout((=> @updatePopover(); @currentDelayedUpdateId = null), 1000)
 
-      updatePosition: ->
-        popoverHandler.setPosition(jqFormula(), ch.getPopoverPosition(ch.curEnd))
+      updatePosition: =>
+        popoverHandler.setPosition(jqFormula(), @constructor.getPopoverPosition(@curEnd))
 
-      handleCurrentContext: ->
+      handleCurrentContext: =>
         currentContext = getContext(editor.session, editor.getCursorPosition().row)
-        if not ch.contextPreviewExists and currentContext == "equation"
-          ch.contextPreviewExists = true
+        if not @contextPreviewExists and currentContext == "equation"
+          @contextPreviewExists = true
           if not katex?
-            initKaTeX(ch.initPopover)
+            initKaTeX(@initPopover)
           else
-            ch.initPopover()
-          editor.on("change", ch.delayedUpdatePopover)
-          editor.session.on("changeScrollTop", ch.updatePosition)
-        else if ch.contextPreviewExists and currentContext != "equation"
-          ch.contextPreviewExists = false
-          editor.off("change", ch.delayedUpdatePopover)
-          editor.session.off("changeScrollTop", ch.updatePosition)
+            @initPopover()
+          editor.on("change", @delayedUpdatePopover)
+          editor.session.on("changeScrollTop", @updatePosition)
+        else if @contextPreviewExists and currentContext != "equation"
+          @contextPreviewExists = false
+          editor.off("change", @delayedUpdatePopover)
+          editor.session.off("changeScrollTop", @updatePosition)
           popoverHandler.destroy(jqFormula())
-    }
 
-    # sh stands for Selection Handler
-    sh = {
-      hideSelectionPopover: ->
+
+    selectionHandler = new class
+      hideSelectionPopover: =>
         popoverHandler.destroy(jqFormula())
-        editor.off("changeSelection", sh.hideSelectionPopover)
-        editor.session.off("changeScrollTop", sh.hideSelectionPopover)
-        editor.session.off("changeScrollLeft", sh.hideSelectionPopover)
+        editor.off("changeSelection", @hideSelectionPopover)
+        editor.session.off("changeScrollTop", @hideSelectionPopover)
+        editor.session.off("changeScrollLeft", @hideSelectionPopover)
         return
 
-      renderSelectionUnderCursor: ->
+      renderSelectionUnderCursor: =>
         try
           cursorPosition = $("textarea.ace_text-input").position()
           popoverPosition = {
@@ -156,26 +158,26 @@ define((require, exports, module) ->
           content = e
         finally
           popoverHandler.show(jqFormula(), content, popoverPosition)
-          editor.on("changeSelection", sh.hideSelectionPopover)
-          editor.session.on("changeScrollTop", sh.hideSelectionPopover)
-          editor.session.on("changeScrollLeft", sh.hideSelectionPopover)
+          editor.on("changeSelection", @hideSelectionPopover)
+          editor.session.on("changeScrollTop", @hideSelectionPopover)
+          editor.session.on("changeScrollLeft", @hideSelectionPopover)
           return
 
-      createPopover: (editor) ->
-        unless ch.contextPreviewExists
+      createPopover: (editor) =>
+        unless contextHandler.contextPreviewExists
           unless katex?
-            initKaTeX(sh.renderSelectionUnderCursor)
+            initKaTeX(@renderSelectionUnderCursor)
             return
-          sh.renderSelectionUnderCursor()
-    }
+          @renderSelectionUnderCursor()
+
 
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
       bindKey: {win: "Alt-p", mac: "Alt-p"}
-      exec: sh.createPopover
+      exec: selectionHandler.createPopover
     )
 
-    editor.on("changeSelection", ch.handleCurrentContext)
+    editor.on("changeSelection", contextHandler.handleCurrentContext)
     return
   return
 )
