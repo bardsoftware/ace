@@ -18,13 +18,13 @@ define((require, exports, module) ->
         jqPopoverContainer.popover("show")
         return
 
-      destroy: (jqPopoverContainer) =>
+      destroy: (jqPopoverContainer) ->
         jqPopoverContainer.popover("destroy")
 
-      popoverExists: (jqPopoverContainer) =>
+      popoverExists: (jqPopoverContainer) ->
         jqPopoverContainer.data()? and jqPopoverContainer.data().popover?
 
-      setContent: (jqPopoverContainer, content) =>
+      setContent: (jqPopoverContainer, content) ->
         jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content")
         jqPopoverElement.html(content)
 
@@ -62,7 +62,7 @@ define((require, exports, module) ->
     contextHandler = new class
       @removeRegex: /\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
 
-      @getEquationRange: (cursorRow) =>
+      @getEquationRange: (cursorRow) ->
         i = cursorRow
         while getContext(editor.session, i - 1) == "equation"
           i -= 1
@@ -72,10 +72,10 @@ define((require, exports, module) ->
         end = i
         return [start, end]
 
-      @getWholeEquation: (start, end) =>
+      @getWholeEquation: (start, end) ->
         editor.session.getLines(start, end).join(" ").replace(@removeRegex, "")
 
-      @getPopoverPosition: (row) => {
+      @getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
           left: "#{jqEditorContainer.position().left}px"
         }
@@ -85,7 +85,7 @@ define((require, exports, module) ->
         @currentDelayedUpdateId = null
         @contextPreviewExists = false
 
-      getCurrentFormula: =>
+      getCurrentFormula: ->
         katex.renderToString(
           @constructor.getWholeEquation(@curStart, @curEnd),
           {displayMode: true}
@@ -102,7 +102,7 @@ define((require, exports, module) ->
         finally
           popoverHandler.show(jqFormula(), content, popoverPosition)
 
-      updatePopover: =>
+      updatePopover: ->
         try
           content = @getCurrentFormula()
         catch e
@@ -136,7 +136,7 @@ define((require, exports, module) ->
 
 
     selectionHandler = new class
-      hideSelectionPopover: =>
+      hideSelectionPopover: ->
         popoverHandler.destroy(jqFormula())
         editor.off("changeSelection", @hideSelectionPopover)
         editor.session.off("changeScrollTop", @hideSelectionPopover)
