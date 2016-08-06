@@ -1,4 +1,4 @@
-define((require, exports, module) ->
+define( ->
   # This will be removed and replaced with real data from server.
   # BTW, this is kinda template for data to send from server.
   TEST_JSON_TYPOS = {
@@ -11,8 +11,8 @@ define((require, exports, module) ->
   }
 
 
-  # Class by now provides words checking (used for highlighting) and
-  # corrections list for a given word.
+  # Class by now provides words checking (used for highlighting)
+  # and also provides corrections list for a given word.
   class SpellChecker
     # By now it's just a stub, but I guess this function will take data from
     # server somehow in future.
@@ -25,8 +25,8 @@ define((require, exports, module) ->
     # @return {Boolean} False if token is in list, true otherwise.
     check: (token) =>
       correctionsList = @getJson()
-      # New JSON structure makes it possible to search for token just like a
-      # dictionary key.
+      # New JSON structure makes it possible to search for token
+      # just like a dictionary key.
       return !correctionsList[token]
 
     # Return corrections list for token if exists.
@@ -36,12 +36,13 @@ define((require, exports, module) ->
       return if not @check(token) then @getJson()[token]
 
 
-  # Sets up spellchecker popup routine and implements
-  exports.setupSpellCheckerPopup = (editor) ->
+  # Sets up spellchecker popup and implements some routines
+  # to work on current in the editor.
+  setupSpellCheckerPopup = (editor) ->
     PopupManager.init(editor)
 
     # Check if current word is in corrections list.
-    # Call showPopup if it's present, do nothing otherwise.
+    # Call PopupManager.show if it's present, do nothing otherwise.
     newPopup = ->
       word = extractWord(editor)
       spellChecker = new SpellChecker()
@@ -50,7 +51,7 @@ define((require, exports, module) ->
         PopupManager.show(convertCorrectionList(correctionsItem))
       return
 
-    # Bind newPopup to Alt-Enter editor shortcut
+    # Bind newPopup to Alt-Enter editor shortcut.
     editor.commands.addCommand({
       name: "newPopup",
       bindKey: "Alt-Enter",
@@ -60,37 +61,31 @@ define((require, exports, module) ->
 
 
   # Get the word under the cursor.
-  # @param {Editor} editor: editor object
-  # @return {String}
+  # @param {Editor} editor: editor object.
+  # @return {String}: the current word.
   extractWord = (editor) ->
-    session = editor.session
-    row = editor.getCursorPosition().row
+    session = editor.getSession()
     wordRange = getCurrentWordRange(editor)
-    # getAWordRange returns start and end positions with a trailing
-    # whitespace at the end (if there's a one), that's why replace is used
-    return session.getTextRange(wordRange).replace(/\s\s*$/, '')
+    return session.getTextRange(wordRange)
 
-  # Returns Range object that describes current word position.
-  # @param {Editor} editor: editor object
+  # Returns Range object that describes the current word position.
+  # @param {Editor} editor: editor object.
   # @return {Range}: current word range.
   getCurrentWordRange = (editor) ->
-    session = editor.session
+    session = editor.getSession()
     row = editor.getCursorPosition().row
     col = editor.getCursorPosition().column
-    return session.getAWordRange(row, col)
+    return session.getWordRange(row, col)
 
-  # Convert an array of string to popup eligible structure.
+  # Convert an array of string to popup-eligible structure.
   # @param {Array} corrections: array of strings with substitution options.
-  # @return {Array}: array of jsons, actually.
+  # @return {Array}: array of JSONs, actually.
   convertCorrectionList = (corrections) ->
-    options = []
-    options.push({caption: item, value: item}) for item in corrections
-    return options
+    return ({caption: item, value: item} for item in corrections)
 
 
-  # TODO: incorrect token without correction list.
-  # Object contains init, show and detach functions for popup and some
-  # routines for inner use.
+  # Object contains init, show and detach functions for popup
+  # and some routines for inner use.
   PopupManager =
     # Bindings for editor keys with PopupManager functions.
     commands:
@@ -107,6 +102,7 @@ define((require, exports, module) ->
     # @param {Editor} editor: editor object.
     init: (editor) ->
       @editor = editor
+      @activated = false
 
       HashHandler = require("ace/keyboard/hash_handler").HashHandler
       AcePopup = require("ace/autocomplete/popup").AcePopup
@@ -119,35 +115,33 @@ define((require, exports, module) ->
         e.stop()
       )
 
-      @session = editor.session
+      @session = editor.getSession()
 
       @keyboard = new HashHandler()
       @keyboard.bindKeys(@commands)
 
-      @detach if editor?
       return
 
     # Show popup in editor.
     # @param {Array} options: list of corrections for the current word.
     show: (options) ->
-      @options = options
+      PopupManager.detach() if editor?
 
+      @options = options
       @popup.setData(options)
 
-      @editor.keyBinding.addKeyboardHandler(@keyboard)
+      @activated = true
 
       position = @editor.getCursorPosition()
       @base = @session.doc.createAnchor(position.row, position.column)
 
-      PopupManager.detach if editor?
-      @editor.on("change", @changeListener)
-      @editor.on("changeSelection", @changeSelectionListener)
-      @editor.on("blur", @blurListener)
-      @editor.on("mousedown", @mousedownListener)
-      @editor.on("mousewheel", @mousewheelListener)
+      @editor.keyBinding.addKeyboardHandler(@keyboard)
+      @editor.on("change", @onChange)
+      @editor.on("changeSelection", @onChangeSelection)
+      @editor.on("blur", @onBlur)
+      @editor.on("mousedown", @onMouseDown)
+      @editor.on("mousewheel", @onMouseWheel)
       @editor.$blockScrolling = Infinity
-
-      @activated = true
 
       renderer = @editor.renderer
       lineHeight = renderer.layerConfig.lineHeight
@@ -163,38 +157,33 @@ define((require, exports, module) ->
 
     # Detach popup from editor.
     detach: ->
-      @popup.hide() if @popup and @popup.isOpen
-
-      @base.detach() if @base
+      if @activated
+        @popup.hide()
+        @base.detach()
 
       @editor.keyBinding.removeKeyboardHandler(@keyboard)
-
-      @editor.off("change", @changeListener)
-      @editor.off("changeSelection", @changeSelectionListener)
-      @editor.off("blur", @blurListener)
-      @editor.off("mousedown", @mousedownListener)
-      @editor.off("mousewheel", @mousewheelListener)
+      @editor.off("change", @onChange)
+      @editor.off("changeSelection", @onChangeSelection)
+      @editor.off("blur", @onBlur)
+      @editor.off("mousedown", @onMouseDown)
+      @editor.off("mousewheel", @onMouseWheel)
 
       @activated = false
       return
 
-    # Insert selected correction (option) instead of the current word.
-    insertCorrection: () ->
+    # Insert a selected correction (option) instead of the current word.
+    insertCorrection: ->
       PopupManager.detach()
-      row = PopupManager.popup.getRow()
-      correction = PopupManager.options[row].value
+      correction = PopupManager.getSelectedCorrection()
       wordRange = getCurrentWordRange(PopupManager.editor)
-      word = PopupManager.editor.session.getTextRange(wordRange)
-      if ' ' in word
-        wordRange.end.column--
-      PopupManager.editor.session.replace(wordRange, correction)
+      PopupManager.editor.getSession().replace(wordRange, correction)
       return
 
     # Change current row in a popup when "up" or "down" listeners triggers.
     # @param {String} where: direction.
     goTo: (where) ->
       row = @popup.getRow()
-      max = @popup.session.getLength() - 1
+      max = @popup.getSession().getLength() - 1
 
       switch where
         when "up"
@@ -207,34 +196,40 @@ define((require, exports, module) ->
       @popup.setRow(row)
       return
 
-    changeListener: (e) ->
+    # Pick the chosen option from options object.
+    # @return {String}: chosen correction.
+    getSelectedCorrection: ->
+      row = PopupManager.popup.getRow()
+      return PopupManager.options[row].value
+
+    onChange: (e) ->
       PopupManager.detach()
       return
 
-    changeSelectionListener: (e) ->
+    onChangeSelection: (e) ->
+      if not @activated
+        PopupManager.detach()
+        return
       cursor = PopupManager.editor.selection.lead
       if cursor.row isnt @base.row or cursor.column < @base.column
         PopupManager.detach()
-      if not @activated
-        PopupManager.detach()
       return
 
-    blurListener: (e) ->
-      element = document.activeElement
-      text = PopupManager.editor.textInput.getElement()
-      container = @popup and @popup.container
-      if element isnt text and element.parentNode isnt container and e.relatedTarget isnt text
-        PopupManager.detach()
-      return
-
-    mousedownListener: (e) ->
+    onBlur: (e) ->
       PopupManager.detach()
       return
 
-    mousewheelListener: (e) ->
+    onMouseDown: (e) ->
       PopupManager.detach()
       return
 
-  exports.SpellChecker = SpellChecker
-  return
+    onMouseWheel: (e) ->
+      PopupManager.detach()
+      return
+
+
+  return {
+    SpellChecker: SpellChecker
+    setupSpellCheckerPopup: setupSpellCheckerPopup
+  }
 )
