@@ -125,7 +125,7 @@ define( ->
     # Show popup in editor.
     # @param {Array} options: list of corrections for the current word.
     show: (options) ->
-      PopupManager.detach() if editor?
+      PopupManager.detach()
 
       @options = options
       @popup.setData(options)
@@ -136,11 +136,11 @@ define( ->
       @base = @session.doc.createAnchor(position.row, position.column)
 
       @editor.keyBinding.addKeyboardHandler(@keyboard)
-      @editor.on("change", @onChange)
-      @editor.on("changeSelection", @onChangeSelection)
-      @editor.on("blur", @onBlur)
-      @editor.on("mousedown", @onMouseDown)
-      @editor.on("mousewheel", @onMouseWheel)
+      @editor.on("change", -> PopupManager.detach())
+      @editor.on("changeSelection", -> PopupManager.onChangeSelection())
+      @editor.on("blur", -> PopupManager.detach())
+      @editor.on("mousedown", -> PopupManager.detach())
+      @editor.on("mousewheel", -> PopupManager.detach())
       @editor.$blockScrolling = Infinity
 
       renderer = @editor.renderer
@@ -190,8 +190,6 @@ define( ->
           if row <= 0 then row = max else row = row - 1
         when "down"
           if row >= max then row = -1 else row = row + 1
-        when "start" then row = 0
-        when "end" then row = max
 
       @popup.setRow(row)
       return
@@ -202,10 +200,6 @@ define( ->
       row = PopupManager.popup.getRow()
       return PopupManager.options[row].value
 
-    onChange: (e) ->
-      PopupManager.detach()
-      return
-
     onChangeSelection: (e) ->
       if not @activated
         PopupManager.detach()
@@ -213,18 +207,6 @@ define( ->
       cursor = PopupManager.editor.selection.lead
       if cursor.row isnt @base.row or cursor.column < @base.column
         PopupManager.detach()
-      return
-
-    onBlur: (e) ->
-      PopupManager.detach()
-      return
-
-    onMouseDown: (e) ->
-      PopupManager.detach()
-      return
-
-    onMouseWheel: (e) ->
-      PopupManager.detach()
       return
 
 
