@@ -170,10 +170,10 @@ define( ->
 
     # Insert a selected correction (option) instead of the current word.
     insertCorrection: ->
-      PopupManager.detach()
-      correction = PopupManager.getSelectedCorrection()
-      wordRange = getCurrentWordRange(PopupManager.editor)
-      PopupManager.editor.getSession().replace(wordRange, correction)
+      @detach()
+      correction = @getSelectedCorrection()
+      wordRange = getCurrentWordRange(@editor)
+      @editor.getSession().replace(wordRange, correction)
       return
 
     # Change current row in a popup when "up" or "down" listeners triggers.
@@ -194,16 +194,16 @@ define( ->
     # Pick the chosen option from options object.
     # @return {String}: chosen correction.
     getSelectedCorrection: ->
-      row = PopupManager.popup.getRow()
-      return PopupManager.options[row].value
+      row = @popup.getRow()
+      return @options[row].value
 
     onChangeSelection: (e) ->
       if not @activated
-        PopupManager.detach()
+        @detach()
         return
-      cursor = PopupManager.editor.selection.lead
+      cursor = @editor.selection.lead
       if cursor.row isnt @base.row or cursor.column < @base.column
-        PopupManager.detach()
+        @detach()
       return
 
 
