@@ -24,10 +24,7 @@ define( ->
     # @param {String} token: Token to check.
     # @return {Boolean} False if token is in list, true otherwise.
     check: (token) =>
-      correctionsList = @getJson()
-      # New JSON structure makes it possible to search for token
-      # just like a dictionary key.
-      return !correctionsList[token]
+      return not @getJson()[token]
 
     # Return corrections list for token if exists.
     # @param {String} token: token to search in corrections list from server.
@@ -125,8 +122,6 @@ define( ->
     # Show popup in editor.
     # @param {Array} options: list of corrections for the current word.
     show: (options) ->
-      PopupManager.detach()
-
       @options = options
       @popup.setData(options)
 
@@ -145,21 +140,23 @@ define( ->
 
       renderer = @editor.renderer
       lineHeight = renderer.layerConfig.lineHeight
-      pos = renderer.$cursorLayer.getPixelPosition(this.base, true)
-      pos.left -= @popup.getTextLeftOffset()
+      position = renderer.$cursorLayer.getPixelPosition(this.base, true)
+      position.left -= @popup.getTextLeftOffset()
       rect = @editor.container.getBoundingClientRect()
-      pos.top += rect.top - renderer.layerConfig.offset
-      pos.left += rect.left - @editor.renderer.scrollLeft
-      pos.left += renderer.gutterWidth
+      position.top += rect.top - renderer.layerConfig.offset
+      position.left += rect.left - @editor.renderer.scrollLeft
+      position.left += renderer.gutterWidth
 
-      @popup.show(pos, lineHeight)
+      @popup.show(position, lineHeight)
       return
 
     # Detach popup from editor.
     detach: ->
-      if @activated
-        @popup.hide()
-        @base.detach()
+      if not @activated
+        return
+
+      @popup.hide()
+      @base.detach()
 
       @editor.keyBinding.removeKeyboardHandler(@keyboard)
       @editor.off("change", @onChange)
