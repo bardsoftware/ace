@@ -95,8 +95,8 @@ define([], ->
                             value: current.token.value.substring(0, pos.column - current.column)
                             type: current.token.type
                         }
-                        row: pos.row
-                        column: pos.column
+                        row: current.row
+                        column: current.column
                         contains: -> false
                     result.$current = fakeToken
                     return result
