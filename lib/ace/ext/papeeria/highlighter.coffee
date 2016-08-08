@@ -75,11 +75,32 @@ define([], ->
             current = result.current()
             if !typeRe.test(token.type)
                 result.next()
-            else if current.token.value == openingBracket or current.token.value == closingBracket
-                if current.contains(pos) and current.column < pos.column
-                    result.$current = newFakeToken(pos)
+            else
+                # When we either at a single bracket or in the first position of a multi-bracket token like =>}<=}} (zero } is a cursor position)
+                if current.token.value.length == 1 or current.column == pos.column
+                    # We don't want to swallow the bracket when cursor is right behind" {foo}_
+                    if current.contains(pos) and current.column < pos.column
+                        result.$current = newFakeToken(pos)
+                        return result
+                    # But if it is at the bracket position then we want to proceed to the next token
+                    result.next()
+                else
+                    # Other wise, we're somewhere in the middle of a multi-bracket token: }=>{<=
+                    # We want to search for brackets in the prefix before the cursor, and immediately proceed to the
+                    # next token afterwards. For this purpose we position token iterator to the next value and fake the current value,
+                    # so that findOpeningBracket will think that cursor is placed after the prefix of the current token.
+                    result.next()
+                    fakeToken =
+                        token: {
+                            value: current.token.value.substring(0, pos.column - current.column)
+                            type: current.token.type
+                        }
+                        row: pos.row
+                        column: pos.column
+                        contains: -> false
+                    result.$current = fakeToken
                     return result
-                result.next()
+
         return if result.current()? then result else null
 
     findSurroundingBrackets = (editor) ->
