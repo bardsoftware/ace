@@ -229,9 +229,15 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 
 <script>
 require.config({ paths : { "ace" : "../lib/ace" } });
-require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer", "ace/ext/papeeria/highlighter",
-         "ace/ext/papeeria/tex_completer"],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter) {
+require([
+  "ace/ace",
+  "ace/ext/language_tools",
+  "ace/ext/papeeria/katex-previewer",
+  "ace/ext/papeeria/highlighter",
+  "ace/ext/papeeria/tex_completer",
+  "ace/ext/papeeria/spellchecker",
+  ],
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellChecker) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -239,18 +245,16 @@ require(["ace/ace", "ace/ext/language_tools", "ace/ext/papeeria/katex-previewer"
 
     var initSpellCheck = function() {
       session._emit("changeSpellingCheckSettings", {
-        alphabet: 'abcdefghijklmnopqrstuvwxyz1234567890',
+        alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
         language: "en_US",
-        dicPath: "/demo/typojs/dictionaries/en_US/en_US.dic",
-        affPath: "/demo/typojs/dictionaries/en_US/en_US.aff",
         onSettingsUpdateSuccess: function() {
-          console.log("New settings has just been set");
         },
         onSettingsUpdateError: function(data) {
           console.log("Error: " + data.content);
         }
       });
+      spellChecker.setupSpellCheckerPopup(editor);
     };
     session.on("changeMode", initSpellCheck);
     editor.setOptions({
