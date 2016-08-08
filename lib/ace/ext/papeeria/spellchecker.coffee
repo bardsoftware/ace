@@ -140,7 +140,7 @@ define( ->
 
       renderer = @editor.renderer
       lineHeight = renderer.layerConfig.lineHeight
-      position = renderer.$cursorLayer.getPixelPosition(this.base, true)
+      position = renderer.$cursorLayer.getPixelPosition(@base, true)
       position.left -= @popup.getTextLeftOffset()
       rect = @editor.container.getBoundingClientRect()
       position.top += rect.top - renderer.layerConfig.offset
