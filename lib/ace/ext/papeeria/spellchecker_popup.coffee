@@ -1,4 +1,4 @@
-define( ['ace/autocomplete'], (Autocomplete) ->
+define( ['ace/autocomplete', 'ace/ext/papeeria/spellchecker'], (Autocomplete, SpellChecker) ->
   # Returns Range object that describes the current word position.
   # @param {Editor} editor: editor object.
   # @return {Range}: current word range.
@@ -26,69 +26,32 @@ define( ['ace/autocomplete'], (Autocomplete) ->
   # to work on current in the editor.
   setup = (editor) ->
     # Bind newPopup to Alt-Enter editor shortcut.
-    editor.commands.addCommand(PopupMgr.startCommand)
-    return
-
-
-  class PopupMgr extends Autocomplete
-    constructor: ->
-      return
-
-    $init: ->
-      HashHandler = require("ace/keyboard/hash_handler").HashHandler
-      @keyboardHandler = new HashHandler()
-      @keyboardHandler.bindKeys(@commands)
-
-      AcePopup = require("ace/autocomplete/popup").AcePopup
-      @popup = new AcePopup()
-      @popup.on("click", (e) =>
-        @insertMatch()
-        e.stop()
-      )
-      return @popup
-
-    detach: ->
-      @editor.keyBinding.removeKeyboardHandler(@keyboardHandler)
-      @editor.off("changeSelection", @changeListener)
-      @editor.off("blur", @detach)
-      @editor.off("mousedown", @detach)
-      @editor.off("mousewheel", @detach)
-
-      @popup.hide if @popup and @popup.isOpen()
-
-      @base.detach if @base
-
-      @activated = false
-      @completions = null
-      @base = null
-
-      return
-
-    changeListener: (e) ->
-      if not @activated
-        @detach
-      cursor = @editor.selection.lead
-      if cursor.row isnt @base.row or cursor.column < @base.column
-        @detach
-      return
-
-    updateCompletions: (keepPopupPosition) ->
-      word = extractWord(editor)
-      spellChecker = new SpellChecker()
-      correctionsItem = spellChecker.getCorrections(word)
-      if correctionsItem
-        @completions.filtered = convertCorrectionList(correctionsItem)
-        @openPopup(editor)
-      else
-        @detach
-
-    @startCommand:
+    cmd =
       name: "spellCheckPopup"
       exec: ->
         if not editor.spellCheckPopup
-          editor.spellCheckPopup = new PopupMgr()
-        editor.spellCheckPopup.showPopup(editor)
+          editor.spellCheckPopup = new PopupMgr(editor)
+          editor.spellCheckPopup.showPopup(editor)
       bindKey: "Alt-Enter"
+    editor.commands.addCommand(cmd)
+    return
+
+
+  class PopupMgr extends Autocomplete.Autocomplete
+    constructor: ->
+      super()
+
+    gatherCompletions: (editor, callback) =>
+      word = extractWord(editor)
+      spellChecker = new SpellChecker.SpellChecker()
+      correctionsItem = spellChecker.getCorrections(word)
+      if correctionsItem
+        callback(null, {
+            prefix: ""
+            matches: convertCorrectionList(correctionsItem)
+            finished: true
+        })
+      return true
 
   return {
     setup: setup
