@@ -235,9 +235,9 @@ require([
   "ace/ext/papeeria/katex-previewer",
   "ace/ext/papeeria/highlighter",
   "ace/ext/papeeria/tex_completer",
-  "ace/ext/papeeria/spellchecker",
+  "ace/ext/papeeria/spellchecker_popup"
   ],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellChecker) {
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
@@ -254,7 +254,7 @@ require([
           console.log("Error: " + data.content);
         }
       });
-      spellChecker.setupSpellCheckerPopup(editor);
+      spellCheckerPopup.setup(editor);
     };
     session.on("changeMode", initSpellCheck);
     editor.setOptions({
