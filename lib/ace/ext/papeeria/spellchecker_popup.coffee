@@ -1,4 +1,8 @@
-define( ['ace/autocomplete', 'ace/ext/papeeria/spellchecker'], (Autocomplete, SpellChecker) ->
+define( [
+  'ace/autocomplete',
+  'ace/ext/papeeria/spellchecker'
+  ], (Autocomplete, SpellChecker) ->
+
   # Returns Range object that describes the current word position.
   # @param {Editor} editor: editor object.
   # @return {Range}: current word range.
@@ -22,167 +26,62 @@ define( ['ace/autocomplete', 'ace/ext/papeeria/spellchecker'], (Autocomplete, Sp
     wordRange = getCurrentWordRange(editor)
     return session.getTextRange(wordRange)
 
+    
   # Sets up spellchecker popup and implements some routines
   # to work on current in the editor.
   setup = (editor) ->
-    # Bind newPopup to Alt-Enter editor shortcut.
-    cmd =
+    # Bind PopupManager.showPopup to Alt-Enter editor shortcut.
+    command =
       name: "spellCheckPopup"
       exec: ->
         if not editor.spellCheckPopup
-          editor.spellCheckPopup = new PopupMgr(editor)
-          editor.spellCheckPopup.showPopup(editor)
+          editor.spellCheckPopup = new PopupManager(editor)
+        editor.spellCheckPopup.showPopup(editor)
       bindKey: "Alt-Enter"
-    editor.commands.addCommand(cmd)
+    editor.commands.addCommand(command)
     return
 
 
-  class PopupMgr extends Autocomplete.Autocomplete
+  # Autocomplete class extension since it behaves almost the same way.
+  # All we need is to override methods responsible for getting data for
+  # popup and inserting chosen correction instead of the current word.
+  class PopupManager extends Autocomplete.Autocomplete
     constructor: ->
       super()
 
+    # "Gather" completions extracting current word
+    # and take it's corrections list as "completions"
     gatherCompletions: (editor, callback) =>
+      # For some reason Autocomplete needs this base object, so
+      # I propose just not to touch it.
+      session = editor.getSession()
+      position = editor.getCursorPosition()
+      @base = session.doc.createAnchor(position.row, position.column)
+
       word = extractWord(editor)
       spellChecker = new SpellChecker.SpellChecker()
-      correctionsItem = spellChecker.getCorrections(word)
-      if correctionsItem
+      correctionsList = spellChecker.getCorrections(word)
+      if correctionsList
         callback(null, {
-            prefix: ""
-            matches: convertCorrectionList(correctionsItem)
-            finished: true
+          prefix: ""
+          matches: convertCorrectionList(correctionsList)
+          finished: true
         })
       return true
+
+    # Insert "matching" word instead of the current one.
+    # In fact we substitute current word with data,
+    # not just insert something.
+    insertMatch: (data, options) =>
+      if not data
+        data = @popup.getData(@popup.getRow())
+
+      wordRange = getCurrentWordRange(@editor)
+      @editor.getSession().replace(wordRange, data.value || data)
+      @detach()
+      return
 
   return {
     setup: setup
   }
-
-  ##############################################
-  # The old PopupManager is here for difference#
-  ##############################################
-
-  # Object contains init, show and detach functions for popup
-  # and some routines for inner use.
-  PopupManager =
-    # Bindings for editor keys with PopupManager functions.
-    commands:
-      "Esc": ->
-        PopupManager.detach()
-      "Up": ->
-        PopupManager.goTo("up")
-      "Down": ->
-        PopupManager.goTo("down")
-      "Return": ->
-        PopupManager.insertCorrection()
-
-    # Initial setup for popup.
-    # @param {Editor} editor: editor object.
-    init: (editor) ->
-      @editor = editor
-      @activated = false
-
-      HashHandler = require("ace/keyboard/hash_handler").HashHandler
-      AcePopup = require("ace/autocomplete/popup").AcePopup
-
-      @popup = new AcePopup(document.body)
-      @popup.setTheme(editor.getTheme())
-      @popup.setFontSize(editor.getFontSize())
-      @popup.on("click", (e) =>
-        @insertCorrection()
-        e.stop()
-      )
-
-      @session = editor.getSession()
-
-      @keyboard = new HashHandler()
-      @keyboard.bindKeys(@commands)
-
-      return
-
-    # Show popup in editor.
-    # @param {Array} options: list of corrections for the current word.
-    show: (options) ->
-      @options = options
-      @popup.setData(options)
-
-      @activated = true
-
-      position = @editor.getCursorPosition()
-      @base = @session.doc.createAnchor(position.row, position.column)
-
-      @editor.keyBinding.addKeyboardHandler(@keyboard)
-      @editor.on("change", -> PopupManager.detach())
-      @editor.on("changeSelection", -> PopupManager.onChangeSelection())
-      @editor.on("blur", -> PopupManager.detach())
-      @editor.on("mousedown", -> PopupManager.detach())
-      @editor.on("mousewheel", -> PopupManager.detach())
-      @editor.$blockScrolling = Infinity
-
-      renderer = @editor.renderer
-      lineHeight = renderer.layerConfig.lineHeight
-      position = renderer.$cursorLayer.getPixelPosition(@base, true)
-      position.left -= @popup.getTextLeftOffset()
-      rect = @editor.container.getBoundingClientRect()
-      position.top += rect.top - renderer.layerConfig.offset
-      position.left += rect.left - @editor.renderer.scrollLeft
-      position.left += renderer.gutterWidth
-
-      @popup.show(position, lineHeight)
-      return
-
-    # Detach popup from editor.
-    detach: ->
-      if not @activated
-        return
-
-      @popup.hide()
-      @base.detach()
-
-      @editor.keyBinding.removeKeyboardHandler(@keyboard)
-      @editor.off("change", @onChange)
-      @editor.off("changeSelection", @onChangeSelection)
-      @editor.off("blur", @onBlur)
-      @editor.off("mousedown", @onMouseDown)
-      @editor.off("mousewheel", @onMouseWheel)
-
-      @activated = false
-      return
-
-    # Insert a selected correction (option) instead of the current word.
-    insertCorrection: ->
-      @detach()
-      correction = @getSelectedCorrection()
-      wordRange = getCurrentWordRange(@editor)
-      @editor.getSession().replace(wordRange, correction)
-      return
-
-    # Change current row in a popup when "up" or "down" listeners triggers.
-    # @param {String} where: direction.
-    goTo: (where) ->
-      row = @popup.getRow()
-      max = @popup.getSession().getLength() - 1
-
-      switch where
-        when "up"
-          if row <= 0 then row = max else row = row - 1
-        when "down"
-          if row >= max then row = -1 else row = row + 1
-
-      @popup.setRow(row)
-      return
-
-    # Pick the chosen option from options object.
-    # @return {String}: chosen correction.
-    getSelectedCorrection: ->
-      row = @popup.getRow()
-      return @options[row].value
-
-    onChangeSelection: (e) ->
-      if not @activated
-        @detach()
-        return
-      cursor = @editor.selection.lead
-      if cursor.row isnt @base.row or cursor.column < @base.column
-        @detach()
-      return
 )
