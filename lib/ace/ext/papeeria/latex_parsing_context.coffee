@@ -1,5 +1,7 @@
-define( ["./papeeria_latex_highlight_rules"], (PapeeriaLatexHighlightRules) ->
-    #PapeeriaLatexHighlightRules = require()
+foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
+
+define((require, exports, module) ->
+    PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
     EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
     LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
     ###
@@ -24,9 +26,7 @@ define( ["./papeeria_latex_highlight_rules"], (PapeeriaLatexHighlightRules) ->
         # and 3 LIST_STATE for more level
         return count - 1
 
-
-    return {
-        getContext: getContext
-        getNestedListDepth: getNestedListDepth
-    }
+    exports.getContext = getContext
+    exports.getNestedListDepth = getNestedListDepth
+    return
 )

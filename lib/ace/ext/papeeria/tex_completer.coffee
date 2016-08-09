@@ -1,4 +1,9 @@
-define(["./papeeria_latex_highlight_rules", "./latex_parsing_context"],  (PapeeriaLatexHighlightRules, LatexParsingContext) ->
+foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
+
+define((require, exports, module) ->
+  HashHandler = require("ace/keyboard/hash_handler")
+  PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   equationEnvironments = [
@@ -98,8 +103,7 @@ define(["./papeeria_latex_highlight_rules", "./latex_parsing_context"],  (Papeer
 
 
   init = (editor, bindKey) ->
-    HashHandler = require("ace/keyboard/hash_handler").HashHandler
-    keyboardHandler = new HashHandler()
+    keyboardHandler = new HashHandler.HashHandler()
     keyboardHandler.addCommand(
       name: "add item in list mode"
       bindKey: bindKey
