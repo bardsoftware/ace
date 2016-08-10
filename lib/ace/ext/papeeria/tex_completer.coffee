@@ -126,7 +126,7 @@ define((require, exports, module) ->
       @lastFetchedUrl =  ""
       @cache = []
     processData: (data) =>
-      @cache = data.map((elem) =>
+      @cache = data.Labels?.map((elem) =>
           return {
             name: elem.caption
             value: elem.caption
@@ -147,6 +147,8 @@ define((require, exports, module) ->
       constructor: ->
         @refGetter = new ReferenceGetter()
       @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
+
+      setReferencesUrl: (url) => @referencesUrl = url
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
       # @param {object} error -- convention in node, the first argument to a callback
@@ -157,9 +159,8 @@ define((require, exports, module) ->
         context = LatexParsingContext.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
 
-        if isType(token, "ref")
-          console.log("sure")
-          @refGetter.getReferences("example.json", callback)
+        if isType(token, "ref") and @referencesUrl?
+          @refGetter.getReferences(@referencesUrl, callback)
         else switch context
           when "start" then callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
           when LIST_STATE then callback(null, listKeywords.concat(listSnippets.concat(equationSnippets)))
