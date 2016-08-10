@@ -292,7 +292,9 @@ require([
     };
 
     TexCompleter.init(editor)
-    langTools.setCompleters([new TexCompleter()]);
+    var texCompleter = new TexCompleter();
+    langTools.setCompleters([texCompleter]);
+    texCompleter.setReferencesUrl("/demo/example.json")
     console.log("Simple Latex Completer successfully added");
     //Initialization bind for highlight brackets.
     highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
