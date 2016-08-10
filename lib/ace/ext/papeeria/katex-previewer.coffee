@@ -60,6 +60,7 @@ define((require, exports, module) ->
 
     ch = contextHandler = {
       contextPreviewExists: false
+      updateDelay: 1000
 
       removeRegex: /\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
 
@@ -106,10 +107,20 @@ define((require, exports, module) ->
         finally
           popoverHandler.setContent(jqFormula(), content)
 
+      updateCallback: ->
+        if ch.lastChangeTime?
+          curTime = Date.now()
+          ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.updateDelay - (Date.now() - ch.lastChangeTime))
+          ch.lastChangeTime = null
+        else
+          ch.updatePopover()
+          ch.currentDelayedUpdateId = null
+
       delayedUpdatePopover: ->
         if ch.currentDelayedUpdateId?
-          clearTimeout(ch.currentDelayedUpdateId)
-        ch.currentDelayedUpdateId = setTimeout((-> ch.updatePopover(); currentDelayedUpdateId = null), 1000)
+          ch.lastChangeTime = Date.now()
+          return
+        ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.updateDelay)
 
       updatePosition: ->
         popoverHandler.setPosition(jqFormula(), ch.getPopoverPosition(ch.curEnd))
