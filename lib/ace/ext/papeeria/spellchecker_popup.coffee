@@ -1,4 +1,4 @@
-define( [
+define([
   'ace/autocomplete',
   'ace/ext/papeeria/spellchecker'
   ], (Autocomplete, SpellChecker) ->
@@ -26,7 +26,7 @@ define( [
     wordRange = getCurrentWordRange(editor)
     return session.getTextRange(wordRange)
 
-    
+
   # Sets up spellchecker popup and implements some routines
   # to work on current in the editor.
   setup = (editor) ->
@@ -34,8 +34,8 @@ define( [
     command =
       name: "spellCheckPopup"
       exec: ->
-        if not editor.spellCheckPopup
-          editor.spellCheckPopup = new PopupManager(editor)
+        #if not editor.spellCheckPopup
+        editor.spellCheckPopup ?= new PopupManager(editor)
         editor.spellCheckPopup.showPopup(editor)
       bindKey: "Alt-Enter"
     editor.commands.addCommand(command)
