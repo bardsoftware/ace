@@ -1,5 +1,5 @@
 define((require, exports, module) ->
-  getContext = require("ace/ext/papeeria/latex_parsing_context").getContext
+  latexContextParser = require("ace/ext/papeeria/latex_parsing_context")
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
     popoverHandler = popoverHandler ? {
@@ -65,10 +65,10 @@ define((require, exports, module) ->
 
       getEquationRange: (cursorRow) ->
         i = cursorRow
-        while getContext(editor.session, i - 1) == "equation"
+        while latexContextParser.getContext(editor.session, i - 1) == "equation"
           i -= 1
         start = i
-        while getContext(editor.session, i + 1) == "equation"
+        while latexContextParser.getContext(editor.session, i + 1) == "equation"
           i += 1
         end = i
         return [start, end]
@@ -88,7 +88,7 @@ define((require, exports, module) ->
         )
 
       initPopover: ->
-        {row: cursorRow} = editor.getCursorPosition()
+        cursorRow = editor.getCursorPosition().row
         [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
         popoverPosition = ch.getPopoverPosition(ch.curEnd)
         try
@@ -115,7 +115,7 @@ define((require, exports, module) ->
         popoverHandler.setPosition(jqFormula(), ch.getPopoverPosition(ch.curEnd))
 
       handleCurrentContext: ->
-        currentContext = getContext(editor.session, editor.getCursorPosition().row)
+        currentContext = latexContextParser.getContext(editor.session, editor.getCursorPosition().row)
         if not ch.contextPreviewExists and currentContext == "equation"
           ch.contextPreviewExists = true
           if not katex?
@@ -131,7 +131,6 @@ define((require, exports, module) ->
           popoverHandler.destroy(jqFormula())
     }
 
-    # sh stands for Selection Handler
     sh = selectionHandler = {
       hideSelectionPopover: ->
         popoverHandler.destroy(jqFormula())
