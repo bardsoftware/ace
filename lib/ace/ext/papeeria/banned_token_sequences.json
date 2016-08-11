@@ -1,0 +1,56 @@
+[
+  [
+    {
+      "type": "storage.type",
+      "value": "^\\\\begin$"
+    },
+    {
+      "type": "lparen",
+      "value": "^{$"
+    },
+    {
+      "type": "variable.parameter",
+      "value": "^equation$"
+    },
+    {
+      "type": "rparen",
+      "value": "^}$"
+    }
+  ],
+  [
+    {
+      "type": "keyword",
+      "value": "^\\\\label$"
+    },
+    {
+      "type": "lparen",
+      "value": "^{$"
+    },
+    {
+      "type": "variable.parameter",
+      "value": ".*"
+    },
+    {
+      "type": "rparen",
+      "value": "^}$"
+    }
+  ],
+  [
+    {
+      "type": "storage.type",
+      "value": "^\\\\end$"
+    },
+    {
+      "type": "lparen",
+      "value": "^{$"
+    },
+    {
+      "type": "variable.parameter",
+      "value": "^equation$"
+    },
+    {
+      "type": "rparen",
+      "value": "^}$"
+    }
+  ]
+]

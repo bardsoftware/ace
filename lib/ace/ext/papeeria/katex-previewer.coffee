@@ -2,6 +2,7 @@ define((require, exports, module) ->
   latexContextParser = require("ace/ext/papeeria/latex_parsing_context")
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
+    bannedTokenSequences = null
     popoverHandler = popoverHandler ? {
       options: {
         html: true
@@ -34,6 +35,10 @@ define((require, exports, module) ->
     }
 
     initKaTeX = (onLoaded) ->
+      # Loading banned sequences file
+      response = $.getJSON(require.toUrl("./banned_token_sequences.json"))
+      setTimeout((-> bannedTokenSequences = response.responseJSON), 0)
+
       # Adding CSS for demo formula
       cssDemoPath = require.toUrl("./katex-demo.css")
       linkDemo = $("<link>").attr(
@@ -62,8 +67,6 @@ define((require, exports, module) ->
       contextPreviewExists: false
       updateDelay: 1000
 
-      removeRegex: /\\end\{equation\}|\\begin\{equation\}|\\label\{[^\}]*\}/g
-
       getEquationRange: (cursorRow) ->
         i = cursorRow
         while latexContextParser.getContext(editor.session, i - 1) == "equation"
@@ -74,8 +77,46 @@ define((require, exports, module) ->
         end = i
         return [start, end]
 
+      compareTokens: (tokenToCheck, tokenToMatch) ->
+        return tokenToCheck["type"] == tokenToMatch["type"] and (new RegExp(tokenToMatch["value"])).test(tokenToCheck["value"])
+
+      filterTokens: (tokens) ->
+        i = 0
+        rangesToDelete = []
+        while i < tokens.length
+          j = 0
+          while j < bannedTokenSequences.length
+            curSequenceToMatch = bannedTokenSequences[j]
+            k = 0
+            while k < curSequenceToMatch.length and ch.compareTokens(tokens[i + k], curSequenceToMatch[k])
+              k += 1
+            if k == curSequenceToMatch.length
+              rangesToDelete.push([i, i + k])
+              i = i + k
+              break
+            j += 1
+          if j == bannedTokenSequences.length
+            i += 1
+
+        i = 0
+        j = 0
+        filteredTokens = []
+        while i < tokens.length
+          if j < rangesToDelete.length and i == rangesToDelete[j][0]
+            i = rangesToDelete[j][1]
+            j += 1
+          else
+            filteredTokens.push(tokens[i])
+            i += 1
+
+        return filteredTokens
+
       getWholeEquation: (start, end) ->
-        editor.session.getLines(start, end).join(" ").replace(ch.removeRegex, "")
+        tokens = []
+        for i in [start..end]
+          $.merge(tokens, editor.session.getTokens(i))
+        filteredTokens = ch.filterTokens(tokens)
+        return filteredTokens.map((val) -> val["value"]).join(" ")
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
