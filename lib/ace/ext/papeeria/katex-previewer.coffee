@@ -61,7 +61,7 @@ define((require, exports, module) ->
       return
 
     jqEditorContainer = $(editor.container)
-    jqFormula = -> $("#formula")
+    getFormulaElement = -> $("#formula")
 
     ch = contextHandler = {
       contextPreviewExists: false
@@ -138,7 +138,7 @@ define((require, exports, module) ->
         catch e
           content = e
         finally
-          popoverHandler.show(jqFormula(), content, popoverPosition)
+          popoverHandler.show(getFormulaElement(), content, popoverPosition)
 
       updatePopover: ->
         try
@@ -146,7 +146,7 @@ define((require, exports, module) ->
         catch e
           content = e
         finally
-          popoverHandler.setContent(jqFormula(), content)
+          popoverHandler.setContent(getFormulaElement(), content)
 
       updateCallback: ->
         if ch.lastChangeTime?
@@ -164,7 +164,7 @@ define((require, exports, module) ->
         ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.updateDelay)
 
       updatePosition: ->
-        popoverHandler.setPosition(jqFormula(), ch.getPopoverPosition(ch.curEnd))
+        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curEnd))
 
       handleCurrentContext: ->
         currentContext = latexContextParser.getContext(editor.session, editor.getCursorPosition().row)
@@ -180,12 +180,12 @@ define((require, exports, module) ->
           ch.contextPreviewExists = false
           editor.off("change", ch.delayedUpdatePopover)
           editor.session.off("changeScrollTop", ch.updatePosition)
-          popoverHandler.destroy(jqFormula())
+          popoverHandler.destroy(getFormulaElement())
     }
 
     sh = selectionHandler = {
       hideSelectionPopover: ->
-        popoverHandler.destroy(jqFormula())
+        popoverHandler.destroy(getFormulaElement())
         editor.off("changeSelection", sh.hideSelectionPopover)
         editor.session.off("changeScrollTop", sh.hideSelectionPopover)
         editor.session.off("changeScrollLeft", sh.hideSelectionPopover)
@@ -193,10 +193,11 @@ define((require, exports, module) ->
 
       renderSelectionUnderCursor: ->
         try
-          cursorPosition = $("textarea.ace_text-input").position()
+          {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+          cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
           popoverPosition = {
-            top: "#{cursorPosition.top + 24}px"
-            left: "#{cursorPosition.left}px"
+            top: "#{cursorPosition.pageY + 24}px"
+            left: "#{cursorPosition.pageX}px"
           }
           content = katex.renderToString(
             editor.getSelectedText(),
@@ -205,7 +206,7 @@ define((require, exports, module) ->
         catch e
           content = e
         finally
-          popoverHandler.show(jqFormula(), content, popoverPosition)
+          popoverHandler.show(getFormulaElement(), content, popoverPosition)
           editor.on("changeSelection", sh.hideSelectionPopover)
           editor.session.on("changeScrollTop", sh.hideSelectionPopover)
           editor.session.on("changeScrollLeft", sh.hideSelectionPopover)
