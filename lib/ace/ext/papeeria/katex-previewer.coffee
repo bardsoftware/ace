@@ -69,10 +69,10 @@ define((require, exports, module) ->
 
       getEquationRange: (cursorRow) ->
         i = cursorRow
-        while latexContextParser.getContext(editor.session, i - 1) == "equation"
+        while latexContextParser.getContext(editor.getSession(), i - 1) == "equation"
           i -= 1
         start = i
-        while latexContextParser.getContext(editor.session, i + 1) == "equation"
+        while latexContextParser.getContext(editor.getSession(), i + 1) == "equation"
           i += 1
         end = i
         return [start, end]
@@ -114,7 +114,7 @@ define((require, exports, module) ->
       getWholeEquation: (start, end) ->
         tokens = []
         for i in [start..end]
-          $.merge(tokens, editor.session.getTokens(i))
+          $.merge(tokens, editor.getSession().getTokens(i))
         filteredTokens = ch.filterTokens(tokens)
         return filteredTokens.map((val) -> val["value"]).join(" ")
 
@@ -167,7 +167,7 @@ define((require, exports, module) ->
         popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curEnd))
 
       handleCurrentContext: ->
-        currentContext = latexContextParser.getContext(editor.session, editor.getCursorPosition().row)
+        currentContext = latexContextParser.getContext(editor.getSession(), editor.getCursorPosition().row)
         if not ch.contextPreviewExists and currentContext == "equation"
           ch.contextPreviewExists = true
           if not katex?
@@ -175,11 +175,11 @@ define((require, exports, module) ->
           else
             ch.initPopover()
           editor.on("change", ch.delayedUpdatePopover)
-          editor.session.on("changeScrollTop", ch.updatePosition)
+          editor.getSession().on("changeScrollTop", ch.updatePosition)
         else if ch.contextPreviewExists and currentContext != "equation"
           ch.contextPreviewExists = false
           editor.off("change", ch.delayedUpdatePopover)
-          editor.session.off("changeScrollTop", ch.updatePosition)
+          editor.getSession().off("changeScrollTop", ch.updatePosition)
           popoverHandler.destroy(getFormulaElement())
     }
 
@@ -187,8 +187,8 @@ define((require, exports, module) ->
       hideSelectionPopover: ->
         popoverHandler.destroy(getFormulaElement())
         editor.off("changeSelection", sh.hideSelectionPopover)
-        editor.session.off("changeScrollTop", sh.hideSelectionPopover)
-        editor.session.off("changeScrollLeft", sh.hideSelectionPopover)
+        editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
+        editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
         return
 
       renderSelectionUnderCursor: ->
@@ -208,8 +208,8 @@ define((require, exports, module) ->
         finally
           popoverHandler.show(getFormulaElement(), content, popoverPosition)
           editor.on("changeSelection", sh.hideSelectionPopover)
-          editor.session.on("changeScrollTop", sh.hideSelectionPopover)
-          editor.session.on("changeScrollLeft", sh.hideSelectionPopover)
+          editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
+          editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
           return
 
       createPopover: (editor) ->
