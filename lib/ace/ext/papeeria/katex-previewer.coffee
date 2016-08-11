@@ -1,5 +1,5 @@
 define((require, exports, module) ->
-  latexContextParser = require("ace/ext/papeeria/latex_parsing_context")
+  LatexContextParser = require("ace/ext/papeeria/latex_parsing_context")
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
     bannedTokenSequences = null
@@ -23,15 +23,13 @@ define((require, exports, module) ->
         jqPopoverContainer.popover("destroy")
 
       popoverExists: (jqPopoverContainer) ->
-        jqPopoverContainer.data()? and jqPopoverContainer.data().popover?
+        jqPopoverContainer.data()?.popover?
 
       setContent: (jqPopoverContainer, content) ->
-        jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content")
-        jqPopoverElement.html(content)
+        jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content").html(content)
 
       setPosition: (jqPopoverContainer, position) ->
-        jqPopoverElement = jqPopoverContainer.data().popover.tip()
-        jqPopoverElement.css(position)
+        jqPopoverElement = jqPopoverContainer.data().popover.tip().css(position)
     }
 
     initKaTeX = (onLoaded) ->
@@ -63,16 +61,17 @@ define((require, exports, module) ->
     jqEditorContainer = $(editor.container)
     getFormulaElement = -> $("#formula")
 
-    ch = contextHandler = {
+    ch = ContextHandler = {
       contextPreviewExists: false
-      updateDelay: 1000
+      UPDATE_DELAY: 1000
 
       getEquationRange: (cursorRow) ->
         i = cursorRow
-        while latexContextParser.getContext(editor.getSession(), i - 1) == "equation"
+        while LatexContextParser.getContext(editor.getSession(), i - 1) == "equation"
           i -= 1
         start = i
-        while latexContextParser.getContext(editor.getSession(), i + 1) == "equation"
+        i = cursorRow
+        while LatexContextParser.getContext(editor.getSession(), i + 1) == "equation"
           i += 1
         end = i
         return [start, end]
@@ -151,7 +150,7 @@ define((require, exports, module) ->
       updateCallback: ->
         if ch.lastChangeTime?
           curTime = Date.now()
-          ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.updateDelay - (Date.now() - ch.lastChangeTime))
+          ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY - (Date.now() - ch.lastChangeTime))
           ch.lastChangeTime = null
         else
           ch.updatePopover()
@@ -161,13 +160,13 @@ define((require, exports, module) ->
         if ch.currentDelayedUpdateId?
           ch.lastChangeTime = Date.now()
           return
-        ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.updateDelay)
+        ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY)
 
       updatePosition: ->
         popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curEnd))
 
       handleCurrentContext: ->
-        currentContext = latexContextParser.getContext(editor.getSession(), editor.getCursorPosition().row)
+        currentContext = LatexContextParser.getContext(editor.getSession(), editor.getCursorPosition().row)
         if not ch.contextPreviewExists and currentContext == "equation"
           ch.contextPreviewExists = true
           if not katex?
@@ -183,7 +182,7 @@ define((require, exports, module) ->
           popoverHandler.destroy(getFormulaElement())
     }
 
-    sh = selectionHandler = {
+    sh = SelectionHandler = {
       hideSelectionPopover: ->
         popoverHandler.destroy(getFormulaElement())
         editor.off("changeSelection", sh.hideSelectionPopover)
@@ -223,10 +222,10 @@ define((require, exports, module) ->
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
       bindKey: {win: "Alt-p", mac: "Alt-p"}
-      exec: selectionHandler.createPopover
+      exec: SelectionHandler.createPopover
     )
 
-    editor.on("changeSelection", contextHandler.handleCurrentContext)
+    editor.on("changeSelection", ContextHandler.handleCurrentContext)
     return
   return
 )
