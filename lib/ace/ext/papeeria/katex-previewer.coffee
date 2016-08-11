@@ -2,7 +2,6 @@ define((require, exports, module) ->
   LatexContextParser = require("ace/ext/papeeria/latex_parsing_context")
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
-    bannedTokenSequences = null
     popoverHandler = popoverHandler ? {
       options: {
         html: true
@@ -33,10 +32,6 @@ define((require, exports, module) ->
     }
 
     initKaTeX = (onLoaded) ->
-      # Loading banned sequences file
-      response = $.getJSON(require.toUrl("./banned_token_sequences.json"))
-      setTimeout((-> bannedTokenSequences = response.responseJSON), 0)
-
       # Adding CSS for demo formula
       cssDemoPath = require.toUrl("./katex-demo.css")
       linkDemo = $("<link>").attr(
@@ -60,10 +55,12 @@ define((require, exports, module) ->
 
     jqEditorContainer = $(editor.container)
     getFormulaElement = -> $("#formula")
+    KATEX_OPTIONS = {displayMode: true, throwOnError: false}
 
     ch = ContextHandler = {
       contextPreviewExists: false
       UPDATE_DELAY: 1000
+      REMOVE_REGEX: /\\end\{equation\}|\\begin\{equation\}/g
 
       getEquationRange: (cursorRow) ->
         i = cursorRow
@@ -76,46 +73,8 @@ define((require, exports, module) ->
         end = i
         return [start, end]
 
-      compareTokens: (tokenToCheck, tokenToMatch) ->
-        return tokenToCheck["type"] == tokenToMatch["type"] and (new RegExp(tokenToMatch["value"])).test(tokenToCheck["value"])
-
-      filterTokens: (tokens) ->
-        i = 0
-        rangesToDelete = []
-        while i < tokens.length
-          j = 0
-          while j < bannedTokenSequences.length
-            curSequenceToMatch = bannedTokenSequences[j]
-            k = 0
-            while k < curSequenceToMatch.length and ch.compareTokens(tokens[i + k], curSequenceToMatch[k])
-              k += 1
-            if k == curSequenceToMatch.length
-              rangesToDelete.push([i, i + k])
-              i = i + k
-              break
-            j += 1
-          if j == bannedTokenSequences.length
-            i += 1
-
-        i = 0
-        j = 0
-        filteredTokens = []
-        while i < tokens.length
-          if j < rangesToDelete.length and i == rangesToDelete[j][0]
-            i = rangesToDelete[j][1]
-            j += 1
-          else
-            filteredTokens.push(tokens[i])
-            i += 1
-
-        return filteredTokens
-
       getWholeEquation: (start, end) ->
-        tokens = []
-        for i in [start..end]
-          $.merge(tokens, editor.getSession().getTokens(i))
-        filteredTokens = ch.filterTokens(tokens)
-        return filteredTokens.map((val) -> val["value"]).join(" ")
+        editor.session.getLines(start, end).join(" ").replace(ch.REMOVE_REGEX, "")
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -125,27 +84,17 @@ define((require, exports, module) ->
       getCurrentFormula: ->
         katex.renderToString(
           ch.getWholeEquation(ch.curStart, ch.curEnd),
-          {displayMode: true}
+          KATEX_OPTIONS
         )
 
       initPopover: ->
         cursorRow = editor.getCursorPosition().row
         [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
         popoverPosition = ch.getPopoverPosition(ch.curEnd)
-        try
-          content = ch.getCurrentFormula()
-        catch e
-          content = e
-        finally
-          popoverHandler.show(getFormulaElement(), content, popoverPosition)
+        popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
 
       updatePopover: ->
-        try
-          content = ch.getCurrentFormula()
-        catch e
-          content = e
-        finally
-          popoverHandler.setContent(getFormulaElement(), content)
+          popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
 
       updateCallback: ->
         if ch.lastChangeTime?
@@ -183,6 +132,7 @@ define((require, exports, module) ->
     }
 
     sh = SelectionHandler = {
+
       hideSelectionPopover: ->
         popoverHandler.destroy(getFormulaElement())
         editor.off("changeSelection", sh.hideSelectionPopover)
@@ -191,25 +141,21 @@ define((require, exports, module) ->
         return
 
       renderSelectionUnderCursor: ->
-        try
-          {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
-          cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
-          popoverPosition = {
-            top: "#{cursorPosition.pageY + 24}px"
-            left: "#{cursorPosition.pageX}px"
-          }
-          content = katex.renderToString(
-            editor.getSelectedText(),
-            {displayMode: true}
-          )
-        catch e
-          content = e
-        finally
-          popoverHandler.show(getFormulaElement(), content, popoverPosition)
-          editor.on("changeSelection", sh.hideSelectionPopover)
-          editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
-          editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
-          return
+        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
+        popoverPosition = {
+          top: "#{cursorPosition.pageY + 24}px"
+          left: "#{cursorPosition.pageX}px"
+        }
+        content = katex.renderToString(
+          editor.getSelectedText(),
+          KATEX_OPTIONS
+        )
+        popoverHandler.show(getFormulaElement(), content, popoverPosition)
+        editor.on("changeSelection", sh.hideSelectionPopover)
+        editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
+        editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
+        return
 
       createPopover: (editor) ->
         unless ch.contextPreviewExists
