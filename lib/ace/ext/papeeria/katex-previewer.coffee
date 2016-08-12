@@ -1,8 +1,8 @@
 define((require, exports, module) ->
-  LatexContextParser = require("ace/ext/papeeria/latex_parsing_context")
+  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
-    popoverHandler = popoverHandler ? {
+    popoverHandler ?= {
       options: {
         html: true
         placement: "bottom"
@@ -64,17 +64,17 @@ define((require, exports, module) ->
 
       getEquationRange: (cursorRow) ->
         i = cursorRow
-        while LatexContextParser.getContext(editor.getSession(), i - 1) == "equation"
+        while LatexParsingContext.getContext(editor.getSession(), i - 1) == "equation"
           i -= 1
         start = i
         i = cursorRow
-        while LatexContextParser.getContext(editor.getSession(), i + 1) == "equation"
+        while LatexParsingContext.getContext(editor.getSession(), i + 1) == "equation"
           i += 1
         end = i
         return [start, end]
 
       getWholeEquation: (start, end) ->
-        editor.session.getLines(start, end).join(" ").replace(ch.REMOVE_REGEX, "")
+        editor.getSession().getLines(start, end).join(" ").replace(ch.REMOVE_REGEX, "")
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -82,19 +82,24 @@ define((require, exports, module) ->
         }
 
       getCurrentFormula: ->
-        katex.renderToString(
-          ch.getWholeEquation(ch.curStart, ch.curEnd),
-          KATEX_OPTIONS
-        )
+        try
+          return katex.renderToString(
+            ch.getWholeEquation(ch.curStart, ch.curEnd),
+            KATEX_OPTIONS
+          )
+        catch e
+          return e
 
       initPopover: ->
         cursorRow = editor.getCursorPosition().row
         [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
         popoverPosition = ch.getPopoverPosition(ch.curEnd)
         popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
+        editor.on("change", ch.delayedUpdatePopover)
+        editor.getSession().on("changeScrollTop", ch.updatePosition)
 
       updatePopover: ->
-          popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
+        popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
 
       updateCallback: ->
         if ch.lastChangeTime?
@@ -115,15 +120,13 @@ define((require, exports, module) ->
         popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curEnd))
 
       handleCurrentContext: ->
-        currentContext = LatexContextParser.getContext(editor.getSession(), editor.getCursorPosition().row)
+        currentContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
         if not ch.contextPreviewExists and currentContext == "equation"
           ch.contextPreviewExists = true
           if not katex?
             initKaTeX(ch.initPopover)
           else
             ch.initPopover()
-          editor.on("change", ch.delayedUpdatePopover)
-          editor.getSession().on("changeScrollTop", ch.updatePosition)
         else if ch.contextPreviewExists and currentContext != "equation"
           ch.contextPreviewExists = false
           editor.off("change", ch.delayedUpdatePopover)
