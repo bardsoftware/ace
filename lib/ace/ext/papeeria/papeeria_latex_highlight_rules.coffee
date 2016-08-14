@@ -93,6 +93,11 @@ define((require, exports, module) ->
         token: "constant.character.escape"
         regex: "\\\\[^a-zA-Z]?"
       }
+      {
+          token : "string.math",
+          regex : "\\${1,2}",
+          next  : "math"
+      }
     ]
 
 
@@ -147,6 +152,23 @@ define((require, exports, module) ->
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
       ]
+      "math" : [{
+            token : "comment"
+            regex : "%.*$"
+        }, {
+            token : "string.math",
+            regex : "\\${1,2}"
+            next  : "start"
+        }, {
+            token : "constant.character.escape.string.math"
+            regex : "\\\\(?:[^a-zA-Z]|[a-zA-Z]+)"
+        }, {
+            token : "error.math",
+            regex : "^\\s*$",
+            next : "start"
+        }, {
+            defaultToken : "string.math"
+        }]
 
 
     for key of @$rules

@@ -177,12 +177,6 @@ define((require, exports, module) ->
     meta: "Greek Letter"
   )
 
-  # Specific for token"s system of type in ace
-  # We saw such a realization in html_completions.js
-  isType = (token, type) ->
-    return token.type.split(".").indexOf(type) > -1
-
-
   init = (editor, bindKey) ->
     keyboardHandler = new HashHandler.HashHandler()
     keyboardHandler.addCommand(
@@ -242,10 +236,10 @@ define((require, exports, module) ->
       # @param {array} response -- list of completions for adding to popup
       ###
       getCompletions: (editor, session, pos, prefix, callback) =>
-        context = LatexParsingContext.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
+        context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
-        if isType(token, "ref") and @referencesUrl?
+        if LatexParsingContext.isType(token, "ref") and @referencesUrl?
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
           when "start" then callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
