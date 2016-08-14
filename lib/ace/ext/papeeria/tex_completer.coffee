@@ -31,7 +31,7 @@ define((require, exports, module) ->
       meta: "base"
     }
     {
-      caption: "\\usepackage[]{..."
+      caption: "\\usepackage[options]{..."
       snippet: """
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
@@ -40,7 +40,7 @@ define((require, exports, module) ->
     {
       caption: "\\newcommand{..."
       snippet: """
-            \\newcommand{\\${1:cmd}}[${2:opt}]{${3:realcmd}}${4}\n\
+            \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
         """
       meta: "base"
     }
@@ -65,24 +65,104 @@ define((require, exports, module) ->
               """
       meta: "equation"
     }
+
+  SumsAndIntegrals = [
+    "\\sum"
+    "\\int"
+    "\\bigcup"
+    "\\bigsqcup"
+    "\\oint"
+    "\\bigotimes"
+    "\\bigcap"
+    "\\bigvee"
+    "\\oint"
+    "\\bigwedge"
+    "\\biguplus"
+    "\\bigodot"
+    "\\coprod"
+    "\\prod"
+  ]
+
+  SumsAndIntegrals = SumsAndIntegrals.map((word) ->
+    caption: word + "{n}{i=..}{..}",
+    snippet: word + "^{${1:n}}_{${2:i=1}}{${3}}"
+    score: 1
+    meta: "Sums and integrals"
+  )
+
   formulasSnippets = [
     {
       caption: "\\frac{num}{denom}"
       snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
-      meta: "equation"
+      score: 4
+      meta: "Math"
     }
     {
-      caption: "\\sum{n}{i=..}{..}"
+      caption: "\\sqrt{n}"
       snippet: """
-                  \\sum^{${1:n}}_{${2:i=1}}{${3}}
+                \\sqrt{${1:n}}
             """
-      meta: "equation"
+      score: 4
+      meta: "Math"
+    }
+    {
+      caption: "\\sqrt[k]{n}"
+      snippet: """
+                \\sqrt[${1:k}]{${2:n}}
+            """
+      score: 4
+      meta: "Math"
+    }
+    {
+      caption: "\\binom{n}{k}"
+      snippet: """
+                \\binom{${1:n}}{${2:k}}
+            """
+      score: 4
+      meta: "Math"
     }
   ]
 
-  equationKeywords = ["\\alpha"]
+  greekLetters = [
+    "\\gamma"
+    "\\delta"
+    "\\theta"
+    "\\lambda"
+    "\\nu"
+    "\\xi"
+    "\\pi"
+    "\\sigma"
+    "\\upsilon"
+    "\\phi"
+    "\\chi"
+    "\\psi"
+    "\\omega"
+  ]
+  # Add
+  greekLetters = greekLetters.concat(greekLetters.map((word) ->  return "\\" + word[1].toUpperCase() + word.substring(2)))
+  greekLetters = greekLetters.concat([
+    "\\alpha"
+    "\\beta"
+    "\\chi"
+    "\\nu"
+    "\\eta"
+    "\\zeta"
+    "\\rho"
+    "\\mu"
+    "\\epsilon"
+    "\\iota"
+    "\\kappa"
+    "\\tau"
+    "\\varepsilon"
+    "\\varsigma"
+    "\\varphi"
+    "\\varrho"
+    "\\vartheta"
+    "\\varkappa"
+  ])
+
   listKeywords = ["\\item"]
 
   listKeywords = listKeywords.map((word) ->
@@ -90,10 +170,11 @@ define((require, exports, module) ->
     value: word
     meta: "list"
   )
-  equationKeywords = equationKeywords.map((word) ->
+  greekLetters = greekLetters.map((word) ->
     caption: word,
     value: word
-    meta: "equation"
+    score: 2
+    meta: "Greek Letter"
   )
 
   # Specific for token"s system of type in ace
@@ -153,6 +234,7 @@ define((require, exports, module) ->
       @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
 
       setReferencesUrl: (url) => @referencesUrl = url
+
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
       # @param {object} error -- convention in node, the first argument to a callback
@@ -168,7 +250,7 @@ define((require, exports, module) ->
         else switch context
           when "start" then callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
           when LIST_STATE then callback(null, listKeywords.concat(listSnippets.concat(equationSnippets)))
-          when EQUATION_STATE then callback(null, formulasSnippets.concat(equationKeywords))
+          when EQUATION_STATE then callback(null, SumsAndIntegrals.concat(formulasSnippets.concat(greekLetters)))
 
   return TexCompleter
 )
