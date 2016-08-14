@@ -108,13 +108,17 @@ define((require, exports, module) ->
       name: "add item in list mode"
       bindKey: bindKey
       exec: (editor) ->
-        pos = editor.getCursorPosition()
-        curLine = editor.session.getLine(pos.row)
-        indentCount = LatexParsingContext.getNestedListDepth(editor.session, pos.row)
-        tabString = editor.getSession().getTabString()
-        # it"s temporary fix bug with added \item before \begin{itemize|enumerate}
-        if LatexParsingContext.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
-          editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
+        cursor = editor.getCursorPosition();
+        line = editor.session.getLine(cursor.row);
+        tabString = editor.session.getTabString();
+        indentString = line.match(/^\s*/)[0];
+        indexOfBegin = line.indexOf("begin")
+
+        if LatexParsingContext.getContext(editor.session, cursor.row) == LIST_STATE &&  indexOfBegin < cursor.column
+          if indexOfBegin > -1
+            editor.insert("\n" + tabString + indentString + "\\item ")
+          else
+            editor.insert("\n" + indentString + "\\item ")
           return true
         else
           return false
