@@ -57,6 +57,88 @@ define((require, exports, module) ->
     getFormulaElement = -> $("#formula")
     KATEX_OPTIONS = {displayMode: true, throwOnError: false}
 
+    erh = EquationRangeHandler = {
+      BEGIN_EQUATION_TOKEN_SEQUENCE: [
+        {
+          type: "storage.type"
+          value: "\\begin"
+        }
+        {
+          type: "lparen"
+          value: "{"
+        }
+        {
+          type: "variable.parameter"
+          value: "equation"
+        }
+        {
+          type: "rparen"
+          value: "}"
+        }
+      ]
+      END_EQUATION_TOKEN_SEQUENCE: [
+        {
+          type: "storage.type"
+          value: "\\end"
+        }
+        {
+          type: "lparen"
+          value: "{"
+        }
+        {
+          type: "variable.parameter"
+          value: "equation"
+        }
+        {
+          type: "rparen"
+          value: "}"
+        }
+      ]
+      rangeCache: {}
+
+      compareTokens: (token1, token2) ->
+        token1["type"] == token2["type"] and token1["value"] == token2["value"]
+
+      getEquationStart: (tokenIterator) ->
+        j = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+        curEquationStart = null
+        while j >= 0
+          if erh.compareTokens(erh.BEGIN_EQUATION_TOKEN_SEQUENCE[j], tokenIterator.stepBackward())
+            if j == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+              curTokenPosition = tokenIterator.getCurrentTokenPosition()
+              curEquationStart = {
+                row: curTokenPosition.row
+                column: curTokenPosition.column + tokenIterator.getCurrentToken().value.length
+              }
+            j -= 1
+          else
+            j = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+            curEquationStart = null
+        return curEquationStart
+
+      getEquationEnd: (tokenIterator) ->
+        j = 0
+        curEquationStart = null
+        while j < erh.END_EQUATION_TOKEN_SEQUENCE.length
+          if erh.compareTokens(erh.END_EQUATION_TOKEN_SEQUENCE[j], tokenIterator.stepForward())
+            if j == 0
+              curEquationStart = tokenIterator.getCurrentTokenPosition()
+            j += 1
+          else
+            j = 0
+            curEquationStart = null
+        return curEquationStart
+
+      getEquationRange: (row, column) ->
+        if not erh.rangeCache[[row, column]]
+          tokenIterator = new TokenIterator(editor.getSession(), row, column)
+          start = erh.getEquationStart(tokenIterator)
+          end = erh.getEquationEnd(tokenIterator)
+          erh.rangeCache[[row, column]] = [start, end]
+        return erh.rangeCache[[row, column]]
+    }
+
+
     ch = ContextHandler = {
       contextPreviewExists: false
       UPDATE_DELAY: 1000
