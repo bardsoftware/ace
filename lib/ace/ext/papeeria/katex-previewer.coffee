@@ -56,6 +56,8 @@ define((require, exports, module) ->
     jqEditorContainer = $(editor.container)
     getFormulaElement = -> $("#formula")
     KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+    TokenIterator = require("ace/token_iterator").TokenIterator
+    Range = require("ace/range").Range
 
     erh = EquationRangeHandler = {
       BEGIN_EQUATION_TOKEN_SEQUENCE: [
@@ -102,6 +104,10 @@ define((require, exports, module) ->
       getEquationStart: (tokenIterator) ->
         j = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
         curEquationStart = null
+        # in case we're actually inside `\begin{equation}`
+        for token in erh.BEGIN_EQUATION_TOKEN_SEQUENCE
+          if erh.compareTokens(token, tokenIterator.getCurrentToken())
+            tokenIterator.stepForward()
         while j >= 0
           if erh.compareTokens(erh.BEGIN_EQUATION_TOKEN_SEQUENCE[j], tokenIterator.stepBackward())
             if j == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
@@ -134,7 +140,8 @@ define((require, exports, module) ->
           tokenIterator = new TokenIterator(editor.getSession(), row, column)
           start = erh.getEquationStart(tokenIterator)
           end = erh.getEquationEnd(tokenIterator)
-          erh.rangeCache[[row, column]] = [start, end]
+          range = new Range(start.row, start.column, end.row, end.column)
+          erh.rangeCache[[row, column]] = range
         return erh.rangeCache[[row, column]]
     }
 
@@ -144,19 +151,8 @@ define((require, exports, module) ->
       UPDATE_DELAY: 1000
       REMOVE_REGEX: /\\end\{equation\}|\\begin\{equation\}/g
 
-      getEquationRange: (cursorRow) ->
-        i = cursorRow
-        while LatexParsingContext.getContext(editor.getSession(), i - 1) == "equation"
-          i -= 1
-        start = i
-        i = cursorRow
-        while LatexParsingContext.getContext(editor.getSession(), i + 1) == "equation"
-          i += 1
-        end = i
-        return [start, end]
-
-      getWholeEquation: (start, end) ->
-        editor.getSession().getLines(start, end).join(" ").replace(ch.REMOVE_REGEX, "")
+      getWholeEquation: (range) ->
+        editor.getSession().getTextRange(range).replace(ch.REMOVE_REGEX, "")
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -166,16 +162,16 @@ define((require, exports, module) ->
       getCurrentFormula: ->
         try
           return katex.renderToString(
-            ch.getWholeEquation(ch.curStart, ch.curEnd),
+            ch.getWholeEquation(ch.curRange),
             KATEX_OPTIONS
           )
         catch e
           return e
 
       initPopover: ->
-        cursorRow = editor.getCursorPosition().row
-        [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
-        popoverPosition = ch.getPopoverPosition(ch.curEnd)
+        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        ch.curRange = erh.getEquationRange(cursorRow, cursorColumn)
+        popoverPosition = ch.getPopoverPosition(ch.curRange.end.row)
         popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
         editor.on("change", ch.delayedUpdatePopover)
         editor.getSession().on("changeScrollTop", ch.updatePosition)
@@ -199,7 +195,7 @@ define((require, exports, module) ->
         ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY)
 
       updatePosition: ->
-        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curEnd))
+        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curRange.end.row))
 
       handleCurrentContext: ->
         currentContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
