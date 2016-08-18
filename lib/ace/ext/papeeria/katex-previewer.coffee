@@ -149,10 +149,9 @@ define((require, exports, module) ->
     ch = ContextHandler = {
       contextPreviewExists: false
       UPDATE_DELAY: 1000
-      REMOVE_REGEX: /\\end\{equation\}|\\begin\{equation\}/g
 
       getWholeEquation: (range) ->
-        editor.getSession().getTextRange(range).replace(ch.REMOVE_REGEX, "")
+        editor.getSession().getTextRange(range)
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
