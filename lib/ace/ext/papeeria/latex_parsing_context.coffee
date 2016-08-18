@@ -9,8 +9,9 @@ define((require, exports, module) ->
      *
      * Returns context at row.
     ###
+
     # Specific for token"s system of type in ace
-  # We saw such a realization in html_completions.js
+    # We saw such a realization in html_completions.js
     isType = (token, type) ->
         return token.type.split(".").indexOf(type) > -1
 
