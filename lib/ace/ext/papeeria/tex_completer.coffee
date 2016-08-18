@@ -4,19 +4,23 @@ define((require, exports, module) ->
   HashHandler = require("ace/keyboard/hash_handler")
   PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
+
+
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  equationSnippets = require("./snippets/equation_snippets")
-  listEnvironments = [
+  EQUATION_SNIPPETS = require("./snippets/EquationSnippets")
+
+  LIST_ENVIRONMENTS = [
     "itemize"
     "enumerate"
   ]
-  equationEnvironments = [
+
+  EQUATION_ENVIRONMENTS = [
       "equation"
       "equation*"
   ]
 
-  equationEnvSnippets = for env in equationEnvironments
+  EQUATION_ENV_SNIPPETS = for env in EQUATION_ENVIRONMENTS
     {
       caption: "\\begin{#{env}}..."
       snippet: """
@@ -27,7 +31,8 @@ define((require, exports, module) ->
       meta: "equation"
     }
 
-  referenceSnippet =
+
+  REFERENCE_SNIPPET =
   {
       caption: "\\ref{..."
       snippet: """
@@ -36,8 +41,8 @@ define((require, exports, module) ->
       meta: "reference"
   }
 
-  basicSnippets = [
-    referenceSnippet
+  BASIC_SNIPPETS = [
+    REFERENCE_SNIPPET
     {
       caption: "\\ref{..."
       snippet: """
@@ -68,7 +73,7 @@ define((require, exports, module) ->
     }
   ]
 
-  listSnippets = for env in listEnvironments
+  LIST_SNIPPET = for env in LIST_ENVIRONMENTS
     {
       caption: "\\begin{#{env}}..."
       snippet: """
@@ -78,9 +83,10 @@ define((require, exports, module) ->
             """
       meta: "list"
     }
-  listSnippets = listSnippets.concat([referenceSnippet])
-  listKeywords = ["\\item"]
-  listKeywords = listKeywords.map((word) ->
+
+  LIST_SNIPPET = LIST_SNIPPET.concat([REFERENCE_SNIPPET])
+  LIST_KEYWORDS = ["\\item"]
+  LIST_KEYWORDS = LIST_KEYWORDS.map((word) ->
     caption: word,
     value: word
     meta: "list"
@@ -151,9 +157,9 @@ define((require, exports, module) ->
         if LatexParsingContext.isType(token, "ref") and @referencesUrl?
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
-          when "start" then callback(null, listSnippets.concat(equationEnvSnippets.concat(basicSnippets)))
-          when LIST_STATE then callback(null, listKeywords.concat(listSnippets.concat(equationEnvSnippets)))
-          when EQUATION_STATE then callback(null, equationSnippets)
+          when "start" then callback(null, LIST_SNIPPET.concat(EQUATION_ENV_SNIPPETS.concat(BASIC_SNIPPETS)))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET.concat(EQUATION_ENV_SNIPPETS)))
+          when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
 
   return TexCompleter
 )
