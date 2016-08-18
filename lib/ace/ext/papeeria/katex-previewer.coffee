@@ -171,14 +171,21 @@ define((require, exports, module) ->
           return e
 
       initPopover: ->
-        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
-        ch.curRange = erh.getEquationRange(cursorRow, cursorColumn)
+        ch.updateRange()
         popoverPosition = ch.getPopoverPosition(ch.curRange.end.row)
         popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
         editor.on("change", ch.delayedUpdatePopover)
         editor.getSession().on("changeScrollTop", ch.updatePosition)
 
+      updatePosition: ->
+        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curRange.end.row))
+
+      updateRange: ->
+        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        ch.curRange = erh.getEquationRange(cursorRow, cursorColumn)
+
       updatePopover: ->
+        ch.updatePosition()
         popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
 
       updateCallback: ->
@@ -191,23 +198,30 @@ define((require, exports, module) ->
           ch.currentDelayedUpdateId = null
 
       delayedUpdatePopover: ->
+        ch.updateRange()
+        ch.updatePosition()
         if ch.currentDelayedUpdateId?
           ch.lastChangeTime = Date.now()
           return
         ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY)
 
-      updatePosition: ->
-        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curRange.end.row))
-
       handleCurrentContext: ->
-        currentContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
+        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        currentContext = LatexParsingContext.getContext(editor.getSession(), cursorRow)
         if not ch.contextPreviewExists and currentContext == "equation"
           ch.contextPreviewExists = true
           if not katex?
             initKaTeX(ch.initPopover)
           else
             ch.initPopover()
-        else if ch.contextPreviewExists and currentContext != "equation"
+        else if ch.curRange? and not ch.curRange.contains(cursorRow, cursorColumn)
+        #
+        # The commented check does not work, because if we create new line while
+        # inside the equation on the last line of the equation, then context
+        # is not updated for another 700 ms, and this new line does not have
+        # `equation` context, whereas range is updated on every change.
+        #
+        # else if ch.contextPreviewExists and currentContext != "equation"
           ch.contextPreviewExists = false
           editor.off("change", ch.delayedUpdatePopover)
           editor.getSession().off("changeScrollTop", ch.updatePosition)
