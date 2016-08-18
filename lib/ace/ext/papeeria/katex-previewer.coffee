@@ -123,6 +123,9 @@ define((require, exports, module) ->
         return curEquationStart
 
       getEquationEnd: (tokenIterator) ->
+        for token in erh.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
+          if erh.compareTokens(token, tokenIterator.getCurrentToken())
+            tokenIterator.stepBackward()
         curSequenceIndex = 0
         curEquationStart = null
         while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
