@@ -102,7 +102,8 @@ define((require, exports, module) ->
         (not token1? and not token2?) or token1? and token2? and token1.type == token2.type and token1.value == token2.value
 
       getEquationStart: (tokenIterator) ->
-        # in case we're actually inside `\begin{equation}`
+        # following cycle pushes tokenIterator to the end of
+        # beginning sequence, if it is inside one
         for token in erh.BEGIN_EQUATION_TOKEN_SEQUENCE
           if erh.compareTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepForward()
@@ -123,6 +124,8 @@ define((require, exports, module) ->
         return curEquationStart
 
       getEquationEnd: (tokenIterator) ->
+        # following cycle pushes tokenIterator to the start of
+        # ending sequence, if it is inside one
         for token in erh.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
           if erh.compareTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepBackward()
