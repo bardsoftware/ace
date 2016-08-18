@@ -99,39 +99,39 @@ define((require, exports, module) ->
       rangeCache: {}
 
       compareTokens: (token1, token2) ->
-        (not token1? and not token2?) or token1? and token2? and token1["type"] == token2["type"] and token1["value"] == token2["value"]
+        (not token1? and not token2?) or token1? and token2? and token1.type == token2.type and token1.value == token2.value
 
       getEquationStart: (tokenIterator) ->
-        j = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-        curEquationStart = null
         # in case we're actually inside `\begin{equation}`
         for token in erh.BEGIN_EQUATION_TOKEN_SEQUENCE
           if erh.compareTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepForward()
-        while j >= 0
-          if erh.compareTokens(erh.BEGIN_EQUATION_TOKEN_SEQUENCE[j], tokenIterator.stepBackward())
-            if j == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+        curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+        curEquationStart = null
+        while curSequenceIndex >= 0
+          if erh.compareTokens(erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex], tokenIterator.stepBackward())
+            if curSequenceIndex == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
               curTokenPosition = tokenIterator.getCurrentTokenPosition()
               curEquationStart = {
                 row: curTokenPosition.row
                 column: curTokenPosition.column + tokenIterator.getCurrentToken().value.length
               }
-            j -= 1
+            curSequenceIndex -= 1
           else
-            j = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+            curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
             curEquationStart = null
         return curEquationStart
 
       getEquationEnd: (tokenIterator) ->
-        j = 0
+        curSequenceIndex = 0
         curEquationStart = null
-        while j < erh.END_EQUATION_TOKEN_SEQUENCE.length
-          if erh.compareTokens(erh.END_EQUATION_TOKEN_SEQUENCE[j], tokenIterator.stepForward())
-            if j == 0
+        while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
+          if erh.compareTokens(erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex], tokenIterator.stepForward())
+            if curSequenceIndex == 0
               curEquationStart = tokenIterator.getCurrentTokenPosition()
-            j += 1
+            curSequenceIndex += 1
           else
-            j = 0
+            curSequenceIndex = 0
             curEquationStart = null
         return curEquationStart
 
