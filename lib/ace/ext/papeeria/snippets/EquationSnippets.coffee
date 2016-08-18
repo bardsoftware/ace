@@ -20,7 +20,7 @@ define((require, exports, module) ->
   SUMS_AND_INTEGRALS = SUMS_AND_INTEGRALS.map((word) ->
       caption: word + "{n}{i=..}{..}",
       snippet: word + "^{${1:n}}_{${2:i=1}}{${3}}"
-      score: 1
+      score: 1000
       meta: "Sums and integrals"
   )
 
@@ -31,7 +31,7 @@ define((require, exports, module) ->
       snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
-      score: 4
+      score: 1000
       meta: "Math"
     }
     {
@@ -39,7 +39,7 @@ define((require, exports, module) ->
       snippet: """
                 \\sqrt{${1:n}}
             """
-      score: 4
+      score: 1000
       meta: "Math"
     }
     {
@@ -47,7 +47,7 @@ define((require, exports, module) ->
       snippet: """
                 \\sqrt[${1:k}]{${2:n}}
             """
-      score: 4
+      score: 1000
       meta: "Math"
     }
     {
@@ -55,7 +55,7 @@ define((require, exports, module) ->
       snippet: """
                 \\binom{${1:n}}{${2:k}}
             """
-      score: 4
+      score: 1000
       meta: "Math"
     }
   ]
@@ -103,11 +103,11 @@ define((require, exports, module) ->
   GREEK_LETTERS = GREEK_LETTERS.map((word) ->
     caption: word,
     value: word
-    score: 2
+    score: 1000
     meta: "Greek Letter"
   )
 
-  return SUMS_AND_INTEGRALS.concat(FORMULAS_SNIPPETS.concat(GREEK_LETTERS))
+  return SUMS_AND_INTEGRALS.concat(FORMULAS_SNIPPETS, GREEK_LETTERS)
 );
 
 

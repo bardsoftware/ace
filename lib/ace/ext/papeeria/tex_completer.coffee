@@ -129,6 +129,9 @@ define((require, exports, module) ->
       else
         callback(null, @cache)
 
+  compare = (a, b) ->
+    console.log(a.meta, b.meta)
+    a.meta < b.meta
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
