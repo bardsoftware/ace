@@ -142,12 +142,10 @@ define((require, exports, module) ->
         return curEquationStart
 
       getEquationRange: (row, column) ->
-        if not erh.rangeCache[[row, column]]
-          start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, column))
-          end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, column))
-          range = new Range(start.row, start.column, end.row, end.column)
-          erh.rangeCache[[row, column]] = range
-        return erh.rangeCache[[row, column]]
+        start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, column))
+        end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, column))
+        return new Range(start.row, start.column, end.row, end.column)
+        erh.rangeCache[[row, column]] = range
     }
 
 
