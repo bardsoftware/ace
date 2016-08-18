@@ -99,7 +99,7 @@ define((require, exports, module) ->
       rangeCache: {}
 
       compareTokens: (token1, token2) ->
-        token1["type"] == token2["type"] and token1["value"] == token2["value"]
+        (not token1? and not token2?) or token1? and token2? and token1["type"] == token2["type"] and token1["value"] == token2["value"]
 
       getEquationStart: (tokenIterator) ->
         j = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
