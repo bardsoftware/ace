@@ -42,14 +42,6 @@ define((require, exports, module) ->
   }
 
   BASIC_SNIPPETS = [
-    REFERENCE_SNIPPET
-    {
-      caption: "\\ref{..."
-      snippet: """
-            \\ref{${1}}
-        """
-      meta: "base"
-    }
     {
       caption: "\\usepackage[]{..."
       snippet: """
@@ -84,7 +76,7 @@ define((require, exports, module) ->
       meta: "list"
     }
 
-  LIST_SNIPPET = LIST_SNIPPET.concat([REFERENCE_SNIPPET])
+
   LIST_KEYWORDS = ["\\item"]
   LIST_KEYWORDS = LIST_KEYWORDS.map((word) ->
     caption: word,
@@ -157,8 +149,9 @@ define((require, exports, module) ->
         if LatexParsingContext.isType(token, "ref") and @referencesUrl?
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
-          when "start" then callback(null, LIST_SNIPPET.concat(EQUATION_ENV_SNIPPETS.concat(BASIC_SNIPPETS)))
-          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET.concat(EQUATION_ENV_SNIPPETS)))
+          when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS, LIST_SNIPPET))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
 
   return TexCompleter

@@ -19,9 +19,9 @@ define((require, exports, module) ->
         if token? and isType(token, "math")
             return EQUATION_STATE
         else
-            getContext_(session, row)
+            getContextFromRaw(session, row)
 
-    getContext_ = (session, row) ->
+    getContextFromRaw = (session, row) ->
         states = session.getState(row)
         if (Array.isArray(states))
             return states[states.length - 1]
