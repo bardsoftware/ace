@@ -143,9 +143,8 @@ define((require, exports, module) ->
 
       getEquationRange: (row, column) ->
         if not erh.rangeCache[[row, column]]
-          tokenIterator = new TokenIterator(editor.getSession(), row, column)
-          start = erh.getEquationStart(tokenIterator)
-          end = erh.getEquationEnd(tokenIterator)
+          start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, column))
+          end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, column))
           range = new Range(start.row, start.column, end.row, end.column)
           erh.rangeCache[[row, column]] = range
         return erh.rangeCache[[row, column]]
