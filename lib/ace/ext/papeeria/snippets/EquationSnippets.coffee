@@ -1,21 +1,6 @@
 define((require, exports, module) ->
-  equationEnvironments = [
-      "equation"
-      "equation*"
-  ]
 
-  equationSnippets = for env in equationEnvironments
-    {
-      caption: "\\begin{#{env}}..."
-      snippet: """
-                \\begin{#{env}}
-                \t$1
-                \\end{#{env}}
-            """
-      meta: "equation"
-    }
-
-  SumsAndIntegrals = [
+  SUMS_AND_INTEGRALS = [
     "\\sum"
     "\\int"
     "\\bigcup"
@@ -32,7 +17,7 @@ define((require, exports, module) ->
     "\\prod"
   ]
 
-  SumsAndIntegrals = SumsAndIntegrals.map((word) ->
+  SUMS_AND_INTEGRALS = SUMS_AND_INTEGRALS.map((word) ->
       caption: word + "{n}{i=..}{..}",
       snippet: word + "^{${1:n}}_{${2:i=1}}{${3}}"
       score: 1
@@ -40,7 +25,7 @@ define((require, exports, module) ->
   )
 
 
-  formulasSnippets = [
+  FORMULAS_SNIPPETS = [
     {
       caption: "\\frac{num}{denom}"
       snippet: """
@@ -76,7 +61,7 @@ define((require, exports, module) ->
   ]
 
 
-  greekLetters = [
+  GREEK_LETTERS = [
     "\\gamma"
     "\\delta"
     "\\theta"
@@ -92,8 +77,9 @@ define((require, exports, module) ->
     "\\omega"
   ]
 
-  greekLetters = greekLetters.concat(greekLetters.map((word) ->  return "\\" + word[1].toUpperCase() + word.substring(2)))
-  greekLetters = greekLetters.concat([
+  capitalizeGreekLetter = (word) -> return "\\" + word[1].toUpperCase() + word.substring(2)
+  GREEK_LETTERS = GREEK_LETTERS.concat(GREEK_LETTERS.map(capitalizeGreekLetter))
+  GREEK_LETTERS = GREEK_LETTERS.concat([
     "\\alpha"
     "\\beta"
     "\\chi"
@@ -114,14 +100,14 @@ define((require, exports, module) ->
     "\\varkappa"
   ])
 
-  greekLetters = greekLetters.map((word) ->
+  GREEK_LETTERS = GREEK_LETTERS.map((word) ->
     caption: word,
     value: word
     score: 2
     meta: "Greek Letter"
   )
 
-  return SumsAndIntegrals.concat(formulasSnippets.concat(greekLetters))
+  return SUMS_AND_INTEGRALS.concat(FORMULAS_SNIPPETS.concat(GREEK_LETTERS))
 );
 
 
