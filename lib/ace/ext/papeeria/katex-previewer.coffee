@@ -96,10 +96,11 @@ define((require, exports, module) ->
           value: "}"
         }
       ]
-      rangeCache: {}
 
       compareTokens: (token1, token2) ->
-        (not token1? and not token2?) or token1? and token2? and token1.type == token2.type and token1.value == token2.value
+        if token1? and token2?
+          return token1.type == token2.type and token1.value == token2.value
+        else return if token1? or token2? then false else true
 
       getEquationStart: (tokenIterator) ->
         # following cycle pushes tokenIterator to the end of
@@ -110,7 +111,10 @@ define((require, exports, module) ->
         curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
         curEquationStart = null
         while curSequenceIndex >= 0
-          if erh.compareTokens(erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex], tokenIterator.stepBackward())
+          if erh.compareTokens(
+              erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+              tokenIterator.stepBackward()
+          )
             if curSequenceIndex == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
               curTokenPosition = tokenIterator.getCurrentTokenPosition()
               curEquationStart = {
@@ -132,7 +136,10 @@ define((require, exports, module) ->
         curSequenceIndex = 0
         curEquationStart = null
         while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
-          if erh.compareTokens(erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex], tokenIterator.stepForward())
+          if erh.compareTokens(
+            erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+            tokenIterator.stepForward()
+          )
             if curSequenceIndex == 0
               curEquationStart = tokenIterator.getCurrentTokenPosition()
             curSequenceIndex += 1
@@ -145,7 +152,6 @@ define((require, exports, module) ->
         start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, column))
         end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, column))
         return new Range(start.row, start.column, end.row, end.column)
-        erh.rangeCache[[row, column]] = range
     }
 
 
