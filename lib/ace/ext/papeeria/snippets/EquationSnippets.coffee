@@ -17,12 +17,14 @@ define((require, exports, module) ->
     "\\prod"
   ]
 
-  SUMS_AND_INTEGRALS = SUMS_AND_INTEGRALS.map((word) ->
-      caption: word + "{n}{i=..}{..}",
-      snippet: word + "^{${1:n}}_{${2:i=1}}{${3}}"
-      score: 1000 - word.charCodeAt(1)
+  compare = (a, b) -> (b < a) - (a < b)
+  SUMS_AND_INTEGRALS = SUMS_AND_INTEGRALS.sort(compare)
+  SUMS_AND_INTEGRALS = for i in [0..SUMS_AND_INTEGRALS.length]
+      caption: SUMS_AND_INTEGRALS[i] + "{n}{i=..}{..}"
+      snippet: SUMS_AND_INTEGRALS[i] + "^{${1:n}}_{${2:i=1}}{${3}}"
+      score: 1000 - i
       meta: "Sums and integrals"
-  )
+
 
 
   FORMULAS_SNIPPETS = [
@@ -100,12 +102,13 @@ define((require, exports, module) ->
     "\\varkappa"
   ])
 
-  GREEK_LETTERS = GREEK_LETTERS.map((word) ->
-    caption: word,
-    value: word
-    score: 1000 - word.charCodeAt(1)
+  GREEK_LETTERS = GREEK_LETTERS.sort(compare)
+  GREEK_LETTERS = for i in [0..GREEK_LETTERS.length]
+    caption: GREEK_LETTERS[i]
+    value: GREEK_LETTERS[i]
+    score: 1000 - i
     meta: "Greek Letter"
-  )
+
 
   return SUMS_AND_INTEGRALS.concat(FORMULAS_SNIPPETS, GREEK_LETTERS)
 );
