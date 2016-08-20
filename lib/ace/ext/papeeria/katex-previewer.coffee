@@ -1,65 +1,10 @@
 define((require, exports, module) ->
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-  exports.setupPreviewer = (editor, popoverHandler) ->
-    katex = null
-    popoverHandler ?= {
-      options: {
-        html: true
-        placement: "bottom"
-        trigger: "manual"
-        title: "Formula"
-        container: editor.container
-      }
+  TokenIterator = require("ace/token_iterator").TokenIterator
+  Range = require("ace/range").Range
 
-      show: (jqPopoverContainer, content, position) ->
-        jqPopoverContainer.css(position)
-        popoverHandler.options.content = content
-        jqPopoverContainer.popover(popoverHandler.options)
-        jqPopoverContainer.popover("show")
-        return
-
-      destroy: (jqPopoverContainer) ->
-        jqPopoverContainer.popover("destroy")
-
-      popoverExists: (jqPopoverContainer) ->
-        jqPopoverContainer.data()?.popover?
-
-      setContent: (jqPopoverContainer, content) ->
-        jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content").html(content)
-
-      setPosition: (jqPopoverContainer, position) ->
-        jqPopoverElement = jqPopoverContainer.data().popover.tip().css(position)
-    }
-
-    initKaTeX = (onLoaded) ->
-      # Adding CSS for demo formula
-      cssDemoPath = require.toUrl("./katex-demo.css")
-      linkDemo = $("<link>").attr(
-        rel: "stylesheet"
-        href: cssDemoPath
-      )
-      $("head").append(linkDemo)
-
-      # Adding DOM element to place formula into
-      span = $("<span>").attr(
-        id: "formula"
-      )
-      $("body").append(span)
-
-      require(["ace/ext/katex"], (katexInner) ->
-        katex = katexInner
-        onLoaded()
-        return
-      )
-      return
-
-    jqEditorContainer = $(editor.container)
-    getFormulaElement = -> $("#formula")
-    KATEX_OPTIONS = {displayMode: true, throwOnError: false}
-    TokenIterator = require("ace/token_iterator").TokenIterator
-    Range = require("ace/range").Range
-
-    erh = EquationRangeHandler = {
+  getEquationRangeHandler = (editor) ->
+    erh = {
       BEGIN_EQUATION_TOKEN_SEQUENCE: [
         {
           type: "storage.type"
@@ -153,7 +98,67 @@ define((require, exports, module) ->
         end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, column))
         return new Range(start.row, start.column, end.row, end.column)
     }
+    return erh
 
+  exports.getEquationRangeHandler = getEquationRangeHandler
+  exports.setupPreviewer = (editor, popoverHandler) ->
+    katex = null
+    popoverHandler ?= {
+      options: {
+        html: true
+        placement: "bottom"
+        trigger: "manual"
+        title: "Formula"
+        container: editor.container
+      }
+
+      show: (jqPopoverContainer, content, position) ->
+        jqPopoverContainer.css(position)
+        popoverHandler.options.content = content
+        jqPopoverContainer.popover(popoverHandler.options)
+        jqPopoverContainer.popover("show")
+        return
+
+      destroy: (jqPopoverContainer) ->
+        jqPopoverContainer.popover("destroy")
+
+      popoverExists: (jqPopoverContainer) ->
+        jqPopoverContainer.data()?.popover?
+
+      setContent: (jqPopoverContainer, content) ->
+        jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content").html(content)
+
+      setPosition: (jqPopoverContainer, position) ->
+        jqPopoverElement = jqPopoverContainer.data().popover.tip().css(position)
+    }
+
+    initKaTeX = (onLoaded) ->
+      # Adding CSS for demo formula
+      cssDemoPath = require.toUrl("./katex-demo.css")
+      linkDemo = $("<link>").attr(
+        rel: "stylesheet"
+        href: cssDemoPath
+      )
+      $("head").append(linkDemo)
+
+      # Adding DOM element to place formula into
+      span = $("<span>").attr(
+        id: "formula"
+      )
+      $("body").append(span)
+
+      require(["ace/ext/katex"], (katexInner) ->
+        katex = katexInner
+        onLoaded()
+        return
+      )
+      return
+
+    jqEditorContainer = $(editor.container)
+    getFormulaElement = -> $("#formula")
+    KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+
+    erh = EquationRangeHandler = getEquationRangeHandler(editor)
 
     ch = ContextHandler = {
       contextPreviewExists: false
