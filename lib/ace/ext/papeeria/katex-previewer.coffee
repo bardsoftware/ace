@@ -42,7 +42,7 @@ define((require, exports, module) ->
         }
       ]
 
-      compareTokens: (token1, token2) ->
+      equalTokens: (token1, token2) ->
         if token1? and token2?
           return token1.type == token2.type and token1.value == token2.value
         else return if token1? or token2? then false else true
@@ -51,12 +51,12 @@ define((require, exports, module) ->
         # following cycle pushes tokenIterator to the end of
         # beginning sequence, if it is inside one
         for token in erh.BEGIN_EQUATION_TOKEN_SEQUENCE
-          if erh.compareTokens(token, tokenIterator.getCurrentToken())
+          if erh.equalTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepForward()
         curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
         curEquationStart = null
         while curSequenceIndex >= 0
-          if erh.compareTokens(
+          if erh.equalTokens(
               erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
               tokenIterator.stepBackward()
           )
@@ -76,12 +76,12 @@ define((require, exports, module) ->
         # following cycle pushes tokenIterator to the start of
         # ending sequence, if it is inside one
         for token in erh.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-          if erh.compareTokens(token, tokenIterator.getCurrentToken())
+          if erh.equalTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepBackward()
         curSequenceIndex = 0
         curEquationStart = null
         while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
-          if erh.compareTokens(
+          if erh.equalTokens(
             erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
             tokenIterator.stepForward()
           )
@@ -94,8 +94,9 @@ define((require, exports, module) ->
         return curEquationStart
 
       getEquationRange: (row, column) ->
-        start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, column))
-        end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, column))
+        lineLength = editor.getSession().getLine(row).length
+        start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, lineLength))
+        end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, 0))
         return new Range(start.row, start.column, end.row, end.column)
     }
     return erh
@@ -181,23 +182,27 @@ define((require, exports, module) ->
         catch e
           return e
 
-      initPopover: ->
-        ch.updateRange()
-        popoverPosition = ch.getPopoverPosition(ch.curRange.end.row)
+      initPopover: -> setTimeout((->
+        popoverPosition = ch.getPopoverPosition(ch.getEquationEnd())
         popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
-        editor.on("change", ch.delayedUpdatePopover)
-        editor.getSession().on("changeScrollTop", ch.updatePosition)
+      ), 0)
+
+      getEquationEnd: ->
+        i = editor.getCursorPosition().row
+        while LatexParsingContext.getContext(editor.getSession(), i) == "equation"
+          i += 1
+        return i
 
       updatePosition: ->
-        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curRange.end.row))
+        setTimeout((-> popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.getEquationEnd()))), 0)
 
       updateRange: ->
         {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
         ch.curRange = erh.getEquationRange(cursorRow, cursorColumn)
 
       updatePopover: ->
-        ch.updatePosition()
-        popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
+        if ch.contextPreviewExists
+          popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
 
       updateCallback: ->
         if ch.lastChangeTime?
@@ -205,38 +210,57 @@ define((require, exports, module) ->
           ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY - (Date.now() - ch.lastChangeTime))
           ch.lastChangeTime = null
         else
-          ch.updatePopover()
           ch.currentDelayedUpdateId = null
+          curContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
+          if ch.contextPreviewExists and curContext != "equation"
+            ch.destroyContextPreview()
+          if ch.contextPreviewExists
+            ch.updateRange()
+            ch.updatePopover()
 
       delayedUpdatePopover: ->
-        ch.updateRange()
-        ch.updatePosition()
+        curDocLength = editor.getSession().getLength()
+        if (curDocLength != ch.prevDocLength)
+          ch.updatePosition()
+          ch.prevDocLength = curDocLength
+
         if ch.currentDelayedUpdateId?
           ch.lastChangeTime = Date.now()
           return
+
         ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY)
 
-      handleCurrentContext: ->
+      createContextPreview: ->
+        ch.updateRange()
+        ch.contextPreviewExists = true
+        if not katex?
+          initKaTeX(ch.initPopover)
+        else
+          ch.initPopover()
+        ch.prevDocLength = editor.getSession().getLength()
+        editor.on("change", ch.delayedUpdatePopover)
+        editor.getSession().on("changeScrollTop", ch.updatePosition)
+
+      destroyContextPreview: ->
+        ch.curRange = null
+        ch.contextPreviewExists = false
+        editor.off("change", ch.delayedUpdatePopover)
+        editor.getSession().off("changeScrollTop", ch.updatePosition)
+        popoverHandler.destroy(getFormulaElement())
+
+      handleCurrentContext: -> setTimeout((->
+        if ch.currentDelayedUpdateId?
+          return
+
         {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
         currentContext = LatexParsingContext.getContext(editor.getSession(), cursorRow)
-        if not ch.contextPreviewExists and currentContext == "equation"
-          ch.contextPreviewExists = true
-          if not katex?
-            initKaTeX(ch.initPopover)
-          else
-            ch.initPopover()
-        else if ch.curRange? and not ch.curRange.contains(cursorRow, cursorColumn)
-        #
-        # The commented check does not work, because if we create new line while
-        # inside the equation on the last line of the equation, then context
-        # is not updated for another 700 ms, and this new line does not have
-        # `equation` context, whereas range is updated on every change.
-        #
-        # else if ch.contextPreviewExists and currentContext != "equation"
-          ch.contextPreviewExists = false
-          editor.off("change", ch.delayedUpdatePopover)
-          editor.getSession().off("changeScrollTop", ch.updatePosition)
-          popoverHandler.destroy(getFormulaElement())
+
+        if ch.contextPreviewExists and currentContext != "equation"
+          ch.destroyContextPreview()
+
+        else if not ch.contextPreviewExists and currentContext == "equation"
+          ch.createContextPreview()
+      ), 0)
     }
 
     sh = SelectionHandler = {
