@@ -58,8 +58,7 @@ define((require, exports, module) ->
         while curSequenceIndex >= 0
           if erh.equalTokens(
               erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-              tokenIterator.stepBackward()
-          )
+              tokenIterator.stepBackward())
             if curSequenceIndex == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
               curTokenPosition = tokenIterator.getCurrentTokenPosition()
               curEquationStart = {
@@ -83,8 +82,7 @@ define((require, exports, module) ->
         while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
           if erh.equalTokens(
             erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-            tokenIterator.stepForward()
-          )
+            tokenIterator.stepForward())
             if curSequenceIndex == 0
               curEquationStart = tokenIterator.getCurrentTokenPosition()
             curSequenceIndex += 1
