@@ -92,7 +92,6 @@ define((require, exports, module) ->
         return curEquationStart
 
       getEquationRange: (row, column) ->
-        lineLength = editor.getSession().getLine(row).length
         tokenIterator = new TokenIterator(editor.getSession(), row, column)
         end = erh.getEquationEnd(tokenIterator)
         start = erh.getEquationStart(tokenIterator)
@@ -210,10 +209,9 @@ define((require, exports, module) ->
           ch.lastChangeTime = null
         else
           ch.currentDelayedUpdateId = null
-          if ch.contextPreviewExists
-            curContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
-            if curContext != "equation"
-              ch.destroyContextPreview()
+          if (ch.contextPreviewExists and
+              LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row) != "equation")
+            ch.destroyContextPreview()
           if ch.contextPreviewExists
             ch.updateRange()
             ch.updatePopover()
