@@ -93,8 +93,9 @@ define((require, exports, module) ->
 
       getEquationRange: (row, column) ->
         lineLength = editor.getSession().getLine(row).length
-        start = erh.getEquationStart(new TokenIterator(editor.getSession(), row, lineLength))
-        end = erh.getEquationEnd(new TokenIterator(editor.getSession(), row, 0))
+        tokenIterator = new TokenIterator(editor.getSession(), row, column)
+        end = erh.getEquationEnd(tokenIterator)
+        start = erh.getEquationStart(tokenIterator)
         return new Range(start.row, start.column, end.row, end.column)
     }
     return erh
