@@ -209,12 +209,13 @@ define((require, exports, module) ->
           ch.lastChangeTime = null
         else
           ch.currentDelayedUpdateId = null
-          if (ch.contextPreviewExists and
-              LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row) != "equation")
-            ch.destroyContextPreview()
           if ch.contextPreviewExists
-            ch.updateRange()
-            ch.updatePopover()
+            curContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
+            if curContext != "equation"
+              ch.destroyContextPreview()
+            else
+              ch.updateRange()
+              ch.updatePopover()
 
       delayedUpdatePopover: ->
         curDocLength = editor.getSession().getLength()
