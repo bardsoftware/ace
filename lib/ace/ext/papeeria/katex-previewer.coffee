@@ -192,7 +192,7 @@ define((require, exports, module) ->
         return i
 
       updatePosition: ->
-        setTimeout((-> popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.getEquationEnd()))), 0)
+        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.getEquationEnd()))
 
       updateRange: ->
         {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
@@ -220,7 +220,7 @@ define((require, exports, module) ->
       delayedUpdatePopover: ->
         curDocLength = editor.getSession().getLength()
         if curDocLength != ch.prevDocLength
-          ch.updatePosition()
+          setTimeout(ch.updatePosition, 0)
           ch.prevDocLength = curDocLength
 
         if ch.currentDelayedUpdateId?
