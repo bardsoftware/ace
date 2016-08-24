@@ -107,13 +107,13 @@ define((require, exports, module) ->
         html: true
         placement: "bottom"
         trigger: "manual"
-        title: "Formula"
         container: editor.container
       }
 
-      show: (jqPopoverContainer, content, position) ->
+      show: (jqPopoverContainer, title, content, position) ->
         jqPopoverContainer.css(position)
         popoverHandler.options.content = content
+        popoverHandler.options.title = title
         jqPopoverContainer.popover(popoverHandler.options)
         jqPopoverContainer.popover("show")
         return
@@ -124,11 +124,13 @@ define((require, exports, module) ->
       popoverExists: (jqPopoverContainer) ->
         jqPopoverContainer.data()?.popover?
 
-      setContent: (jqPopoverContainer, content) ->
-        jqPopoverElement = jqPopoverContainer.data().popover.tip().children(".popover-content").html(content)
+      setContent: (jqPopoverContainer, title, content) ->
+        popoverElement = jqPopoverContainer.data().popover.tip()
+        popoverElement.children(".popover-content").html(content)
+        popoverElement.children(".popover-title").text(title)
 
       setPosition: (jqPopoverContainer, position) ->
-        jqPopoverElement = jqPopoverContainer.data().popover.tip().css(position)
+        jqPopoverContainer.data().popover.tip().css(position)
     }
 
     initKaTeX = (onLoaded) ->
@@ -162,9 +164,55 @@ define((require, exports, module) ->
     ch = ContextHandler = {
       contextPreviewExists: false
       UPDATE_DELAY: 1000
+      LABEL_SEQUENCE: [
+        {type: "keyword", value: /^\\label$/}
+        {type: "lparen", value: /^\{$/}
+        {type: "variable.parameter", value: /.*/}
+        {type: "rparen", value: /^\}$/}
+      ]
+      LABEL_PARAMETER_INDEX: 2
 
       getWholeEquation: (range) ->
-        editor.getSession().getTextRange(range)
+
+        tokenValues = []
+        labelSequenceIndex = 0
+        labelParameters = []
+        curLabelParameter = null
+        curLabelTokens = []
+
+        tokenIterator = new TokenIterator(editor.getSession(), range.start.row, range.start.column)
+        tokenIterator.stepForward() # at first it should be on the closing token of begin sequence
+        {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
+        token = tokenIterator.getCurrentToken()
+
+        while range.contains(curRow, curColumn + token.value.length)
+          tokenToMatch = ch.LABEL_SEQUENCE[labelSequenceIndex]
+
+          if token.type == tokenToMatch.type and tokenToMatch.value.test(token.value)
+
+            if labelSequenceIndex == ch.LABEL_PARAMETER_INDEX
+              curLabelParameter = token.value
+
+            curLabelTokens.push(token)
+            labelSequenceIndex += 1
+
+            if labelSequenceIndex == ch.LABEL_SEQUENCE.length
+              labelParameters.push(curLabelParameter)
+              labelSequenceIndex = 0
+              curLabelTokens = []
+
+          else
+            labelSequenceIndex = 0
+            for labelToken in curLabelTokens
+              tokenValues.push(labelToken.value)
+            curLabelTokens = []
+            tokenValues.push(token.value)
+
+          tokenIterator.stepForward()
+          {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
+          token = tokenIterator.getCurrentToken()
+
+        return [labelParameters, tokenValues.join("")]
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -173,16 +221,16 @@ define((require, exports, module) ->
 
       getCurrentFormula: ->
         try
-          return katex.renderToString(
-            ch.getWholeEquation(ch.curRange),
-            KATEX_OPTIONS
-          )
+          [labelParameters, equationString] = ch.getWholeEquation(ch.curRange)
+          title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
+          return [title, katex.renderToString(equationString, KATEX_OPTIONS)]
         catch e
-          return e
+          return ["Error!", e]
 
       initPopover: -> setTimeout((->
         popoverPosition = ch.getPopoverPosition(ch.getEquationEnd())
-        popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
+        [title, rendered] = ch.getCurrentFormula()
+        popoverHandler.show(getFormulaElement(), title, rendered, popoverPosition)
       ), 0)
 
       getEquationEnd: ->
@@ -200,7 +248,8 @@ define((require, exports, module) ->
 
       updatePopover: ->
         if ch.contextPreviewExists
-          popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
+          [title, rendered] = ch.getCurrentFormula()
+          popoverHandler.setContent(getFormulaElement(), title, rendered)
 
       updateCallback: ->
         if ch.lastChangeTime?
@@ -282,7 +331,7 @@ define((require, exports, module) ->
           editor.getSelectedText(),
           KATEX_OPTIONS
         )
-        popoverHandler.show(getFormulaElement(), content, popoverPosition)
+        popoverHandler.show(getFormulaElement(), "Preview", content, popoverPosition)
         editor.on("changeSelection", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
