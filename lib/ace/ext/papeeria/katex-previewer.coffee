@@ -19,24 +19,24 @@ define((require, exports, module) ->
       curToken = @tokenIterator.getCurrentToken()
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      if not @range.containsRange(tokenRange)
+      if @range.containsRange(tokenRange)
+        return curToken
+      else
         @tokenIterator.stepForward()
         @expired = true
         return null
-      else
-        return @tokenIterator.getCurrentToken()
 
     stepForward: ->
       @tokenIterator.stepForward()
       curToken = @tokenIterator.getCurrentToken()
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      if not @range.containsRange(tokenRange)
+      if @range.containsRange(tokenRange)
+        return curToken
+      else
         @tokenIterator.stepBackward()
         @expired = true
         return null
-      else
-        return @tokenIterator.getCurrentToken()
 
 
   class EquationRangeHandler
@@ -53,9 +53,10 @@ define((require, exports, module) ->
       { type: "rparen", value: "}" }
     ]
 
+    # empty constructor
     constructor: (@editor) ->
 
-    equalTokens: (token1, token2) ->
+    @equalTokens: (token1, token2) ->
       if token1? and token2?
         return token1.type == token2.type and token1.value == token2.value
       else return if token1? or token2? then false else true
@@ -63,16 +64,16 @@ define((require, exports, module) ->
     getEquationStart: (tokenIterator) ->
       # following cycle pushes tokenIterator to the end of
       # beginning sequence, if it is inside one
-      for token in @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE
-        if @equalTokens(token, tokenIterator.getCurrentToken())
+      for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
+        if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
           tokenIterator.stepForward()
-      curSequenceIndex = @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+      curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
       curEquationStart = null
       while curSequenceIndex >= 0
-        if @equalTokens(
-            @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+        if EquationRangeHandler.equalTokens(
+            EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
             tokenIterator.stepBackward())
-          if curSequenceIndex == @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+          if curSequenceIndex == EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
             curTokenPosition = tokenIterator.getCurrentTokenPosition()
             curEquationStart = {
               row: curTokenPosition.row
@@ -80,21 +81,21 @@ define((require, exports, module) ->
             }
           curSequenceIndex -= 1
         else
-          curSequenceIndex = @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+          curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
           curEquationStart = null
       return curEquationStart
 
     getEquationEnd: (tokenIterator) ->
       # following cycle pushes tokenIterator to the start of
       # ending sequence, if it is inside one
-      for token in @constructor.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-        if @equalTokens(token, tokenIterator.getCurrentToken())
+      for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
+        if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
           tokenIterator.stepBackward()
       curSequenceIndex = 0
       curEquationStart = null
-      while curSequenceIndex < @constructor.END_EQUATION_TOKEN_SEQUENCE.length
-        if @equalTokens(
-            @constructor.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+      while curSequenceIndex < EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.length
+        if EquationRangeHandler.equalTokens(
+            EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
             tokenIterator.stepForward())
           if curSequenceIndex == 0
             curEquationStart = tokenIterator.getCurrentTokenPosition()
@@ -206,21 +207,19 @@ define((require, exports, module) ->
         tokenPosition = tokenIterator.getCurrentTokenPosition()
 
         while token?
-          if not token?
-            break
 
-          noPush = false
+          acceptToken = true
           if token.type == "storage.type" and token.value == "\\label"
             curLine = session.getLine(tokenPosition.row)
             bracketPosition = tokenPosition.column + "\\label".length
             if curLine[bracketPosition] == "{"
               argumentRange = ch.getMacrosArgumentRange(session, {row: tokenPosition.row, column: bracketPosition + 1})
               if argumentRange?
-                noPush = true
+                acceptToken = false
                 labelParameters.push(session.getTextRange(argumentRange))
                 tokenIterator = new ConstrainedTokenIterator(session, range, argumentRange.end.row, argumentRange.end.column + 1)
 
-          if not noPush
+          if acceptToken
             tokenValues.push(token.value)
 
           tokenIterator.stepForward()
