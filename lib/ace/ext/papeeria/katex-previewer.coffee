@@ -17,24 +17,32 @@ define((require, exports, module) ->
     stepBackward: ->
       @tokenIterator.stepBackward()
       curToken = @tokenIterator.getCurrentToken()
+      if not curToken?
+        @expired = true
+        return null
+
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
+        @expired = false
         return curToken
       else
-        @tokenIterator.stepForward()
         @expired = true
         return null
 
     stepForward: ->
       @tokenIterator.stepForward()
       curToken = @tokenIterator.getCurrentToken()
+      if not curToken?
+        @expired = true
+        return null
+
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
+        @expired = false
         return curToken
       else
-        @tokenIterator.stepBackward()
         @expired = true
         return null
 
