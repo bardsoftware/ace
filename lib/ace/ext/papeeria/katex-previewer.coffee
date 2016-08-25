@@ -46,6 +46,10 @@ define((require, exports, module) ->
         @expired = true
         return null
 
+     stepTo: (row, column) ->
+      @tokenIterator = new TokenIterator(@session, row, column)
+      @expired = not @range.contains(row, column)
+
 
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCE: [
@@ -225,7 +229,7 @@ define((require, exports, module) ->
               if argumentRange?
                 acceptToken = false
                 labelParameters.push(session.getTextRange(argumentRange))
-                tokenIterator = new ConstrainedTokenIterator(session, range, argumentRange.end.row, argumentRange.end.column + 1)
+                tokenIterator.stepTo(argumentRange.end.row, argumentRange.end.column + 1)
 
           if acceptToken
             tokenValues.push(token.value)
