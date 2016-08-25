@@ -192,7 +192,7 @@ define((require, exports, module) ->
           return new Range(argumentRange.start.row, argumentRange.start.column + 1,
                            argumentRange.end.row, argumentRange.end.column)
 
-      getWholeEquation: (range) ->
+      getWholeEquation: (tokenIterator) ->
 
         tokenValues = []
         labelSequenceIndex = 0
@@ -201,8 +201,7 @@ define((require, exports, module) ->
         curLabelTokens = []
 
         session = editor.getSession()
-        tokenIterator = new ConstrainedTokenIterator(session, range, range.start.row, range.start.column)
-        tokenIterator.stepForward() # at first it should be on the closing token of begin sequence
+        range = tokenIterator.range
         token = tokenIterator.getCurrentToken()
         tokenPosition = tokenIterator.getCurrentTokenPosition()
 
@@ -237,7 +236,10 @@ define((require, exports, module) ->
 
       getCurrentFormula: ->
         try
-          [labelParameters, equationString] = ch.getWholeEquation(ch.curRange)
+          {row: startRow, column: startColumn} = ch.curRange.start
+          tokenIterator = new ConstrainedTokenIterator(editor.getSession(), ch.curRange, startRow, startColumn)
+          tokenIterator.stepForward()
+          [labelParameters, equationString] = ch.getWholeEquation(tokenIterator)
           title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
           return [title, katex.renderToString(equationString, KATEX_OPTIONS)]
         catch e
