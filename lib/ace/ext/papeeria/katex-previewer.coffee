@@ -5,6 +5,40 @@ define((require, exports, module) ->
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
 
+  class ConstrainedTokenIterator
+    constructor: (@session, @range, row, column) ->
+      @tokenIterator = new TokenIterator(@session, row, column)
+      @expired = not @range.contains(row, column)
+
+    getCurrentToken: -> if not @expired then @tokenIterator.getCurrentToken() else null
+
+    getCurrentTokenPosition: -> if not @expired then @tokenIterator.getCurrentTokenPosition() else null
+
+    stepBackward: ->
+      @tokenIterator.stepBackward()
+      curToken = @tokenIterator.getCurrentToken()
+      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
+      if not @range.containsRange(tokenRange)
+        @tokenIterator.stepForward()
+        @expired = true
+        return null
+      else
+        return @tokenIterator.getCurrentToken()
+
+    stepForward: ->
+      @tokenIterator.stepForward()
+      curToken = @tokenIterator.getCurrentToken()
+      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
+      if not @range.containsRange(tokenRange)
+        @tokenIterator.stepBackward()
+        @expired = true
+        return null
+      else
+        return @tokenIterator.getCurrentToken()
+
+
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCE: [
       { type: "storage.type", value: "\\begin" }
@@ -167,13 +201,14 @@ define((require, exports, module) ->
         curLabelTokens = []
 
         session = editor.getSession()
-        tokenIterator = new TokenIterator(session, range.start.row, range.start.column)
+        tokenIterator = new ConstrainedTokenIterator(session, range, range.start.row, range.start.column)
         tokenIterator.stepForward() # at first it should be on the closing token of begin sequence
-        {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
         token = tokenIterator.getCurrentToken()
         tokenPosition = tokenIterator.getCurrentTokenPosition()
 
-        while range.contains(curRow, curColumn + token.value.length)
+        while token?
+          if not token?
+            break
 
           noPush = false
           if token.type == "storage.type" and token.value == "\\label"
@@ -184,13 +219,12 @@ define((require, exports, module) ->
               if argumentRange?
                 noPush = true
                 labelParameters.push(session.getTextRange(argumentRange))
-                tokenIterator = new TokenIterator(session, argumentRange.end.row, argumentRange.end.column + 1)
+                tokenIterator = new ConstrainedTokenIterator(session, range, argumentRange.end.row, argumentRange.end.column + 1)
 
           if not noPush
             tokenValues.push(token.value)
 
           tokenIterator.stepForward()
-          {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
           token = tokenIterator.getCurrentToken()
           tokenPosition = tokenIterator.getCurrentTokenPosition()
 
