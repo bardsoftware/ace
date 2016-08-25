@@ -4,103 +4,80 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
-  getEquationRangeHandler = (editor) ->
-    erh = {
-      BEGIN_EQUATION_TOKEN_SEQUENCE: [
-        {
-          type: "storage.type"
-          value: "\\begin"
-        }
-        {
-          type: "lparen"
-          value: "{"
-        }
-        {
-          type: "variable.parameter"
-          value: "equation"
-        }
-        {
-          type: "rparen"
-          value: "}"
-        }
-      ]
-      END_EQUATION_TOKEN_SEQUENCE: [
-        {
-          type: "storage.type"
-          value: "\\end"
-        }
-        {
-          type: "lparen"
-          value: "{"
-        }
-        {
-          type: "variable.parameter"
-          value: "equation"
-        }
-        {
-          type: "rparen"
-          value: "}"
-        }
-      ]
 
-      equalTokens: (token1, token2) ->
-        if token1? and token2?
-          return token1.type == token2.type and token1.value == token2.value
-        else return if token1? or token2? then false else true
+  class EquationRangeHandler
+    @BEGIN_EQUATION_TOKEN_SEQUENCE: [
+      { type: "storage.type", value: "\\begin" }
+      { type: "lparen", value: "{" }
+      { type: "variable.parameter", value: "equation" }
+      { type: "rparen", value: "}" }
+    ]
+    @END_EQUATION_TOKEN_SEQUENCE: [
+      { type: "storage.type", value: "\\end" }
+      { type: "lparen", value: "{" }
+      { type: "variable.parameter", value: "equation" }
+      { type: "rparen", value: "}" }
+    ]
 
-      getEquationStart: (tokenIterator) ->
-        # following cycle pushes tokenIterator to the end of
-        # beginning sequence, if it is inside one
-        for token in erh.BEGIN_EQUATION_TOKEN_SEQUENCE
-          if erh.equalTokens(token, tokenIterator.getCurrentToken())
-            tokenIterator.stepForward()
-        curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-        curEquationStart = null
-        while curSequenceIndex >= 0
-          if erh.equalTokens(
-              erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-              tokenIterator.stepBackward())
-            if curSequenceIndex == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-              curTokenPosition = tokenIterator.getCurrentTokenPosition()
-              curEquationStart = {
-                row: curTokenPosition.row
-                column: curTokenPosition.column + tokenIterator.getCurrentToken().value.length
-              }
-            curSequenceIndex -= 1
-          else
-            curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-            curEquationStart = null
-        return curEquationStart
+    constructor: (@editor) ->
 
-      getEquationEnd: (tokenIterator) ->
-        # following cycle pushes tokenIterator to the start of
-        # ending sequence, if it is inside one
-        for token in erh.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-          if erh.equalTokens(token, tokenIterator.getCurrentToken())
-            tokenIterator.stepBackward()
-        curSequenceIndex = 0
-        curEquationStart = null
-        while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
-          if erh.equalTokens(
-              erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-              tokenIterator.stepForward())
-            if curSequenceIndex == 0
-              curEquationStart = tokenIterator.getCurrentTokenPosition()
-            curSequenceIndex += 1
-          else
-            curSequenceIndex = 0
-            curEquationStart = null
-        return curEquationStart
+    equalTokens: (token1, token2) ->
+      if token1? and token2?
+        return token1.type == token2.type and token1.value == token2.value
+      else return if token1? or token2? then false else true
 
-      getEquationRange: (row, column) ->
-        tokenIterator = new TokenIterator(editor.getSession(), row, column)
-        end = erh.getEquationEnd(tokenIterator)
-        start = erh.getEquationStart(tokenIterator)
-        return new Range(start.row, start.column, end.row, end.column)
-    }
-    return erh
+    getEquationStart: (tokenIterator) ->
+      # following cycle pushes tokenIterator to the end of
+      # beginning sequence, if it is inside one
+      for token in @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE
+        if @equalTokens(token, tokenIterator.getCurrentToken())
+          tokenIterator.stepForward()
+      curSequenceIndex = @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+      curEquationStart = null
+      while curSequenceIndex >= 0
+        if @equalTokens(
+            @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+            tokenIterator.stepBackward())
+          if curSequenceIndex == @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+            curTokenPosition = tokenIterator.getCurrentTokenPosition()
+            curEquationStart = {
+              row: curTokenPosition.row
+              column: curTokenPosition.column + tokenIterator.getCurrentToken().value.length
+            }
+          curSequenceIndex -= 1
+        else
+          curSequenceIndex = @constructor.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+          curEquationStart = null
+      return curEquationStart
 
-  exports.getEquationRangeHandler = getEquationRangeHandler
+    getEquationEnd: (tokenIterator) ->
+      # following cycle pushes tokenIterator to the start of
+      # ending sequence, if it is inside one
+      for token in @constructor.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
+        if @equalTokens(token, tokenIterator.getCurrentToken())
+          tokenIterator.stepBackward()
+      curSequenceIndex = 0
+      curEquationStart = null
+      while curSequenceIndex < @constructor.END_EQUATION_TOKEN_SEQUENCE.length
+        if @equalTokens(
+            @constructor.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+            tokenIterator.stepForward())
+          if curSequenceIndex == 0
+            curEquationStart = tokenIterator.getCurrentTokenPosition()
+          curSequenceIndex += 1
+        else
+          curSequenceIndex = 0
+          curEquationStart = null
+      return curEquationStart
+
+    getEquationRange: (row, column) ->
+      tokenIterator = new TokenIterator(@editor.getSession(), row, column)
+      end = @getEquationEnd(tokenIterator)
+      start = @getEquationStart(tokenIterator)
+      return new Range(start.row, start.column, end.row, end.column)
+
+
+  exports.EquationRangeHandler = EquationRangeHandler
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
     popoverHandler ?= {
@@ -160,7 +137,7 @@ define((require, exports, module) ->
     getFormulaElement = -> $("#formula")
     KATEX_OPTIONS = {displayMode: true, throwOnError: false}
 
-    erh = EquationRangeHandler = getEquationRangeHandler(editor)
+    equationRangeHandler = new EquationRangeHandler(editor)
 
     ch = ContextHandler = {
       contextPreviewExists: false
@@ -249,7 +226,7 @@ define((require, exports, module) ->
 
       updateRange: ->
         {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
-        ch.curRange = erh.getEquationRange(cursorRow, cursorColumn)
+        ch.curRange = equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
 
       updatePopover: ->
         if ch.contextPreviewExists
