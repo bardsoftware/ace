@@ -2,6 +2,7 @@ define((require, exports, module) ->
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
   TokenIterator = require("ace/token_iterator").TokenIterator
   Range = require("ace/range").Range
+  findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
   getEquationRangeHandler = (editor) ->
     erh = {
@@ -172,6 +173,14 @@ define((require, exports, module) ->
       ]
       LABEL_PARAMETER_INDEX: 2
 
+      getMacrosArgumentRange: (session, argumentStartPos) ->
+        argumentRange = findSurroundingBrackets(session, argumentStartPos)
+        if argumentRange.mismatch
+          return null
+        else
+          return new Range(argumentRange.start.row, argumentRange.start.column + 1,
+                           argumentRange.end.row, argumentRange.end.column)
+
       getWholeEquation: (range) ->
 
         tokenValues = []
@@ -180,37 +189,33 @@ define((require, exports, module) ->
         curLabelParameter = null
         curLabelTokens = []
 
-        tokenIterator = new TokenIterator(editor.getSession(), range.start.row, range.start.column)
+        session = editor.getSession()
+        tokenIterator = new TokenIterator(session, range.start.row, range.start.column)
         tokenIterator.stepForward() # at first it should be on the closing token of begin sequence
         {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
         token = tokenIterator.getCurrentToken()
+        tokenPosition = tokenIterator.getCurrentTokenPosition()
 
         while range.contains(curRow, curColumn + token.value.length)
-          tokenToMatch = ch.LABEL_SEQUENCE[labelSequenceIndex]
 
-          if token.type == tokenToMatch.type and tokenToMatch.value.test(token.value)
+          noPush = false
+          if token.type == "storage.type" and token.value == "\\label"
+            curLine = session.getLine(tokenPosition.row)
+            bracketPosition = tokenPosition.column + "\\label".length
+            if curLine[bracketPosition] == "{"
+              argumentRange = ch.getMacrosArgumentRange(session, {row: tokenPosition.row, column: bracketPosition + 1})
+              if argumentRange?
+                noPush = true
+                labelParameters.push(session.getTextRange(argumentRange))
+                tokenIterator = new TokenIterator(session, argumentRange.end.row, argumentRange.end.column + 1)
 
-            if labelSequenceIndex == ch.LABEL_PARAMETER_INDEX
-              curLabelParameter = token.value
-
-            curLabelTokens.push(token)
-            labelSequenceIndex += 1
-
-            if labelSequenceIndex == ch.LABEL_SEQUENCE.length
-              labelParameters.push(curLabelParameter)
-              labelSequenceIndex = 0
-              curLabelTokens = []
-
-          else
-            labelSequenceIndex = 0
-            for labelToken in curLabelTokens
-              tokenValues.push(labelToken.value)
-            curLabelTokens = []
+          if not noPush
             tokenValues.push(token.value)
 
           tokenIterator.stepForward()
           {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
           token = tokenIterator.getCurrentToken()
+          tokenPosition = tokenIterator.getCurrentTokenPosition()
 
         return [labelParameters, tokenValues.join("")]
 
