@@ -202,6 +202,8 @@ define((require, exports, module) ->
         if argumentRange.mismatch
           return null
         else
+          # increment starting column to not include bracket
+          # do not decrement ending column because Range is left-open
           return new Range(argumentRange.start.row, argumentRange.start.column + 1,
                            argumentRange.end.row, argumentRange.end.column)
 
