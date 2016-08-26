@@ -193,13 +193,6 @@ define((require, exports, module) ->
     ch = ContextHandler = {
       contextPreviewExists: false
       UPDATE_DELAY: 1000
-      LABEL_SEQUENCE: [
-        {type: "keyword", value: /^\\label$/}
-        {type: "lparen", value: /^\{$/}
-        {type: "variable.parameter", value: /.*/}
-        {type: "rparen", value: /^\}$/}
-      ]
-      LABEL_PARAMETER_INDEX: 2
 
       getMacrosArgumentRange: (session, argumentStartPos) ->
         argumentRange = findSurroundingBrackets(session, argumentStartPos)
