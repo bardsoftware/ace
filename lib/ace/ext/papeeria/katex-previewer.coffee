@@ -4,6 +4,29 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
+  katex = null
+  initKaTeX = (onLoaded) ->
+    # Adding CSS for demo formula
+    cssDemoPath = require.toUrl("./katex-demo.css")
+    linkDemo = $("<link>").attr(
+      rel: "stylesheet"
+      href: cssDemoPath
+    )
+    $("head").append(linkDemo)
+
+    # Adding DOM element to place formula into
+    span = $("<span>").attr(
+      id: "formula"
+    )
+    $("body").append(span)
+
+    require(["ace/ext/katex"], (katexInner) ->
+      katex = katexInner
+      onLoaded()
+      return
+    )
+    return
+
 
   class ConstrainedTokenIterator
     constructor: (@session, @range, row, column) ->
@@ -142,7 +165,6 @@ define((require, exports, module) ->
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
   exports.setupPreviewer = (editor, popoverHandler) ->
-    katex = null
     popoverHandler ?= {
       options: {
         html: true
@@ -173,28 +195,6 @@ define((require, exports, module) ->
       setPosition: (jqPopoverContainer, position) ->
         jqPopoverContainer.data().popover.tip().css(position)
     }
-
-    initKaTeX = (onLoaded) ->
-      # Adding CSS for demo formula
-      cssDemoPath = require.toUrl("./katex-demo.css")
-      linkDemo = $("<link>").attr(
-        rel: "stylesheet"
-        href: cssDemoPath
-      )
-      $("head").append(linkDemo)
-
-      # Adding DOM element to place formula into
-      span = $("<span>").attr(
-        id: "formula"
-      )
-      $("body").append(span)
-
-      require(["ace/ext/katex"], (katexInner) ->
-        katex = katexInner
-        onLoaded()
-        return
-      )
-      return
 
     jqEditorContainer = $(editor.container)
     getFormulaElement = -> $("#formula")
@@ -352,7 +352,6 @@ define((require, exports, module) ->
     }
 
     sh = SelectionHandler = {
-
       hideSelectionPopover: ->
         popoverHandler.destroy(getFormulaElement())
         editor.off("changeSelection", sh.hideSelectionPopover)
