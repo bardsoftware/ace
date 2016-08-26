@@ -4,6 +4,7 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
+
   katex = null
   initKaTeX = (onLoaded) ->
     # Adding CSS for demo formula
@@ -26,6 +27,156 @@ define((require, exports, module) ->
       return
     )
     return
+
+
+  class ContextHandler
+    @UPDATE_DELAY: 1000
+    @KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+
+    @getMacrosArgumentRange: (session, argumentStartPos) ->
+      argumentRange = findSurroundingBrackets(session, argumentStartPos)
+      if argumentRange.mismatch
+        return null
+      else
+        # increment starting column to not include bracket
+        # do not decrement ending column because Range is left-open
+        return new Range(argumentRange.start.row, argumentRange.start.column + 1,
+                         argumentRange.end.row, argumentRange.end.column)
+
+    @getWholeEquation: (session, tokenIterator) ->
+      tokenValues = []
+      labelSequenceIndex = 0
+      labelParameters = []
+      curLabelParameter = null
+      curLabelTokens = []
+
+      range = tokenIterator.range
+      token = tokenIterator.getCurrentToken()
+      tokenPosition = tokenIterator.getCurrentTokenPosition()
+
+      while token?
+        acceptToken = true
+        if token.type == "storage.type" and token.value == "\\label"
+          curLine = session.getLine(tokenPosition.row)
+          bracketPosition = tokenPosition.column + "\\label".length
+          if curLine[bracketPosition] == "{"
+            argumentRange = ContextHandler.getMacrosArgumentRange(session, {row: tokenPosition.row, column: bracketPosition + 1})
+            if argumentRange?
+              acceptToken = false
+              labelParameters.push(session.getTextRange(argumentRange))
+              tokenIterator.stepTo(argumentRange.end.row, argumentRange.end.column + 1)
+
+        if acceptToken
+          tokenValues.push(token.value)
+
+        tokenIterator.stepForward()
+        token = tokenIterator.getCurrentToken()
+        tokenPosition = tokenIterator.getCurrentTokenPosition()
+
+      return [labelParameters, tokenValues.join("")]
+
+    constructor: (@editor, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
+      @jqEditorContainer = $(@editor.container)
+      @contextPreviewExists = false
+
+    getPopoverPosition: (row) -> {
+        top: "#{@editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
+        left: "#{@jqEditorContainer.position().left}px"
+      }
+
+    getCurrentFormula: ->
+      try
+        {row: startRow, column: startColumn} = @curRange.start
+        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curRange, startRow, startColumn)
+        tokenIterator.stepForward()
+        [labelParameters, equationString] = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
+        title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
+        return [title, katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS)]
+      catch e
+        return ["Error!", e]
+
+    initPopover: => setTimeout((=>
+      popoverPosition = @getPopoverPosition(@getEquationEnd())
+      [title, rendered] = @getCurrentFormula()
+      @popoverHandler.show(@getFormulaElement(), title, rendered, popoverPosition)
+    ), 0)
+
+    getEquationEnd: ->
+      i = @editor.getCursorPosition().row
+      while LatexParsingContext.getContext(@editor.getSession(), i) == "equation"
+        i += 1
+      return i
+
+    updatePosition: =>
+      @popoverHandler.setPosition(@getFormulaElement(), @getPopoverPosition(@getEquationEnd()))
+
+    updateRange: ->
+      {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
+      @curRange = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+
+    updatePopover: ->
+      if @contextPreviewExists
+        [title, rendered] = @getCurrentFormula()
+        @popoverHandler.setContent(@getFormulaElement(), title, rendered)
+
+    updateCallback: =>
+      if @lastChangeTime?
+        curTime = Date.now()
+        @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY - (Date.now() - @lastChangeTime))
+        @lastChangeTime = null
+      else
+        @currentDelayedUpdateId = null
+        if @contextPreviewExists
+          curContext = LatexParsingContext.getContext(@editor.getSession(), @editor.getCursorPosition().row)
+          if curContext != "equation"
+            @destroyContextPreview()
+          else
+            @updateRange()
+            @updatePopover()
+
+    delayedUpdatePopover: =>
+      curDocLength = @editor.getSession().getLength()
+      if curDocLength != @prevDocLength
+        setTimeout(@updatePosition, 0)
+        @prevDocLength = curDocLength
+
+      if @currentDelayedUpdateId?
+        @lastChangeTime = Date.now()
+        return
+
+      @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY)
+
+    createContextPreview: ->
+      @updateRange()
+      @contextPreviewExists = true
+      if not katex?
+        initKaTeX(@initPopover)
+      else
+        @initPopover()
+      @prevDocLength = @editor.getSession().getLength()
+      @editor.on("change", @delayedUpdatePopover)
+      @editor.getSession().on("changeScrollTop", @updatePosition)
+
+    destroyContextPreview: ->
+      @curRange = null
+      @contextPreviewExists = false
+      @editor.off("change", @delayedUpdatePopover)
+      @editor.getSession().off("changeScrollTop", @updatePosition)
+      @popoverHandler.destroy(@getFormulaElement())
+
+    handleCurrentContext: => setTimeout((=>
+      if @currentDelayedUpdateId?
+        return
+
+      {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
+      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow)
+
+      if @contextPreviewExists and currentContext != "equation"
+        @destroyContextPreview()
+
+      else if not @contextPreviewExists and currentContext == "equation"
+        @createContextPreview()
+    ), 0)
 
 
   class ConstrainedTokenIterator
@@ -162,6 +313,7 @@ define((require, exports, module) ->
       return new Range(start.row, start.column, end.row, end.column)
 
 
+  exports.ContextHandler = ContextHandler
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
   exports.setupPreviewer = (editor, popoverHandler) ->
@@ -197,159 +349,12 @@ define((require, exports, module) ->
     }
 
     jqEditorContainer = $(editor.container)
-    getFormulaElement = -> $("#formula")
     KATEX_OPTIONS = {displayMode: true, throwOnError: false}
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    ch = ContextHandler = {
-      contextPreviewExists: false
-      UPDATE_DELAY: 1000
-
-      getMacrosArgumentRange: (session, argumentStartPos) ->
-        argumentRange = findSurroundingBrackets(session, argumentStartPos)
-        if argumentRange.mismatch
-          return null
-        else
-          # increment starting column to not include bracket
-          # do not decrement ending column because Range is left-open
-          return new Range(argumentRange.start.row, argumentRange.start.column + 1,
-                           argumentRange.end.row, argumentRange.end.column)
-
-      getWholeEquation: (tokenIterator) ->
-
-        tokenValues = []
-        labelSequenceIndex = 0
-        labelParameters = []
-        curLabelParameter = null
-        curLabelTokens = []
-
-        session = editor.getSession()
-        range = tokenIterator.range
-        token = tokenIterator.getCurrentToken()
-        tokenPosition = tokenIterator.getCurrentTokenPosition()
-
-        while token?
-
-          acceptToken = true
-          if token.type == "storage.type" and token.value == "\\label"
-            curLine = session.getLine(tokenPosition.row)
-            bracketPosition = tokenPosition.column + "\\label".length
-            if curLine[bracketPosition] == "{"
-              argumentRange = ch.getMacrosArgumentRange(session, {row: tokenPosition.row, column: bracketPosition + 1})
-              if argumentRange?
-                acceptToken = false
-                labelParameters.push(session.getTextRange(argumentRange))
-                tokenIterator.stepTo(argumentRange.end.row, argumentRange.end.column + 1)
-
-          if acceptToken
-            tokenValues.push(token.value)
-
-          tokenIterator.stepForward()
-          token = tokenIterator.getCurrentToken()
-          tokenPosition = tokenIterator.getCurrentTokenPosition()
-
-        return [labelParameters, tokenValues.join("")]
-
-      getPopoverPosition: (row) -> {
-          top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
-          left: "#{jqEditorContainer.position().left}px"
-        }
-
-      getCurrentFormula: ->
-        try
-          {row: startRow, column: startColumn} = ch.curRange.start
-          tokenIterator = new ConstrainedTokenIterator(editor.getSession(), ch.curRange, startRow, startColumn)
-          tokenIterator.stepForward()
-          [labelParameters, equationString] = ch.getWholeEquation(tokenIterator)
-          title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
-          return [title, katex.renderToString(equationString, KATEX_OPTIONS)]
-        catch e
-          return ["Error!", e]
-
-      initPopover: -> setTimeout((->
-        popoverPosition = ch.getPopoverPosition(ch.getEquationEnd())
-        [title, rendered] = ch.getCurrentFormula()
-        popoverHandler.show(getFormulaElement(), title, rendered, popoverPosition)
-      ), 0)
-
-      getEquationEnd: ->
-        i = editor.getCursorPosition().row
-        while LatexParsingContext.getContext(editor.getSession(), i) == "equation"
-          i += 1
-        return i
-
-      updatePosition: ->
-        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.getEquationEnd()))
-
-      updateRange: ->
-        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
-        ch.curRange = equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
-
-      updatePopover: ->
-        if ch.contextPreviewExists
-          [title, rendered] = ch.getCurrentFormula()
-          popoverHandler.setContent(getFormulaElement(), title, rendered)
-
-      updateCallback: ->
-        if ch.lastChangeTime?
-          curTime = Date.now()
-          ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY - (Date.now() - ch.lastChangeTime))
-          ch.lastChangeTime = null
-        else
-          ch.currentDelayedUpdateId = null
-          if ch.contextPreviewExists
-            curContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
-            if curContext != "equation"
-              ch.destroyContextPreview()
-            else
-              ch.updateRange()
-              ch.updatePopover()
-
-      delayedUpdatePopover: ->
-        curDocLength = editor.getSession().getLength()
-        if curDocLength != ch.prevDocLength
-          setTimeout(ch.updatePosition, 0)
-          ch.prevDocLength = curDocLength
-
-        if ch.currentDelayedUpdateId?
-          ch.lastChangeTime = Date.now()
-          return
-
-        ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY)
-
-      createContextPreview: ->
-        ch.updateRange()
-        ch.contextPreviewExists = true
-        if not katex?
-          initKaTeX(ch.initPopover)
-        else
-          ch.initPopover()
-        ch.prevDocLength = editor.getSession().getLength()
-        editor.on("change", ch.delayedUpdatePopover)
-        editor.getSession().on("changeScrollTop", ch.updatePosition)
-
-      destroyContextPreview: ->
-        ch.curRange = null
-        ch.contextPreviewExists = false
-        editor.off("change", ch.delayedUpdatePopover)
-        editor.getSession().off("changeScrollTop", ch.updatePosition)
-        popoverHandler.destroy(getFormulaElement())
-
-      handleCurrentContext: -> setTimeout((->
-        if ch.currentDelayedUpdateId?
-          return
-
-        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
-        currentContext = LatexParsingContext.getContext(editor.getSession(), cursorRow)
-
-        if ch.contextPreviewExists and currentContext != "equation"
-          ch.destroyContextPreview()
-
-        else if not ch.contextPreviewExists and currentContext == "equation"
-          ch.createContextPreview()
-      ), 0)
-    }
+    getFormulaElement = -> $("#formula")
+    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, getFormulaElement)
 
     sh = SelectionHandler = {
       hideSelectionPopover: ->
@@ -390,7 +395,7 @@ define((require, exports, module) ->
       exec: SelectionHandler.createPopover
     )
 
-    editor.on("changeSelection", ContextHandler.handleCurrentContext)
+    editor.on("changeSelection", contextHandler.handleCurrentContext)
     return
   return
 )
