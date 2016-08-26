@@ -17,23 +17,22 @@ define((require, exports, module) ->
     "\\prod"
   ]
 
-  compare = (a, b) -> (b < a) - (a < b)
+  compare = (a, b) -> a.localeCompare(b)
   SUMS_AND_INTEGRALS = SUMS_AND_INTEGRALS.sort(compare)
-  SUMS_AND_INTEGRALS = for i in [0..SUMS_AND_INTEGRALS.length]
+  SUMS_AND_INTEGRALS = for i in [0..SUMS_AND_INTEGRALS.length-1]
       caption: SUMS_AND_INTEGRALS[i] + "{n}{i=..}{..}"
       snippet: SUMS_AND_INTEGRALS[i] + "^{${1:n}}_{${2:i=1}}{${3}}"
       score: 1000 - i
       meta: "Sums and integrals"
 
 
-
-  FORMULAS_SNIPPETS = [
+  MATH_SNIPPETS = [
     {
       caption: "\\frac{num}{denom}"
       snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
-      score: 2
+      score: 1000
       meta: "Math"
     }
     {
@@ -41,7 +40,7 @@ define((require, exports, module) ->
       snippet: """
                 \\sqrt{${1:n}}
             """
-      score: 3
+      score: 1000
       meta: "Math"
     }
     {
@@ -49,7 +48,7 @@ define((require, exports, module) ->
       snippet: """
                 \\sqrt[${1:k}]{${2:n}}
             """
-      score: 3
+      score: 1000
       meta: "Math"
     }
     {
@@ -57,10 +56,18 @@ define((require, exports, module) ->
       snippet: """
                 \\binom{${1:n}}{${2:k}}
             """
-      score: 4
+      score: 1000
       meta: "Math"
     }
   ]
+
+  MATH_SNIPPETS = MATH_SNIPPETS.sort((a, b) -> a.meta.localeCompare(b.meta))
+  MATH_SNIPPETS = for i in [0..MATH_SNIPPETS.length-1]
+      console.log(i)
+      caption: MATH_SNIPPETS[i].caption
+      snippet: MATH_SNIPPETS[i].snippet
+      score: 1000 - i
+      meta: "Math"
 
 
   GREEK_LETTERS = [
@@ -110,7 +117,7 @@ define((require, exports, module) ->
     meta: "Greek Letter"
 
 
-  return SUMS_AND_INTEGRALS.concat(FORMULAS_SNIPPETS, GREEK_LETTERS)
+  return SUMS_AND_INTEGRALS.concat(MATH_SNIPPETS, GREEK_LETTERS)
 );
 
 
