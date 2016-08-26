@@ -8,7 +8,12 @@ define((require, exports, module) ->
   class ConstrainedTokenIterator
     constructor: (@session, @range, row, column) ->
       @tokenIterator = new TokenIterator(@session, row, column)
-      @expired = not @range.contains(row, column)
+      curToken = @tokenIterator.getCurrentToken()
+      if not curToken?
+        @expired = false
+      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
+      @expired = not @range.containsRange(tokenRange)
 
     getCurrentToken: -> if not @expired then @tokenIterator.getCurrentToken() else null
 
@@ -134,6 +139,7 @@ define((require, exports, module) ->
       return new Range(start.row, start.column, end.row, end.column)
 
 
+  exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
