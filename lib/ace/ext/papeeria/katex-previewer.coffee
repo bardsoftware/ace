@@ -69,11 +69,12 @@ define((require, exports, module) ->
     constructor: (@editor) ->
 
     @equalTokens: (token1, token2) ->
-      if token1? and token2?
-        return token1.type == token2.type and token1.value == token2.value
-      else return if token1? or token2? then false else true
+      return token1.type == token2.type and token1.value == token2.value
 
     getEquationStart: (tokenIterator) ->
+      # if tokenIterator initialy is on the empty line, it's current token is null
+      if not tokenIterator.getCurrentToken()?
+        tokenIterator.stepForward()
       # following cycle pushes tokenIterator to the end of
       # beginning sequence, if it is inside one
       for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
@@ -98,6 +99,9 @@ define((require, exports, module) ->
       return curEquationStart
 
     getEquationEnd: (tokenIterator) ->
+      # if tokenIterator initialy is on the empty line, it's current token is null
+      if not tokenIterator.getCurrentToken()?
+        tokenIterator.stepBackward()
       # following cycle pushes tokenIterator to the start of
       # ending sequence, if it is inside one
       for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
