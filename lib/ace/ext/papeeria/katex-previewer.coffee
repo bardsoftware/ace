@@ -83,14 +83,17 @@ define((require, exports, module) ->
       curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
       curEquationStart = null
       while curSequenceIndex >= 0
+        curToken = tokenIterator.stepBackward()
+        if not curToken
+          return null
         if EquationRangeHandler.equalTokens(
             EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-            tokenIterator.stepBackward())
+            curToken)
           if curSequenceIndex == EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
             curTokenPosition = tokenIterator.getCurrentTokenPosition()
             curEquationStart = {
               row: curTokenPosition.row
-              column: curTokenPosition.column + tokenIterator.getCurrentToken().value.length
+              column: curTokenPosition.column + curToken.value.length
             }
           curSequenceIndex -= 1
         else
@@ -110,9 +113,12 @@ define((require, exports, module) ->
       curSequenceIndex = 0
       curEquationStart = null
       while curSequenceIndex < EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.length
+        curToken = tokenIterator.stepForward()
+        if not curToken
+          return null
         if EquationRangeHandler.equalTokens(
             EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-            tokenIterator.stepForward())
+            curToken)
           if curSequenceIndex == 0
             curEquationStart = tokenIterator.getCurrentTokenPosition()
           curSequenceIndex += 1
