@@ -8,7 +8,7 @@ define((require, exports, module) ->
 
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  EQUATION_SNIPPETS = require("./snippets/EquationSnippets")
+  EQUATION_SNIPPETS = require("./snippets/equation_snippets")
 
   LIST_ENVIRONMENTS = [
     "itemize"
@@ -129,9 +129,6 @@ define((require, exports, module) ->
       else
         callback(null, @cache)
 
-  compare = (a, b) ->
-    console.log(a.meta, b.meta)
-    a.meta < b.meta
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
