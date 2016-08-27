@@ -63,7 +63,6 @@ define((require, exports, module) ->
 
   MATH_SNIPPETS = MATH_SNIPPETS.sort((a, b) -> a.caption.localeCompare(b.caption))
   MATH_SNIPPETS = for i in [0..MATH_SNIPPETS.length-1]
-      console.log(i)
       caption: MATH_SNIPPETS[i].caption
       snippet: MATH_SNIPPETS[i].snippet
       score: 1000 - i
