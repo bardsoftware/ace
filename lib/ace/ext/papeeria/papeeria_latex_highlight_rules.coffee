@@ -32,6 +32,15 @@ define((require, exports, module) ->
 
     popState = (currentState, stack) ->
       return stack.pop() or "start"
+    topState = (currentState, stack) ->
+      #stackTop = (stack) ->
+      top = stack.pop()
+      if !top
+        return "start"
+
+      stack.push(top)
+
+      return top
 
     basicRules = [
       {
@@ -78,6 +87,11 @@ define((require, exports, module) ->
         regex: "(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
       {
+        token : "string.math",
+        regex : "\\\\\\[",
+        next  : "math_latex"
+      }
+      {
         token: "storage.type"
         regex: "\\\\[a-zA-Z]+"
       }
@@ -94,10 +108,11 @@ define((require, exports, module) ->
         regex: "\\\\[^a-zA-Z]?"
       }
       {
-          token : "string.math",
-          regex : "\\${1,2}",
-          next  : "math"
+        token : "string.math",
+        regex : "\\${1,2}",
+        next  : "math"
       }
+
     ]
 
 
@@ -158,18 +173,34 @@ define((require, exports, module) ->
         }, {
             token : "string.math",
             regex : "\\${1,2}"
-            next  : "start"
+            next  : topState
         }, {
             token : "constant.character.escape.string.math"
             regex : "\\\\(?:[^a-zA-Z]|[a-zA-Z]+)"
         }, {
             token : "error.math",
             regex : "^\\s*$",
-            next : "start"
+            next : topState
         }, {
-            defaultToken : "string.math"
-        }]
-
+           defaultToken : "string.math"
+      }]
+      "math_latex" : [{
+          token : "comment.math"
+          regex : "%.*\\]"
+      }, {
+          token : "string.latex.math",
+          regex : "\\\\]"
+          next  : topState
+      }, {
+          token : "constant.character.escape.string.latex.math"
+          regex : "\\\\(?:[^a-zA-Z]|[a-zA-Z]+)"
+      }, {
+          token : "error.latex.math",
+          regex : "^\\s\\]",
+          next : topState
+      }, {
+          defaultToken : "string.latex.math"
+      }]
 
     for key of @$rules
       for rule of basicRules
