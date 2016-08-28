@@ -32,6 +32,7 @@ define((require, exports, module) ->
           stack.push(pushedState)
         return pushedState
 
+    #The same as pushState, but switch our finite state to "to" state
     pushStateCheckout = (pushedState, to) ->
       return (currentState, stack) ->
         if currentState == "start"
