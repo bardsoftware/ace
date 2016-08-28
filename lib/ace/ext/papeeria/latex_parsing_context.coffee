@@ -9,18 +9,19 @@ define((require, exports, module) ->
      *
      * Returns context at row.
     ###
-
     # Specific for token"s system of type in ace
     # We saw such a realization in html_completions.js
     isType = (token, type) ->
         return token.type.split(".").indexOf(type) > -1
 
     getContext = (session, row, column) ->
+        state = getContextFromRow(session, row)
         token = session.getTokenAt(row, column)
         if token? and isType(token, "math")
             return EQUATION_STATE
         else
-            getContextFromRow(session, row)
+            return state
+
 
     getContextFromRow = (session, row) ->
         states = session.getState(row)
