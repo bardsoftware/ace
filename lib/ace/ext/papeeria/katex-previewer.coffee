@@ -252,14 +252,19 @@ define((require, exports, module) ->
       return token1.type == token2.type and token1.value == token2.value
 
     getEquationStart: (tokenIterator) ->
-      # if tokenIterator initialy is on the empty line, it's current token is null
+      # if tokenIterator is initialy on the empty line, its current token is null
       if not tokenIterator.getCurrentToken()?
         tokenIterator.stepForward()
-      # following cycle pushes tokenIterator to the end of
-      # beginning sequence, if it is inside one
-      for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
-        if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-          tokenIterator.stepForward()
+        # if tokenIterator.getCurrentToken() is still null, then we're at the end of a file
+        if not tokenIterator.getCurrentToken()?
+          return null
+      else
+        # following loop pushes tokenIterator to the end of
+        # beginning sequence, if it is inside one
+        for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
+          if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
+            tokenIterator.stepForward()
+
       curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
       curEquationStart = null
       while curSequenceIndex >= 0
@@ -282,14 +287,19 @@ define((require, exports, module) ->
       return curEquationStart
 
     getEquationEnd: (tokenIterator) ->
-      # if tokenIterator initialy is on the empty line, it's current token is null
+      # if tokenIterator is initialy on the empty line, its current token is null
       if not tokenIterator.getCurrentToken()?
         tokenIterator.stepBackward()
-      # following cycle pushes tokenIterator to the start of
-      # ending sequence, if it is inside one
-      for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-        if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-          tokenIterator.stepBackward()
+        # if tokenIterator is still null, then we're at the end of a file
+        if not tokenIterator.getCurrentToken()?
+          return null
+      else
+        # following cycle pushes tokenIterator to the start of
+        # ending sequence, if it is inside one
+        for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
+          if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
+            tokenIterator.stepBackward()
+
       curSequenceIndex = 0
       curEquationStart = null
       while curSequenceIndex < EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.length
@@ -311,6 +321,8 @@ define((require, exports, module) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getEquationEnd(tokenIterator)
       start = @getEquationStart(tokenIterator)
+      if not (start? and end?)
+        return null
       return new Range(start.row, start.column, end.row, end.column)
 
 
