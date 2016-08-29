@@ -252,7 +252,7 @@ define((require, exports, module) ->
       return token1.type == token2.type and token1.value == token2.value
 
     getEquationStart: (tokenIterator) ->
-      # if tokenIterator is initialy on the empty line, its current token is null
+      # if tokenIterator is initially on the empty line, its current token is null
       if not tokenIterator.getCurrentToken()?
         tokenIterator.stepForward()
         # if tokenIterator.getCurrentToken() is still null, then we're at the end of a file
@@ -287,7 +287,7 @@ define((require, exports, module) ->
       return curEquationStart
 
     getEquationEnd: (tokenIterator) ->
-      # if tokenIterator is initialy on the empty line, its current token is null
+      # if tokenIterator is initially on the empty line, its current token is null
       if not tokenIterator.getCurrentToken()?
         tokenIterator.stepBackward()
         # if tokenIterator is still null, then we're at the end of a file
