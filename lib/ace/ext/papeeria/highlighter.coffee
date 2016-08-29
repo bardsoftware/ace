@@ -15,7 +15,7 @@ define([], ->
         session = editor.getSession()
         clearCurrentHighlight(editor, session)
 
-        pos ?= findSurroundingBrackets(editor)
+        pos ?= findSurroundingBrackets(session, editor.getCursorPosition())
         if !pos.mismatch
             range = new Range(pos.left.row, pos.left.column, pos.right.row, pos.right.column + 1)
             session.$bracketMatchHighlight = session.addMarker(range, "ace_selection ace_bracket_match_range", "text")
@@ -43,7 +43,7 @@ define([], ->
 
     newFilteringIterator = (openingBracket, closingBracket, session, pos, isForward) ->
         tokenIterator = new TokenIterator(session, pos.row, pos.column)
-        token = tokenIterator.getCurrentToken();
+        token = tokenIterator.getCurrentToken()
         token ?= if isForward then tokenIterator.stepForward() else tokenIterator.stepBackward()
         if not token?
             return null
@@ -103,10 +103,7 @@ define([], ->
 
         return if result.current()? then result else null
 
-    findSurroundingBrackets = (editor) ->
-        session = editor.getSession();
-        pos = editor.getCursorPosition()
-
+    findSurroundingBrackets = (session, pos) ->
         allBrackets =
             left: [
                 session.$findOpeningBracket('}', pos, newFilteringIterator('{', '}', session, pos, false))
@@ -195,12 +192,12 @@ define([], ->
             readOnly: true
 
 
-        editor.commands.addCommand(keyboardHandler);
+        editor.commands.addCommand(keyboardHandler)
 
         onEditorChange = ->
             currentRange = session.$highlightRange
             if currentRange?
-                candidateRange = findSurroundingBrackets(editor)
+                candidateRange = findSurroundingBrackets(session, editor.getCursorPosition())
                 if !currentRange.equals(candidateRange)
                     if candidateRange?.isDefined()
                         highlightBrackets(editor, candidateRange)

@@ -75,7 +75,7 @@ define((require, exports, module) ->
           "variable.parameter"
           "rparen"
         ]
-        regex: "(\\\\(?:label|v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
+        regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
       {
         token: "storage.type"

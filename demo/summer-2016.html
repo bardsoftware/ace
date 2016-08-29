@@ -184,8 +184,14 @@ Richard & Miles & $2$ \\
 
 \begin{equation}
 \label{eq:emc}
+\label{notemc}
 \text{here's a formula! }
-\sum_{n=1}^{N} \gamma(z_{np}) \frac {\mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \frac{\alpha_{pt} - 1}{\pi_{pt}} = \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1) \sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1 = \pi_{pt} \Big(\sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)\Big) \frac{\sum_{n=1}^{N} \gamma(z_{np}) \frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1} { \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)} = \pi_{pt}
+\sum_{n=1}^{N} \gamma(z_{np}) \frac {\mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})}
++ \frac{\alpha_{pt} - 1}{\pi_{pt}} = \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1) \sum_{n=1}^{N} \gamma(z_{np})
+\frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} + \alpha_{pt} - 1 =
+\pi_{pt} \Big(\sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)\Big) \frac{\sum_{n=1}^{N} \gamma(z_{np})
+\frac {\pi_{pt} \mathcal{N} (x_n | \mu_{ pt }, \Sigma_{pt})} {\sum_l \pi_{pl} \mathcal{N} (x_n | \mu_{pl}, \Sigma_{pl})} +
+\alpha_{pt} - 1} { \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)} = \pi_{pt}
 
 \end{equation}
 
