@@ -96,19 +96,19 @@ define((require, exports, module) ->
         return ["Error!", e]
 
     initPopover: => setTimeout((=>
-      popoverPosition = @getPopoverPosition(@getEquationEnd())
+      popoverPosition = @getPopoverPosition(@getEquationEndRow())
       [title, rendered] = @getCurrentFormula()
       @popoverHandler.show(@getFormulaElement(), title, rendered, popoverPosition)
     ), 0)
 
-    getEquationEnd: ->
+    getEquationEndRow: ->
       i = @editor.getCursorPosition().row
       while LatexParsingContext.getContext(@editor.getSession(), i) == "equation"
         i += 1
       return i
 
     updatePosition: =>
-      @popoverHandler.setPosition(@getFormulaElement(), @getPopoverPosition(@getEquationEnd()))
+      @popoverHandler.setPosition(@getFormulaElement(), @getPopoverPosition(@getEquationEndRow()))
 
     updateRange: ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
@@ -122,7 +122,7 @@ define((require, exports, module) ->
     updateCallback: =>
       if @lastChangeTime?
         curTime = Date.now()
-        @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY - (Date.now() - @lastChangeTime))
+        @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY - (curTime - @lastChangeTime))
         @lastChangeTime = null
       else
         @currentDelayedUpdateId = null
@@ -184,50 +184,50 @@ define((require, exports, module) ->
       @tokenIterator = new TokenIterator(@session, row, column)
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
-        @expired = false
+        @outOfRange = false
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      @expired = not @range.containsRange(tokenRange)
+      @outOfRange = not @range.containsRange(tokenRange)
 
-    getCurrentToken: -> if not @expired then @tokenIterator.getCurrentToken() else null
+    getCurrentToken: -> if not @outOfRange then @tokenIterator.getCurrentToken() else null
 
-    getCurrentTokenPosition: -> if not @expired then @tokenIterator.getCurrentTokenPosition() else null
+    getCurrentTokenPosition: -> if not @outOfRange then @tokenIterator.getCurrentTokenPosition() else null
 
     stepBackward: ->
       @tokenIterator.stepBackward()
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
-        @expired = true
+        @outOfRange = true
         return null
 
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
-        @expired = false
+        @outOfRange = false
         return curToken
       else
-        @expired = true
+        @outOfRange = true
         return null
 
     stepForward: ->
       @tokenIterator.stepForward()
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
-        @expired = true
+        @outOfRange = true
         return null
 
       {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
-        @expired = false
+        @outOfRange = false
         return curToken
       else
-        @expired = true
+        @outOfRange = true
         return null
 
      stepTo: (row, column) ->
       @tokenIterator = new TokenIterator(@session, row, column)
-      @expired = not @range.contains(row, column)
+      @outOfRange = not @range.contains(row, column)
 
 
   class EquationRangeHandler
