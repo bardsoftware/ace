@@ -261,6 +261,13 @@ define((require, exports, module) ->
       else
         # following loop pushes tokenIterator to the end of
         # beginning sequence, if it is inside one
+        # The loop isn't executed, if current token is null, because:
+        #   a) we don't need to -- if `tokenIterator` is initially on
+        #      the empty line, then it is guaranteed not to be inside end sequence
+        #   b) it can cause bugs -- if `tokenIterator` is initially before the start of a document,
+        #      current token is null, and after stepping forward `tokenIterator` is on the
+        #      start of a document. If start sequence happens to be there, then equation start is
+        #      then found without any problem, whereas in this case null should be returned
         for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
           if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepForward()
@@ -296,6 +303,13 @@ define((require, exports, module) ->
       else
         # following cycle pushes tokenIterator to the start of
         # ending sequence, if it is inside one
+        # The loop isn't executed, if current token is null, because:
+        #   a) we don't need to -- if `tokenIterator` is initially on
+        #      the empty line, then it is guaranteed not to be inside start sequence
+        #   b) it can cause bugs -- if `tokenIterator` is initially after the end of a document,
+        #      current token is null, and after stepping backward `tokenIterator` is on the
+        #      end of a document. If end sequence happens to be there, then equation end is
+        #      then found without any problem, whereas in this case null should be returned
         for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
           if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
             tokenIterator.stepBackward()
