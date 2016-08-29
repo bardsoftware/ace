@@ -4,7 +4,6 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
-
   katex = null
   initKaTeX = (onLoaded) ->
     # Adding CSS for demo formula
@@ -122,6 +121,8 @@ define((require, exports, module) ->
     updateCallback: =>
       if @lastChangeTime?
         curTime = Date.now()
+        if curTime - @lastChangeTime > ContextHandler.UPDATE_DELAY
+          return
         @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY - (curTime - @lastChangeTime))
         @lastChangeTime = null
       else
