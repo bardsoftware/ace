@@ -38,8 +38,9 @@ define((require, exports, module) ->
       if not stack?
         return 'start'
 
-      if currentState? and currentState != stack[stack.length - 1]
+      if not (currentState == 'start' and stack.length == 0) && currentState != stack[stack.length - 1]
         throw new Error("papeeria highlight rules stack error, expected " + stack[stack.length - 1] + " found " + currentState)
+
       stack.pop()
       if stack.length == 0
         return 'start'
