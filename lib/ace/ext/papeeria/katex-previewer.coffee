@@ -232,17 +232,40 @@ define((require, exports, module) ->
 
 
   class EquationRangeHandler
-    @BEGIN_EQUATION_TOKEN_SEQUENCE: [
-      { type: "storage.type", value: "\\begin" }
-      { type: "lparen", value: "{" }
-      { type: "variable.parameter", value: "equation" }
-      { type: "rparen", value: "}" }
+    @HAS_IDENTICAL_BOUNDARIES: [false, false, true, true]
+    @BEGIN_EQUATION_TOKEN_SEQUENCES: [
+      [
+        { type: "rparen", value: "}" }
+        { type: "variable.parameter", value: "equation" }
+        { type: "lparen", value: "{" }
+        { type: "storage.type", value: "\\begin" }
+      ]
+      [
+        { type: "string.math", value: "\\[" }
+      ]
+      [
+        { type: "string.math", value: "$" }
+      ]
+      [
+        { type: "string.math", value: "$$" }
+      ]
     ]
-    @END_EQUATION_TOKEN_SEQUENCE: [
-      { type: "storage.type", value: "\\end" }
-      { type: "lparen", value: "{" }
-      { type: "variable.parameter", value: "equation" }
-      { type: "rparen", value: "}" }
+    @END_EQUATION_TOKEN_SEQUENCES: [
+      [
+        { type: "storage.type", value: "\\end" }
+        { type: "lparen", value: "{" }
+        { type: "variable.parameter", value: "equation" }
+        { type: "rparen", value: "}" }
+      ]
+      [
+        { type: "string.math", value: "\\]" }
+      ]
+      [
+        { type: "string.math", value: "$" }
+      ]
+      [
+        { type: "string.math", value: "$$" }
+      ]
     ]
 
     # empty constructor
@@ -251,13 +274,79 @@ define((require, exports, module) ->
     @equalTokens: (token1, token2) ->
       return token1.type == token2.type and token1.value == token2.value
 
+    handleIdenticals: (tokenIterator, start) ->
+      moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
+      moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
+
+      begins = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES
+      ends = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
+
+      # Example: we're looking for an end, and tokenIterator is on `$$` token.
+      # We can't tell, if it's a start or an end, so we handle this case here.
+      # We step forward, and if context there is not equation, then initial
+      # token was the end and then we take two steps back, so that we're
+      # inside the equation.
+      # If context there is equation, then two situations are possible:
+      #   a) We're in the same equation
+      #   b) We're in the different equation, located right after the current
+      #      one. In this case we're right at the start of one of
+      #      start sequences
+      # So after stepping forward we check, if we're at the start of any
+      # start sequence.
+      # If we are, then we were initially at the end of
+      # current equation and now we're inside some other equation, so we
+      # step two steps backward.
+      # If we aren't, then we were initially at the
+      # start of current equation, and we just stepped inside this
+      # equation, so we don't do anything.
+      #
+      # TODO:
+      # All of that assumes, that there would be no start sequence inside
+      # the equation, which is not always true. This is to be fixed later.
+
+      boundaries = if start then ends else begins
+      for i in [0..begins.length - 1]
+        if EquationRangeHandler.HAS_IDENTICAL_BOUNDARIES[i]
+          if EquationRangeHandler.equalTokens(tokenIterator.getCurrentToken(), begins[i][0])
+            moveToBoundary()
+            {row: curRow, column: curColumn} = tokenIterator.getCurrentTokenPosition()
+
+            if LatexParsingContext.getContext(@editor.getSession(), curRow, curColumn) == "equation"
+              matchedBoundary = null
+
+              for boundarySequence in boundaries
+                matchCount = 0
+                for token in boundarySequence.slice(0).reverse()
+                  if EquationRangeHandler.equalTokens(tokenIterator.getCurrentToken(),
+                                                      token)
+                    matchCount += 1
+                    moveToBoundary()
+                  else
+                    break
+
+                if matchCount > 0
+                  for i in [1..matchCount]
+                    moveFromBoundary()
+
+                if matchCount == boundarySequence.length
+                  matchedBoundary = boundarySequence
+                  break
+
+              if matchedBoundary?
+                moveFromBoundary()
+                moveFromBoundary()
+
+            else
+              moveFromBoundary()
+              moveFromBoundary()
+
     getBoundary: (tokenIterator, start) ->
       moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
       moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
-      boundarySequence = (
+      boundarySequences = (
         if start
-        then EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-        else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE
+        then EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES
+        else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
       )
 
       # if tokenIterator is initially on the empty line, its current token is null
@@ -267,6 +356,10 @@ define((require, exports, module) ->
         if not tokenIterator.getCurrentToken()?
           return null
       else
+        # if tokenIterator is initially on a boundary, which is identical
+        # to the opposite boundary, we have to handle this case separately
+        @handleIdenticals(tokenIterator, start)
+
         # following loop pushes tokenIterator to the end of
         # boundary sequence, if it is inside one
         # The loop isn't executed, if current token is null, because:
@@ -277,30 +370,53 @@ define((require, exports, module) ->
         #      current token is null, and after stepping forward `tokenIterator` is on the
         #      start of a document. If start sequence happens to be there, then equation start is
         #      then found without any problem, whereas in this case null should be returned
-        for token in boundarySequence.slice(0).reverse()
-          if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-            moveFromBoundary()
+        for i in [0..boundarySequences.length - 1]
+          # if boundaries are identical, this case is already handled
+          if not EquationRangeHandler.HAS_IDENTICAL_BOUNDARIES[i]
+            boundarySequence = boundarySequences[i]
+            for token in boundarySequence.slice(0).reverse()
+              if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
+                moveFromBoundary()
 
-      curSequenceIndex = 0
+        @handleIdenticals(tokenIterator, start)
+
+      curSequence = null
+      curSequenceIndex = null
       curEquationBoundary = null
-      while curSequenceIndex < boundarySequence.length
+      while true
         moveToBoundary()
         curToken = tokenIterator.getCurrentToken()
-        if not curToken
+        if not curToken?
           return null
-        if EquationRangeHandler.equalTokens(
-            boundarySequence[curSequenceIndex],
-            curToken)
-          if curSequenceIndex == 0
-            curTokenPosition = tokenIterator.getCurrentTokenPosition()
-            curEquationBoundary = {
-              row: curTokenPosition.row
-              column: curTokenPosition.column + (if start then curToken.value.length else 0)
-            }
-          curSequenceIndex += 1
-        else
-          curSequenceIndex = 0
-          curEquationBoundary = null
+
+        if curSequence != null
+          if curSequenceIndex >= curSequence.length
+            break
+          if EquationRangeHandler.equalTokens(
+              curSequence[curSequenceIndex],
+              curToken)
+            curSequenceIndex += 1
+          else
+            curSequence = null
+            curSequenceIndex = null
+            curEquationBoundary = null
+
+        if curSequence == null
+          for boundarySequence in boundarySequences
+            if EquationRangeHandler.equalTokens(boundarySequence[0], curToken)
+              curSequence = boundarySequence
+              # the first token already matches, so in the 
+              # next iteration we match the second one
+              curSequenceIndex = 1
+              curTokenPosition = tokenIterator.getCurrentTokenPosition()
+              curEquationBoundary = {
+                row: curTokenPosition.row
+                column: curTokenPosition.column + (if start then curToken.value.length else 0)
+              }
+
+      # after finding boundary, tokenIterator is exactly one token after it, so we move it back
+      moveFromBoundary()
+      moveFromBoundary()
       return curEquationBoundary
 
     getEquationRange: (row, column) ->
