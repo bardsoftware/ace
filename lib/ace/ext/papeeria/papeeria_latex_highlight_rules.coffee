@@ -34,19 +34,10 @@ define((require, exports, module) ->
         stack.push(pushedState)
         return pushedState
 
-    # Equation, math and math_latex have the same semantics, but also they use
-    # different finite state rules for processing
-    # this function push on the stack "equation" context and switch our finite state mashine
-    # to the right processing branch
-    pushStateCheckout = (pushedState, to) ->
-      return (currentState, stack) ->
-        stack.push(pushedState)
-        return to
-
     popState = (currentState, stack) ->
       if not stack?
         return 'start'
-
+      console.log('pop', stack)
       stack.pop()
       if stack.length == 0
         return 'start'
@@ -103,7 +94,7 @@ define((require, exports, module) ->
       {
         token : "string",
         regex : "\\\\\\[",
-        next  : pushStateCheckout(EQUATION_STATE, "math_latex")
+        next  : pushState("math_latex")
       }
       {
         token: "storage.type"
@@ -124,7 +115,7 @@ define((require, exports, module) ->
       {
         token : "string",
         regex : "\\${1,2}",
-        next  : pushStateCheckout(EQUATION_STATE, "math")
+        next  : pushState("math")
       }
 
     ]
@@ -229,7 +220,7 @@ define((require, exports, module) ->
         {
           token : "string",
           regex : "\\\\\\[",
-          next  : pushStateCheckout(EQUATION_STATE, "math_latex")
+          next  : pushState("math_latex")
         }
         {
           token: "storage.type." + LIST_TOKENTYPE
