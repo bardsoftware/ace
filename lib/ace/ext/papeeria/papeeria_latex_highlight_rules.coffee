@@ -44,10 +44,7 @@ define((require, exports, module) ->
       if stack.length == 0
         return 'start'
 
-      top = stack.pop()
-      stack.push(top)
-
-      return top
+      return stack[stack.length - 1]
 
     basicRules = [
       {
