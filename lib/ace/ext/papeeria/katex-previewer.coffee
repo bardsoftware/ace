@@ -1,5 +1,105 @@
 define((require, exports, module) ->
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
+  TokenIterator = require("ace/token_iterator").TokenIterator
+  Range = require("ace/range").Range
+
+  getEquationRangeHandler = (editor) ->
+    erh = {
+      BEGIN_EQUATION_TOKEN_SEQUENCE: [
+        {
+          type: "storage.type"
+          value: "\\begin"
+        }
+        {
+          type: "lparen"
+          value: "{"
+        }
+        {
+          type: "variable.parameter"
+          value: "equation"
+        }
+        {
+          type: "rparen"
+          value: "}"
+        }
+      ]
+      END_EQUATION_TOKEN_SEQUENCE: [
+        {
+          type: "storage.type"
+          value: "\\end"
+        }
+        {
+          type: "lparen"
+          value: "{"
+        }
+        {
+          type: "variable.parameter"
+          value: "equation"
+        }
+        {
+          type: "rparen"
+          value: "}"
+        }
+      ]
+
+      equalTokens: (token1, token2) ->
+        if token1? and token2?
+          return token1.type == token2.type and token1.value == token2.value
+        else return if token1? or token2? then false else true
+
+      getEquationStart: (tokenIterator) ->
+        # following cycle pushes tokenIterator to the end of
+        # beginning sequence, if it is inside one
+        for token in erh.BEGIN_EQUATION_TOKEN_SEQUENCE
+          if erh.equalTokens(token, tokenIterator.getCurrentToken())
+            tokenIterator.stepForward()
+        curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+        curEquationStart = null
+        while curSequenceIndex >= 0
+          if erh.equalTokens(
+              erh.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+              tokenIterator.stepBackward())
+            if curSequenceIndex == erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+              curTokenPosition = tokenIterator.getCurrentTokenPosition()
+              curEquationStart = {
+                row: curTokenPosition.row
+                column: curTokenPosition.column + tokenIterator.getCurrentToken().value.length
+              }
+            curSequenceIndex -= 1
+          else
+            curSequenceIndex = erh.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
+            curEquationStart = null
+        return curEquationStart
+
+      getEquationEnd: (tokenIterator) ->
+        # following cycle pushes tokenIterator to the start of
+        # ending sequence, if it is inside one
+        for token in erh.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
+          if erh.equalTokens(token, tokenIterator.getCurrentToken())
+            tokenIterator.stepBackward()
+        curSequenceIndex = 0
+        curEquationStart = null
+        while curSequenceIndex < erh.END_EQUATION_TOKEN_SEQUENCE.length
+          if erh.equalTokens(
+              erh.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+              tokenIterator.stepForward())
+            if curSequenceIndex == 0
+              curEquationStart = tokenIterator.getCurrentTokenPosition()
+            curSequenceIndex += 1
+          else
+            curSequenceIndex = 0
+            curEquationStart = null
+        return curEquationStart
+
+      getEquationRange: (row, column) ->
+        tokenIterator = new TokenIterator(editor.getSession(), row, column)
+        end = erh.getEquationEnd(tokenIterator)
+        start = erh.getEquationStart(tokenIterator)
+        return new Range(start.row, start.column, end.row, end.column)
+    }
+    return erh
+
+  exports.getEquationRangeHandler = getEquationRangeHandler
   exports.setupPreviewer = (editor, popoverHandler) ->
     katex = null
     popoverHandler ?= {
@@ -57,24 +157,14 @@ define((require, exports, module) ->
     getFormulaElement = -> $("#formula")
     KATEX_OPTIONS = {displayMode: true, throwOnError: false}
 
+    erh = EquationRangeHandler = getEquationRangeHandler(editor)
+
     ch = ContextHandler = {
       contextPreviewExists: false
       UPDATE_DELAY: 1000
-      REMOVE_REGEX: /\\end\{equation\}|\\begin\{equation\}/g
 
-      getEquationRange: (cursorRow) ->
-        i = cursorRow
-        while LatexParsingContext.getContext(editor.getSession(), i - 1) == "equation"
-          i -= 1
-        start = i
-        i = cursorRow
-        while LatexParsingContext.getContext(editor.getSession(), i + 1) == "equation"
-          i += 1
-        end = i
-        return [start, end]
-
-      getWholeEquation: (start, end) ->
-        editor.getSession().getLines(start, end).join(" ").replace(ch.REMOVE_REGEX, "")
+      getWholeEquation: (range) ->
+        editor.getSession().getTextRange(range)
 
       getPopoverPosition: (row) -> {
           top: "#{editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -84,22 +174,33 @@ define((require, exports, module) ->
       getCurrentFormula: ->
         try
           return katex.renderToString(
-            ch.getWholeEquation(ch.curStart, ch.curEnd),
+            ch.getWholeEquation(ch.curRange),
             KATEX_OPTIONS
           )
         catch e
           return e
 
-      initPopover: ->
-        cursorRow = editor.getCursorPosition().row
-        [ch.curStart, ch.curEnd] = ch.getEquationRange(cursorRow)
-        popoverPosition = ch.getPopoverPosition(ch.curEnd)
+      initPopover: -> setTimeout((->
+        popoverPosition = ch.getPopoverPosition(ch.getEquationEnd())
         popoverHandler.show(getFormulaElement(), ch.getCurrentFormula(), popoverPosition)
-        editor.on("change", ch.delayedUpdatePopover)
-        editor.getSession().on("changeScrollTop", ch.updatePosition)
+      ), 0)
+
+      getEquationEnd: ->
+        i = editor.getCursorPosition().row
+        while LatexParsingContext.getContext(editor.getSession(), i) == "equation"
+          i += 1
+        return i
+
+      updatePosition: ->
+        setTimeout((-> popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.getEquationEnd()))), 0)
+
+      updateRange: ->
+        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        ch.curRange = erh.getEquationRange(cursorRow, cursorColumn)
 
       updatePopover: ->
-        popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
+        if ch.contextPreviewExists
+          popoverHandler.setContent(getFormulaElement(), ch.getCurrentFormula())
 
       updateCallback: ->
         if ch.lastChangeTime?
@@ -107,31 +208,58 @@ define((require, exports, module) ->
           ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY - (Date.now() - ch.lastChangeTime))
           ch.lastChangeTime = null
         else
-          ch.updatePopover()
           ch.currentDelayedUpdateId = null
+          if ch.contextPreviewExists
+            curContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
+            if curContext != "equation"
+              ch.destroyContextPreview()
+            else
+              ch.updateRange()
+              ch.updatePopover()
 
       delayedUpdatePopover: ->
+        curDocLength = editor.getSession().getLength()
+        if curDocLength != ch.prevDocLength
+          ch.updatePosition()
+          ch.prevDocLength = curDocLength
+
         if ch.currentDelayedUpdateId?
           ch.lastChangeTime = Date.now()
           return
+
         ch.currentDelayedUpdateId = setTimeout(ch.updateCallback, ch.UPDATE_DELAY)
 
-      updatePosition: ->
-        popoverHandler.setPosition(getFormulaElement(), ch.getPopoverPosition(ch.curEnd))
+      createContextPreview: ->
+        ch.updateRange()
+        ch.contextPreviewExists = true
+        if not katex?
+          initKaTeX(ch.initPopover)
+        else
+          ch.initPopover()
+        ch.prevDocLength = editor.getSession().getLength()
+        editor.on("change", ch.delayedUpdatePopover)
+        editor.getSession().on("changeScrollTop", ch.updatePosition)
 
-      handleCurrentContext: ->
-        currentContext = LatexParsingContext.getContext(editor.getSession(), editor.getCursorPosition().row)
-        if not ch.contextPreviewExists and currentContext == "equation"
-          ch.contextPreviewExists = true
-          if not katex?
-            initKaTeX(ch.initPopover)
-          else
-            ch.initPopover()
-        else if ch.contextPreviewExists and currentContext != "equation"
-          ch.contextPreviewExists = false
-          editor.off("change", ch.delayedUpdatePopover)
-          editor.getSession().off("changeScrollTop", ch.updatePosition)
-          popoverHandler.destroy(getFormulaElement())
+      destroyContextPreview: ->
+        ch.curRange = null
+        ch.contextPreviewExists = false
+        editor.off("change", ch.delayedUpdatePopover)
+        editor.getSession().off("changeScrollTop", ch.updatePosition)
+        popoverHandler.destroy(getFormulaElement())
+
+      handleCurrentContext: -> setTimeout((->
+        if ch.currentDelayedUpdateId?
+          return
+
+        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        currentContext = LatexParsingContext.getContext(editor.getSession(), cursorRow)
+
+        if ch.contextPreviewExists and currentContext != "equation"
+          ch.destroyContextPreview()
+
+        else if not ch.contextPreviewExists and currentContext == "equation"
+          ch.createContextPreview()
+      ), 0)
     }
 
     sh = SelectionHandler = {
