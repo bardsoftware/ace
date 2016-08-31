@@ -172,6 +172,8 @@ define((require, exports, module) ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow)
 
+      # TODO: don't refresh on every cursor move, when the cursor is inside
+      # start/end sequence
       if @contextPreviewExists and not @curRange.contains(cursorRow, cursorColumn)
         @destroyContextPreview()
 
@@ -423,6 +425,7 @@ define((require, exports, module) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getBoundary(tokenIterator, false)
       start = @getBoundary(tokenIterator, true)
+      # TODO: handle case when different boundaries were found
       if not (start? and end?)
         return null
       return new Range(start.row, start.column, end.row, end.column)
