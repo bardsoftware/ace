@@ -25,8 +25,6 @@ define((require, exports, module) ->
                 return EQUATION_STATE
             if isType(token, LIST_TOKENTYPE)
                 return LIST_STATE
-            return state
-
         return state
 
 

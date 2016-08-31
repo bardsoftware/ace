@@ -44,10 +44,16 @@ define((require, exports, module) ->
         return to
 
     popState = (currentState, stack) ->
-      top = stack.pop()
-
-      if stack?
+      if not stack?
         return 'start'
+
+      stack.pop()
+      if stack.length == 0
+        return 'start'
+
+      top = stack.pop()
+      stack.push(top)
+
       return top
 
     basicRules = [
@@ -152,13 +158,13 @@ define((require, exports, module) ->
 
     # Function for constructing $$ $$ and \[ \] rules
     # regex -- (String) -- regex for definition end of Equation
-    latexMathModeConstructor = (regex) ->
+    latexMathModeConstructor = (regexOfEnd) ->
         [{
             token : "comment",
             regex : "%.*$"
           }, {
             token : "string",
-            regex : regex,
+            regex : regexOfEnd,
             next  : popState
           }, {
             token: "storage.type." + EQUATION_TOKENTYPE
@@ -240,7 +246,7 @@ define((require, exports, module) ->
       ]
 
       "math" : latexMathModeConstructor("\\${1,2}")
-      "math_latex" : latexMathModeConstructor("\\\\]")
+      "math_latex" : latexMathModeConstructor("\\\\\\]")
 
     for key of @$rules
       for rule of basicRules
