@@ -221,6 +221,11 @@ define((require, exports, module) ->
         # adds the necessary type of the token
         # for provide context for one line
         {
+          token : "string",
+          regex : "\\\\\\[",
+          next  : pushStateCheckout(EQUATION_STATE, "math_latex")
+        }
+        {
           token: "storage.type." + LIST_TOKENTYPE
           regex: "\\\\[a-zA-Z]+"
         }

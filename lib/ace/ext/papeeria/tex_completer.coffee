@@ -96,7 +96,7 @@ define((require, exports, module) ->
         indentString = line.match(/^\s*/)[0];
         indexOfBegin = line.indexOf("begin")
 
-        if LatexParsingContext.getContext(editor.session, cursor.row) == LIST_STATE &&  indexOfBegin < cursor.column
+        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
           if indexOfBegin > -1
             editor.insert("\n" + tabString + indentString + "\\item ")
           else
