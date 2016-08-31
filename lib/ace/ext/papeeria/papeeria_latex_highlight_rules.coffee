@@ -37,7 +37,9 @@ define((require, exports, module) ->
     popState = (currentState, stack) ->
       if not stack?
         return 'start'
-      console.log('pop', stack)
+
+      if currentState != stack[stack.length - 1]
+        throw new Error("papeeria highlight rules stack error")
       stack.pop()
       if stack.length == 0
         return 'start'
