@@ -251,90 +251,62 @@ define((require, exports, module) ->
     @equalTokens: (token1, token2) ->
       return token1.type == token2.type and token1.value == token2.value
 
-    getEquationStart: (tokenIterator) ->
+    getBoundary: (tokenIterator, start) ->
+      moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
+      moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
+      boundarySequence = (
+        if start
+        then EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
+        else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE
+      )
+
       # if tokenIterator is initially on the empty line, its current token is null
       if not tokenIterator.getCurrentToken()?
-        tokenIterator.stepForward()
+        moveFromBoundary()
         # if tokenIterator.getCurrentToken() is still null, then we're at the end of a file
         if not tokenIterator.getCurrentToken()?
           return null
       else
         # following loop pushes tokenIterator to the end of
-        # beginning sequence, if it is inside one
+        # boundary sequence, if it is inside one
         # The loop isn't executed, if current token is null, because:
         #   a) we don't need to -- if `tokenIterator` is initially on
-        #      the empty line, then it is guaranteed not to be inside end sequence
-        #   b) it can cause bugs -- if `tokenIterator` is initially before the start of a document,
+        #      the empty line, then it is guaranteed not to be inside boundary sequence
+        #   b) it can cause bugs -- if we are looking for start sequence and
+        #      `tokenIterator` is initially before the start of a document,
         #      current token is null, and after stepping forward `tokenIterator` is on the
         #      start of a document. If start sequence happens to be there, then equation start is
         #      then found without any problem, whereas in this case null should be returned
-        for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
+        for token in boundarySequence.slice(0).reverse()
           if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-            tokenIterator.stepForward()
-
-      curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-      curEquationStart = null
-      while curSequenceIndex >= 0
-        curToken = tokenIterator.stepBackward()
-        if not curToken
-          return null
-        if EquationRangeHandler.equalTokens(
-            EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-            curToken)
-          if curSequenceIndex == EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-            curTokenPosition = tokenIterator.getCurrentTokenPosition()
-            curEquationStart = {
-              row: curTokenPosition.row
-              column: curTokenPosition.column + curToken.value.length
-            }
-          curSequenceIndex -= 1
-        else
-          curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-          curEquationStart = null
-      return curEquationStart
-
-    getEquationEnd: (tokenIterator) ->
-      # if tokenIterator is initially on the empty line, its current token is null
-      if not tokenIterator.getCurrentToken()?
-        tokenIterator.stepBackward()
-        # if tokenIterator is still null, then we're at the end of a file
-        if not tokenIterator.getCurrentToken()?
-          return null
-      else
-        # following cycle pushes tokenIterator to the start of
-        # ending sequence, if it is inside one
-        # The loop isn't executed, if current token is null, because:
-        #   a) we don't need to -- if `tokenIterator` is initially on
-        #      the empty line, then it is guaranteed not to be inside start sequence
-        #   b) it can cause bugs -- if `tokenIterator` is initially after the end of a document,
-        #      current token is null, and after stepping backward `tokenIterator` is on the
-        #      end of a document. If end sequence happens to be there, then equation end is
-        #      then found without any problem, whereas in this case null should be returned
-        for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-          if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-            tokenIterator.stepBackward()
+            moveFromBoundary()
 
       curSequenceIndex = 0
-      curEquationStart = null
-      while curSequenceIndex < EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.length
-        curToken = tokenIterator.stepForward()
+      curEquationBoundary = null
+      while curSequenceIndex < boundarySequence.length
+        moveToBoundary()
+        curToken = tokenIterator.getCurrentToken()
         if not curToken
           return null
         if EquationRangeHandler.equalTokens(
-            EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
+            boundarySequence[curSequenceIndex],
             curToken)
           if curSequenceIndex == 0
-            curEquationStart = tokenIterator.getCurrentTokenPosition()
+            curTokenPosition = tokenIterator.getCurrentTokenPosition()
+            curEquationBoundary = {
+              row: curTokenPosition.row
+              column: curTokenPosition.column + (if start then curToken.value.length else 0)
+            }
           curSequenceIndex += 1
         else
           curSequenceIndex = 0
-          curEquationStart = null
-      return curEquationStart
+          curEquationBoundary = null
+      return curEquationBoundary
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
-      end = @getEquationEnd(tokenIterator)
-      start = @getEquationStart(tokenIterator)
+      end = @getBoundary(tokenIterator, false)
+      start = @getBoundary(tokenIterator, true)
       if not (start? and end?)
         return null
       return new Range(start.row, start.column, end.row, end.column)
