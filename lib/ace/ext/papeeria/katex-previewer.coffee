@@ -172,10 +172,10 @@ define((require, exports, module) ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow)
 
-      if @contextPreviewExists and currentContext != "equation"
+      if @contextPreviewExists and not @curRange.contains(cursorRow, cursorColumn)
         @destroyContextPreview()
 
-      else if not @contextPreviewExists and currentContext == "equation"
+      if not @contextPreviewExists and currentContext == "equation"
         @createContextPreview()
     ), 0)
 
