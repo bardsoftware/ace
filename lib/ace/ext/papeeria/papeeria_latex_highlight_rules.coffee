@@ -36,14 +36,16 @@ define((require, exports, module) ->
 
     popState = (currentState, stack) ->
       if not stack?
-        return 'start'
+        throw new Error("papeeria highlight rules stack error: stack doesn't exist")
+      if not Array.isArray(stack)
+        return "start"
 
-      if not (currentState == 'start' and stack.length == 0) && currentState != stack[stack.length - 1]
+      if not (currentState == "start" and stack.length == 0) && currentState != stack[stack.length - 1]
         throw new Error("papeeria highlight rules stack error, expected " + stack[stack.length - 1] + " found " + currentState)
 
       stack.pop()
       if stack.length == 0
-        return 'start'
+        return "start"
 
       return stack[stack.length - 1]
 
