@@ -4,6 +4,15 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
+  trim = (s) ->
+    i = 0
+    while s[i] == " "
+      i += 1
+    j = s.length - 1
+    while s[j] == " "
+      j -= 1
+    return s[i..j]
+
   katex = null
   initKaTeX = (onLoaded) ->
     # Adding CSS for demo formula
@@ -274,7 +283,7 @@ define((require, exports, module) ->
     constructor: (@editor) ->
 
     @equalTokens: (token1, token2) ->
-      return token1.type == token2.type and token1.value == token2.value
+      return token1.type == token2.type and trim(token1.value) == trim(token2.value)
 
     handleIdenticals: (tokenIterator, start) ->
       moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
