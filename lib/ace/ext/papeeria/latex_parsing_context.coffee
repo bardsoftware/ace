@@ -4,23 +4,30 @@ define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
     EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
     LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
+
+    EQUATION_TOKENTYPE  = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
+    LIST_TOKENTYPE  = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
+
     ###
      * @param {Number} row
      *
      * Returns context at row.
     ###
     # Specific for token"s system of type in ace
-    # We saw such a realization in html_completions.js
     isType = (token, type) ->
         return token.type.split(".").indexOf(type) > -1
 
     getContext = (session, row, column) ->
         state = getContextFromRow(session, row)
         token = session.getTokenAt(row, column)
-        if token? and isType(token, "math")
-            return EQUATION_STATE
-        else
+        if token?
+            if isType(token, EQUATION_TOKENTYPE)
+                return EQUATION_STATE
+            if isType(token, LIST_TOKENTYPE)
+                return LIST_STATE
             return state
+
+        return state
 
 
     getContextFromRow = (session, row) ->
