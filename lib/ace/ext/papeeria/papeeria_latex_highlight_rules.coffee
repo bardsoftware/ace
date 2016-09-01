@@ -43,12 +43,12 @@ define((require, exports, module) ->
 
       if stack.length == 0
         if currentState != "start"
-         throw new Error('papeeria_highlight_rules -- stack error: stack should not be empty here')
+          throw new Error('papeeria_highlight_rules -- stack error: stack should not be empty here')
         else
           return "start"
 
       # here we know stack is not empty
-      errorMessage = "papeeria_highlight_rules -- stack error: expected " + stack[stack.length - 1] + " found " + currentState
+      errorMessage = "papeeria_highlight_rules -- stack error: expected " + currentState + " found " + stack[stack.length - 1]
       if currentState != stack[stack.length-1] then throw new Error(errorMessage)
 
       stack.pop()
