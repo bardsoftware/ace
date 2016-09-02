@@ -52,7 +52,7 @@ define((require, exports, module) ->
 
       while token?
         acceptToken = true
-        if token.type == "storage.type" and token.value == "\\label"
+        if token.type == "storage.type.equation" and token.value == "\\label"
           curLine = session.getLine(tokenPosition.row)
           bracketPosition = tokenPosition.column + "\\label".length
           if curLine[bracketPosition] == "{"
@@ -240,13 +240,13 @@ define((require, exports, module) ->
         { type: "storage.type", value: "\\begin" }
       ]
       [
-        { type: "string.math", value: "\\[" }
+        { type: "string", value: "\\[" }
       ]
       [
-        { type: "string.math", value: "$" }
+        { type: "string", value: "$" }
       ]
       [
-        { type: "string.math", value: "$$" }
+        { type: "string", value: "$$" }
       ]
     ]
     @END_EQUATION_TOKEN_SEQUENCES: [
@@ -257,13 +257,13 @@ define((require, exports, module) ->
         { type: "rparen", value: "}" }
       ]
       [
-        { type: "string.math", value: "\\]" }
+        { type: "string", value: "\\]" }
       ]
       [
-        { type: "string.math", value: "$" }
+        { type: "string", value: "$" }
       ]
       [
-        { type: "string.math", value: "$$" }
+        { type: "string", value: "$$" }
       ]
     ]
 
