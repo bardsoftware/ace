@@ -315,8 +315,6 @@ define((require, exports, module) ->
           return null
 
         if curSequence != null
-          if curSequenceIndex >= curSequence.length
-            break
           if EquationRangeHandler.equalTokens(
               curSequence[curSequenceIndex],
               curToken)
@@ -339,8 +337,12 @@ define((require, exports, module) ->
                 column: curTokenPosition.column + (if start then curToken.value.length else 0)
               }
 
-      # after finding boundary, tokenIterator is exactly one token after it, so we move it back
-      moveFromBoundary()
+        if curSequence? and curSequenceIndex >= curSequence.length
+          break
+
+      # after finding boundary, tokenIterator is exactly on the last token
+      # of ending sequence, so we step back once to avoid errors in case
+      # of boundaries with identical starts and ends
       moveFromBoundary()
       return curEquationBoundary
 
