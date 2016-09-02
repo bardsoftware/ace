@@ -4,26 +4,14 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
+  myKatexLoader = null
   katex = null
   initKaTeX = (onLoaded) ->
-    # Adding CSS for demo formula
-    cssDemoPath = require.toUrl("./katex-demo.css")
-    linkDemo = $("<link>").attr(
-      rel: "stylesheet"
-      href: cssDemoPath
-    )
-    $("head").append(linkDemo)
-
-    # Adding DOM element to place formula into
-    span = $("<span>").attr(
-      id: "formula"
-    )
-    $("body").append(span)
-
-    require(["ace/ext/katex"], (katexInner) ->
+    unless myKatexLoader?
+      myKatexLoader = (consumer) -> require(["ace/ext/katex"], (katexInner) -> consumer(katexInner))
+    myKatexLoader((katexInner) ->
       katex = katexInner
       onLoaded()
-      return
     )
     return
 
@@ -97,7 +85,7 @@ define((require, exports, module) ->
     initPopover: => setTimeout((=>
       popoverPosition = @getPopoverPosition(@getEquationEndRow())
       [title, rendered] = @getCurrentFormula()
-      @popoverHandler.show(@getFormulaElement(), title, rendered, popoverPosition)
+      @popoverHandler.show(title, rendered, popoverPosition)
     ), 0)
 
     getEquationEndRow: ->
@@ -107,7 +95,7 @@ define((require, exports, module) ->
       return i
 
     updatePosition: =>
-      @popoverHandler.setPosition(@getFormulaElement(), @getPopoverPosition(@getEquationEndRow()))
+      @popoverHandler.setPosition(@getPopoverPosition(@getEquationEndRow()))
 
     updateRange: ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
@@ -116,7 +104,7 @@ define((require, exports, module) ->
     updatePopover: ->
       if @contextPreviewExists
         [title, rendered] = @getCurrentFormula()
-        @popoverHandler.setContent(@getFormulaElement(), title, rendered)
+        @popoverHandler.setContent(title, rendered)
 
     updateCallback: =>
       if @lastChangeTime?
@@ -163,7 +151,7 @@ define((require, exports, module) ->
       @contextPreviewExists = false
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
-      @popoverHandler.destroy(@getFormulaElement())
+      @popoverHandler.destroy()
 
     handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
@@ -343,49 +331,66 @@ define((require, exports, module) ->
   exports.ContextHandler = ContextHandler
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
-  exports.setupPreviewer = (editor, popoverHandler) ->
-    popoverHandler ?= {
-      options: {
-        html: true
-        placement: "bottom"
-        trigger: "manual"
-        container: editor.container
+  exports.setupPreviewer = (editor, popoverHandler, katexLoader) ->
+    myKatexLoader = katexLoader
+    if not popoverHandler?
+      # Adding CSS for demo formula
+      cssDemoPath = require.toUrl("./katex-demo.css")
+      linkDemo = $("<link>").attr(
+        rel: "stylesheet"
+        href: cssDemoPath
+      )
+      $("head").append(linkDemo)
+
+      # Adding DOM element to place formula into
+      span = $("<span>").attr(
+        id: "formula"
+      )
+      $("body").append(span)
+
+      jqPopoverContainer = $("#formula")
+
+      popoverHandler = {
+        options: {
+          html: true
+          placement: "bottom"
+          trigger: "manual"
+          container: editor.container
+        }
+
+        show: (title, content, position) ->
+          jqPopoverContainer.css(position)
+          popoverHandler.options.content = content
+          popoverHandler.options.title = title
+          jqPopoverContainer.popover(popoverHandler.options)
+          jqPopoverContainer.popover("show")
+          return
+
+        destroy: ->
+          jqPopoverContainer.popover("destroy")
+
+        popoverExists: ->
+          jqPopoverContainer.data()?.popover?
+
+        setContent: (title, content) ->
+          popoverElement = jqPopoverContainer.data().popover.tip()
+          popoverElement.children(".popover-content").html(content)
+          popoverElement.children(".popover-title").text(title)
+
+        setPosition: (position) ->
+          jqPopoverContainer.data().popover.tip().css(position)
       }
-
-      show: (jqPopoverContainer, title, content, position) ->
-        jqPopoverContainer.css(position)
-        popoverHandler.options.content = content
-        popoverHandler.options.title = title
-        jqPopoverContainer.popover(popoverHandler.options)
-        jqPopoverContainer.popover("show")
-        return
-
-      destroy: (jqPopoverContainer) ->
-        jqPopoverContainer.popover("destroy")
-
-      popoverExists: (jqPopoverContainer) ->
-        jqPopoverContainer.data()?.popover?
-
-      setContent: (jqPopoverContainer, title, content) ->
-        popoverElement = jqPopoverContainer.data().popover.tip()
-        popoverElement.children(".popover-content").html(content)
-        popoverElement.children(".popover-title").text(title)
-
-      setPosition: (jqPopoverContainer, position) ->
-        jqPopoverContainer.data().popover.tip().css(position)
-    }
 
     jqEditorContainer = $(editor.container)
     KATEX_OPTIONS = {displayMode: true, throwOnError: false}
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    getFormulaElement = -> $("#formula")
-    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, getFormulaElement)
+    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler)
 
     sh = SelectionHandler = {
       hideSelectionPopover: ->
-        popoverHandler.destroy(getFormulaElement())
+        popoverHandler.destroy()
         editor.off("changeSelection", sh.hideSelectionPopover)
         editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
@@ -402,7 +407,7 @@ define((require, exports, module) ->
           editor.getSelectedText(),
           KATEX_OPTIONS
         )
-        popoverHandler.show(getFormulaElement(), "Preview", content, popoverPosition)
+        popoverHandler.show("Preview", content, popoverPosition)
         editor.on("changeSelection", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
