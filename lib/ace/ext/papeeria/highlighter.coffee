@@ -1,3 +1,5 @@
+foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
+
 define([], ->
     ourOffscreenTextDisplay = null
     TokenIterator = null
