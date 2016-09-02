@@ -125,7 +125,8 @@ define((require, exports, module) ->
       else
         @currentDelayedUpdateId = null
         if @contextPreviewExists
-          curContext = LatexParsingContext.getContext(@editor.getSession(), @editor.getCursorPosition().row)
+          {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
+          curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
           if curContext != "equation"
             @destroyContextPreview()
           else
@@ -167,7 +168,7 @@ define((require, exports, module) ->
         return
 
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow)
+      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
       # TODO: don't refresh on every cursor move, when the cursor is inside
       # start/end sequence
