@@ -22,6 +22,8 @@ define((require, exports, module) ->
     * @param {pushedState} string
     * @return {function} function, which correctly puts new type(pushedState) on stack
    ###
+
+
     pushState = (pushedState) ->
       return (currentState, stack) ->
         if currentState == "start"
@@ -29,6 +31,15 @@ define((require, exports, module) ->
         else
           stack.push(pushedState)
         return pushedState
+
+    #The same as pushState, but switch our finite state to "to" state
+    pushStateCheckout = (pushedState, to) ->
+      return (currentState, stack) ->
+        if currentState == "start"
+          stack.push(currentState, pushedState)
+        else
+          stack.push(pushedState)
+        return to
 
     popState = (currentState, stack) ->
       return stack.pop() or "start"
@@ -78,6 +89,11 @@ define((require, exports, module) ->
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
       {
+        token : "string.math",
+        regex : "\\\\\\[",
+        next  : pushStateCheckout(EQUATION_STATE, "math_latex")
+      }
+      {
         token: "storage.type"
         regex: "\\\\[a-zA-Z]+"
       }
@@ -93,6 +109,12 @@ define((require, exports, module) ->
         token: "constant.character.escape"
         regex: "\\\\[^a-zA-Z]?"
       }
+      {
+        token : "string.math",
+        regex : "\\${1,2}",
+        next  : pushStateCheckout(EQUATION_STATE, "math")
+      }
+
     ]
 
 
@@ -147,7 +169,48 @@ define((require, exports, module) ->
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
       ]
-
+      "math" : [{
+            token : "comment",
+            regex : "%.*$"
+        }, {
+            token : "string.math",
+            regex : "\\${1,2}",
+            next  : popState
+        }, {
+          token: "storage.type.math"
+          regex: "\\\\[a-zA-Z]+"
+        }, {
+          token: "constant.character.escape.math"
+          regex: "\\\\[^a-zA-Z]?"
+        }, {
+            token : "error.math",
+            regex : "^\\s*$",
+            next : popState
+        }, {
+            defaultToken : "string.math"
+        }
+      ]
+      "math_latex" : [{
+            token : "comment",
+            regex : "%.*$"
+        }, {
+            token : "string.math",
+            regex : "\\\\]",
+            next  : popState
+        }, {
+          token: "storage.type.math"
+          regex: "\\\\[a-zA-Z]+"
+        }, {
+          token: "constant.character.escape.math"
+          regex: "\\\\[^a-zA-Z]?"
+        }, {
+            token : "error.math",
+            regex : "^\\s*$",
+            next : popState
+        }, {
+            defaultToken : "string.math"
+        }
+      ]
 
     for key of @$rules
       for rule of basicRules
