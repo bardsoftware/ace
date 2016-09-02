@@ -8,8 +8,13 @@ define((require, exports, module) ->
   EQUATION_REGEX = "equation|equation\\*"
   LIST_STATE = "list"
   EQUATION_STATE = "equation"
+  LIST_TOKENTYPE = 'list'
+  EQUATION_TOKENTYPE = 'equation'
+
   exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
+  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
+  exports.LIST_TOKENTYPE = LIST_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
     ###*
     * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
@@ -26,23 +31,31 @@ define((require, exports, module) ->
 
     pushState = (pushedState) ->
       return (currentState, stack) ->
-        if currentState == "start"
-          stack.push(currentState, pushedState)
-        else
-          stack.push(pushedState)
+        stack.push(pushedState)
         return pushedState
 
-    #The same as pushState, but switch our finite state to "to" state
-    pushStateCheckout = (pushedState, to) ->
-      return (currentState, stack) ->
-        if currentState == "start"
-          stack.push(currentState, pushedState)
-        else
-          stack.push(pushedState)
-        return to
-
     popState = (currentState, stack) ->
-      return stack.pop() or "start"
+      if not stack?
+        throw new Error("papeeria_highlight_rules -- stack error: stack doesn't exist")
+
+      if not Array.isArray(stack)
+        return "start"
+
+      if stack.length == 0
+        if currentState != "start"
+          throw new Error('papeeria_highlight_rules -- stack error: stack should not be empty here')
+        else
+          return "start"
+
+      # here we know stack is not empty
+      errorMessage = "papeeria_highlight_rules -- stack error: expected " + currentState + " found " + stack[stack.length - 1]
+      if currentState != stack[stack.length-1] then throw new Error(errorMessage)
+
+      stack.pop()
+      if stack.length == 0
+        return "start"
+
+      return stack[stack.length - 1]
 
     basicRules = [
       {
@@ -89,9 +102,9 @@ define((require, exports, module) ->
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
       {
-        token : "string.math",
+        token : "string",
         regex : "\\\\\\[",
-        next  : pushStateCheckout(EQUATION_STATE, "math_latex")
+        next  : pushState("math_latex")
       }
       {
         token: "storage.type"
@@ -110,9 +123,9 @@ define((require, exports, module) ->
         regex: "\\\\[^a-zA-Z]?"
       }
       {
-        token : "string.math",
+        token : "string",
         regex : "\\${1,2}",
-        next  : pushStateCheckout(EQUATION_STATE, "math")
+        next  : pushState("math")
       }
 
     ]
@@ -143,6 +156,32 @@ define((require, exports, module) ->
         next: popState
       }
 
+
+    # Function for constructing $$ $$ and \[ \] rules
+    # regex -- (String) -- regex for definition end of Equation
+    latexMathModeConstructor = (regexOfEnd) ->
+        [{
+            token : "comment",
+            regex : "%.*$"
+          }, {
+            token : "string",
+            regex : regexOfEnd,
+            next  : popState
+          }, {
+            token: "storage.type." + EQUATION_TOKENTYPE
+            regex: "\\\\[a-zA-Z]+"
+          }, {
+            token: "constant.character.escape." + EQUATION_TOKENTYPE
+            regex: "\\\\[^a-zA-Z]?"
+          }, {
+            token : "error." + EQUATION_TOKENTYPE,
+            regex : "^\\s*$",
+            next : popState
+          }, {
+            defaultToken : "string." + EQUATION_TOKENTYPE
+          }
+        ]
+
     # For unknown reasons  we can"t use constants in block below, because background_tokenizer
     # doesn"t like constants. It wants string literal
     @$rules =
@@ -161,6 +200,22 @@ define((require, exports, module) ->
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
 
+        # will be simplified
+        # adds the necessary type of the token
+        # for provide context for one line
+        {
+          token: "storage.type." + EQUATION_TOKENTYPE
+          regex: "\\\\[a-zA-Z]+"
+        }
+
+        {
+          token: "constant.character.escape." + EQUATION_TOKENTYPE
+          regex: "\\\\[^a-zA-Z]?"
+        }
+
+        {
+          defaultToken : "text." + EQUATION_TOKENTYPE
+        }
       ]
       "list": [
         beginRule(LIST_REGEX, LIST_STATE)
@@ -168,49 +223,31 @@ define((require, exports, module) ->
 
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
-      ]
-      "math" : [{
-            token : "comment",
-            regex : "%.*$"
-        }, {
-            token : "string.math",
-            regex : "\\${1,2}",
-            next  : popState
-        }, {
-          token: "storage.type.math"
+
+        # will be simplified
+        # adds the necessary type of the token
+        # for provide context for one line
+        {
+          token : "string",
+          regex : "\\\\\\[",
+          next  : pushState("math_latex")
+        }
+        {
+          token: "storage.type." + LIST_TOKENTYPE
           regex: "\\\\[a-zA-Z]+"
-        }, {
-          token: "constant.character.escape.math"
+        }
+        {
+          token: "constant.character.escape." + LIST_TOKENTYPE
           regex: "\\\\[^a-zA-Z]?"
-        }, {
-            token : "error.math",
-            regex : "^\\s*$",
-            next : popState
-        }, {
-            defaultToken : "string.math"
+        }
+
+        {
+          defaultToken : "text." + LIST_TOKENTYPE
         }
       ]
-      "math_latex" : [{
-            token : "comment",
-            regex : "%.*$"
-        }, {
-            token : "string.math",
-            regex : "\\\\]",
-            next  : popState
-        }, {
-          token: "storage.type.math"
-          regex: "\\\\[a-zA-Z]+"
-        }, {
-          token: "constant.character.escape.math"
-          regex: "\\\\[^a-zA-Z]?"
-        }, {
-            token : "error.math",
-            regex : "^\\s*$",
-            next : popState
-        }, {
-            defaultToken : "string.math"
-        }
-      ]
+
+      "math" : latexMathModeConstructor("\\${1,2}")
+      "math_latex" : latexMathModeConstructor("\\\\\\]")
 
     for key of @$rules
       for rule of basicRules
