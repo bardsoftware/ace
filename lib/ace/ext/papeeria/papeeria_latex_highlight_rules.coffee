@@ -159,13 +159,13 @@ define((require, exports, module) ->
 
     # Function for constructing $$ $$ and \[ \] rules
     # regex -- (String) -- regex for definition end of Equation
-    latexMathModeConstructor = (regexOfEnd) ->
+    latexMathModeConstructor = (closingRegex) ->
         [{
             token : "comment",
             regex : "%.*$"
           }, {
             token : "string",
-            regex : regexOfEnd,
+            regex : closingRegex,
             next  : popState
           }, {
             token: "storage.type." + EQUATION_TOKENTYPE
