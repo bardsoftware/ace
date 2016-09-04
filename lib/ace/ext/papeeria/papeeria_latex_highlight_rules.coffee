@@ -8,8 +8,8 @@ define((require, exports, module) ->
   EQUATION_REGEX = "equation|equation\\*"
   LIST_STATE = "list"
   EQUATION_STATE = "equation"
-  LIST_TOKENTYPE = 'list'
-  EQUATION_TOKENTYPE = 'equation'
+  LIST_TOKENTYPE = "list"
+  EQUATION_TOKENTYPE = "equation"
 
   exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
