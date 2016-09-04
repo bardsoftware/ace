@@ -8,16 +8,15 @@ define((require, exports, module) ->
     EQUATION_TOKENTYPE  = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
     LIST_TOKENTYPE  = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
 
-
+    ###
+     * @param {Number} row
+     *
+     * Returns context at row.
+    ###
     # Specific for token"s system of type in ace
     isType = (token, type) ->
         return token.type.split(".").indexOf(type) > -1
-    ###
-     * @param {Number} row
-     * @param {Number} column
-     *
-     * Returns context at position.
-    ###
+
     getContext = (session, row, column) ->
         state = getContextFromRow(session, row)
         token = session.getTokenAt(row, column)
