@@ -32,7 +32,6 @@ define((require, exports, module) ->
       snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
-      score: 1000
       meta: "Math"
     }
     {
@@ -40,7 +39,6 @@ define((require, exports, module) ->
       snippet: """
                 \\sqrt{${1:n}}
             """
-      score: 1000
       meta: "Math"
     }
     {
@@ -48,7 +46,6 @@ define((require, exports, module) ->
       snippet: """
                 \\sqrt[${1:k}]{${2:n}}
             """
-      score: 1000
       meta: "Math"
     }
     {
@@ -56,7 +53,6 @@ define((require, exports, module) ->
       snippet: """
                 \\binom{${1:n}}{${2:k}}
             """
-      score: 1000
       meta: "Math"
     }
   ]
@@ -118,8 +114,3 @@ define((require, exports, module) ->
 
   return SUMS_AND_INTEGRALS.concat(MATH_SNIPPETS, GREEK_LETTERS)
 );
-
-
-
-
-
