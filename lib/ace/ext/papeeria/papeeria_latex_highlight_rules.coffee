@@ -39,6 +39,9 @@ define((require, exports, module) ->
         throw new Error("papeeria_highlight_rules -- stack error: stack doesn't exist")
 
       if not Array.isArray(stack)
+        if stack != 'start'
+          throw new Error("papeeria_highlight_rules -- stack error: stack must be  'stack' of array")
+
         return "start"
 
       if stack.length == 0
