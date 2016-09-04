@@ -22,7 +22,7 @@ define((require, exports, module) ->
   SUMS_AND_INTEGRALS = for i in [0..SUMS_AND_INTEGRALS.length-1]
       caption: SUMS_AND_INTEGRALS[i] + "{n}{i=..}{..}"
       snippet: SUMS_AND_INTEGRALS[i] + "^{${1:n}}_{${2:i=1}}{${3}}"
-      score: 1000 - i
+      score: i
       meta: "Sums and integrals"
 
 
@@ -61,7 +61,7 @@ define((require, exports, module) ->
   MATH_SNIPPETS = for i in [0..MATH_SNIPPETS.length-1]
       caption: MATH_SNIPPETS[i].caption
       snippet: MATH_SNIPPETS[i].snippet
-      score: 1000 - i
+      score: i
       meta: "Math"
 
 
@@ -108,7 +108,7 @@ define((require, exports, module) ->
   GREEK_LETTERS = for i in [0..GREEK_LETTERS.length]
     caption: GREEK_LETTERS[i]
     value: GREEK_LETTERS[i]
-    score: 1000 - i
+    score: i
     meta: "Greek Letter"
 
 
