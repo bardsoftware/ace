@@ -60,11 +60,26 @@ define((require, exports, module) ->
 
       return stack[stack.length - 1]
 
-    basicRules = [
+    #specialized rules for context
+    basicRules = (tokenType) -> [
+      if (tokenType?)
+        addToken = "." + tokenType
+      else
+        addToken = ""
       {
         token: "comment"
         regex: "%.*$"
       }
+
+      {
+        token: "lparen"
+        regex: "[[({]"
+      }
+      {
+        token: "rparen"
+        regex: "[\\])}]"
+      }
+
       {
         token: [
           "keyword"
@@ -86,20 +101,32 @@ define((require, exports, module) ->
         ]
         regex: "(\\\\(?:begin|end))({)(\\w*)(})"
       }
+
       {
         token: [
-          "storage.type"
-          "lparen.ref"
-          "variable.parameter.ref"
-          "rparen"
+            "storage.type"
+            "lparen.ref"
+            "variable.parameter.ref"
+            "rparen"
         ]
         regex: "(\\\\(?:ref))({)(\\w*)(})"
       }
+
+      {
+        token: [
+            "storage.type"
+            "lparen.cite"
+            "variable.parameter.cite"
+            "rparen"
+        ]
+        regex: "(\\\\(?:cite))({)(\\w*)(})"
+      }
+
       {
         token: [
           "keyword"
-          "lparen"
-          "variable.parameter"
+          "lparen" + addToken
+          "variable.parameter" + addToken
           "rparen"
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
@@ -109,26 +136,25 @@ define((require, exports, module) ->
         regex : "\\\\\\[",
         next  : pushState("math_latex")
       }
-      {
-        token: "storage.type"
-        regex: "\\\\[a-zA-Z]+"
-      }
-      {
-        token: "lparen"
-        regex: "[[({]"
-      }
-      {
-        token: "rparen"
-        regex: "[\\])}]"
-      }
-      {
-        token: "constant.character.escape"
-        regex: "\\\\[^a-zA-Z]?"
-      }
+
       {
         token : "string",
         regex : "\\${1,2}",
         next  : pushState("math")
+      }
+
+      {
+        token: "storage.type" + addToken
+        regex: "\\\\[a-zA-Z]+"
+      }
+
+      {
+        token: "constant.character.escape" + addToken
+        regex: "\\\\[^a-zA-Z]?"
+      }
+
+      {
+          defaultToken : "text" + addToken
       }
 
     ]
@@ -187,6 +213,8 @@ define((require, exports, module) ->
 
     # For unknown reasons  we can"t use constants in block below, because background_tokenizer
     # doesn"t like constants. It wants string literal
+    specificTokenForContext = {"list": LIST_TOKENTYPE, "equation": EQUATION_TOKENTYPE}
+
     @$rules =
       "start": [
         beginRule(LIST_REGEX, LIST_STATE)
@@ -194,32 +222,16 @@ define((require, exports, module) ->
 
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
-
       ]
+
       "equation": [
         beginRule(EQUATION_REGEX, EQUATION_STATE)
         beginRule(LIST_REGEX, LIST_STATE)
 
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
-
-        # will be simplified
-        # adds the necessary type of the token
-        # for provide context for one line
-        {
-          token: "storage.type." + EQUATION_TOKENTYPE
-          regex: "\\\\[a-zA-Z]+"
-        }
-
-        {
-          token: "constant.character.escape." + EQUATION_TOKENTYPE
-          regex: "\\\\[^a-zA-Z]?"
-        }
-
-        {
-          defaultToken : "text." + EQUATION_TOKENTYPE
-        }
       ]
+
       "list": [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
@@ -227,35 +239,16 @@ define((require, exports, module) ->
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
 
-        # will be simplified
-        # adds the necessary type of the token
-        # for provide context for one line
-        {
-          token : "string",
-          regex : "\\\\\\[",
-          next  : pushState("math_latex")
-        }
-        {
-          token: "storage.type." + LIST_TOKENTYPE
-          regex: "\\\\[a-zA-Z]+"
-        }
-        {
-          token: "constant.character.escape." + LIST_TOKENTYPE
-          regex: "\\\\[^a-zA-Z]?"
-        }
-
-        {
-          defaultToken : "text." + LIST_TOKENTYPE
-        }
       ]
 
       "math" : latexMathModeConstructor("\\${1,2}")
       "math_latex" : latexMathModeConstructor("\\\\\\]")
 
     for key of @$rules
-      for rule of basicRules
-        @$rules[key].push(basicRules[rule])
-
+        if (specificTokenForContext[key]?)
+          @$rules[key] = @$rules[key].concat(basicRules(specificTokenForContext[key]))
+        else
+          @$rules[key] = @$rules[key].concat(basicRules())
     return
 
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
