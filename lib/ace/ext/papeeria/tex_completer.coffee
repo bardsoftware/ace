@@ -185,7 +185,7 @@ define((require, exports, module) ->
 
         # Auto showing popup in ref, cite and other context
         editor.commands.on('afterExec', (event) ->
-          allowCommand = ["Return", "backspace"]
+          allowCommand = ["Return"]
           if  event.command.name in allowCommand
             showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
         );
