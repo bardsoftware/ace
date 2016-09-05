@@ -42,6 +42,15 @@ define((require, exports, module) ->
       meta_score: 1000
     }
 
+  LIST_END_ENVIRONMENT = for env in LIST_ENVIRONMENTS
+    {
+      caption: "\\end{#{env}}"
+      value: "\\end{#{env}}"
+      score: 0
+      meta: "End"
+      meta_score: 1000
+    }
+
 
   REFERENCE_SNIPPET =
   {
@@ -201,7 +210,7 @@ define((require, exports, module) ->
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET))
-          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS, LIST_SNIPPET))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS, LIST_SNIPPET, LIST_END_ENVIRONMENT))
           when EQUATION_STATE then callback(null, EQUATION_END_ENVIRONMENTS.concat(EQUATION_SNIPPETS))
 
   return TexCompleter
