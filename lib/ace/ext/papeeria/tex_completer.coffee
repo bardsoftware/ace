@@ -16,8 +16,8 @@ define((require, exports, module) ->
   ]
 
   EQUATION_ENVIRONMENTS = [
-    "equation"
-    "equation*"
+      "equation"
+      "equation*"
   ]
 
 
@@ -67,7 +67,7 @@ define((require, exports, module) ->
     {
       caption: "\\usepackage[]{..."
       snippet: """
-            \\usepackage{${1:package}}\n\
+            \\usepackage{${1  :package}}\n\
         """
       meta: "base"
       meta_score: 1
@@ -157,42 +157,11 @@ define((require, exports, module) ->
       else
         callback(null, @cache)
 
-  sleep = (ms) ->
-    start = new Date().getTime()
-    continue while new Date().getTime() - start < ms
-
-  ###
-  # Show popup if token.type at current pos is one of allowedTypes[i]
-  # @ (editor) --> editor
-  # @ (list of strings) -- allowedTypes
-  ###
-  showPopupIfTokenIsOneOfTypes = (editor, allowedTypes) ->
-    if editor.completer?
-      pos = editor.getCursorPosition()
-      session = editor.getSession()
-      token = editor.session.getTokenAt(pos.row, pos.column)
-
-      if token?
-        for type in allowedTypes
-          if LatexParsingContext.isType(token, type)
-            editor.completer.showPopup(editor)
-
   class TexCompleter
       constructor: ->
         @refGetter = new ReferenceGetter()
-      @init: (editor) ->
-        init(editor,  {win: "enter", mac: "enter"})
+      @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
 
-        # Auto showing popup in ref, cite and other context
-        editor.commands.on('afterExec', (event) ->
-          allowCommand = ["Return"]
-          if  event.command.name in allowCommand
-            showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-        );
-
-        editor.getSession().selection.on('changeCursor', (cursorEvent) ->
-          showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-        );
       setReferencesUrl: (url) => @referencesUrl = url
 
       ###
