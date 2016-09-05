@@ -24,7 +24,7 @@ define((require, exports, module) ->
       snippet: SUMS_AND_INTEGRALS[i] + "^{${1:n}}_{${2:i=1}}{${3}}"
       score: 1000 - i
       meta: "Sums and integrals"
-      meta_score: 1
+      meta_score: 1000
 
 
   MATH_SNIPPETS = [
@@ -60,7 +60,7 @@ define((require, exports, module) ->
       snippet: MATH_SNIPPETS[i].snippet
       score: 1000 - i
       meta: "Math"
-      meta_score: 1
+      meta_score: 10
 
 
   GREEK_LETTERS = [

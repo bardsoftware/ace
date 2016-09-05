@@ -30,7 +30,7 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "equation"
-      meta_score: 1
+      meta_score: 10
     }
 
   EQUATION_END_ENVIRONMENTS = for env in EQUATION_ENVIRONMENTS
@@ -39,7 +39,7 @@ define((require, exports, module) ->
       value: "\\end{#{env}}"
       score: 0
       meta: "End"
-      meta_score: 1000
+      meta_score: 1
     }
 
   LIST_END_ENVIRONMENT = for env in LIST_ENVIRONMENTS
@@ -48,7 +48,7 @@ define((require, exports, module) ->
       value: "\\end{#{env}}"
       score: 0
       meta: "End"
-      meta_score: 1000
+      meta_score: 1
     }
 
 
@@ -59,7 +59,7 @@ define((require, exports, module) ->
             \\ref{${1}}
         """
       meta: "reference"
-      meta_score: 1
+      meta_score: 10
 
   }
 
@@ -70,7 +70,7 @@ define((require, exports, module) ->
             \\usepackage{${1  :package}}\n\
         """
       meta: "base"
-      meta_score: 1
+      meta_score: 10
     }
     {
       caption: "\\usepackage[options]{..."
@@ -78,7 +78,7 @@ define((require, exports, module) ->
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
       meta: "base"
-      meta_score: 1
+      meta_score: 10
     }
     {
       caption: "\\newcommand{..."
@@ -86,7 +86,7 @@ define((require, exports, module) ->
             \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
         """
       meta: "base"
-      meta_score: 1
+      meta_score: 10
     }
   ]
 
@@ -99,7 +99,7 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "list"
-      meta_score: 1
+      meta_score: 10
     }
 
 
@@ -108,7 +108,7 @@ define((require, exports, module) ->
     caption: word,
     value: word
     meta: "list"
-    meta_score: 1
+    meta_score: 10
   )
 
   init = (editor, bindKey) ->
@@ -144,7 +144,7 @@ define((require, exports, module) ->
             name: elem.caption
             value: elem.caption
             meta: elem.type + "-ref"
-            meta_score: 1
+            meta_score: 10
           }
     )
     getReferences: (url, callback) =>
