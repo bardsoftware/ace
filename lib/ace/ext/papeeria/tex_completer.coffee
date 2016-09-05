@@ -39,16 +39,23 @@ define((require, exports, module) ->
       meta: "End"
       meta_score: 1
 
-
   REFERENCE_SNIPPET =
       caption: "\\ref{..."
       snippet: """
             \\ref{${1}}
         """
-      meta: "reference"
+      meta: "reference and citation"
       meta_score: 10
 
+  CITATION_SNIPPET =
+      caption: "\\cite{..."
+      snippet: """
+            \\cite{${1}}
+        """
+      meta: "reference and citation"
+      meta_score: 10
 
+  compare = (a, b) -> a.caption.localeCompare(b.caption)
   BASIC_SNIPPETS = [
     {
       caption: "\\usepackage[]{..."
@@ -56,7 +63,7 @@ define((require, exports, module) ->
             \\usepackage{${1  :package}}\n\
         """
       meta: "base"
-      meta_score: 10
+      meta_score: 9
     }
     {
       caption: "\\usepackage[options]{..."
@@ -64,7 +71,7 @@ define((require, exports, module) ->
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
       meta: "base"
-      meta_score: 10
+      meta_score: 9
     }
     {
       caption: "\\newcommand{..."
@@ -72,9 +79,10 @@ define((require, exports, module) ->
             \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
         """
       meta: "base"
-      meta_score: 10
+      meta_score: 9
     }
   ]
+  BASIC_SNIPPETS = BASIC_SNIPPETS.sort(compare)
 
   LIST_SNIPPET = for env in LIST_ENVIRONMENTS
       caption: "\\begin{#{env}}..."
@@ -162,8 +170,9 @@ define((require, exports, module) ->
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
-            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET))
-          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS, LIST_SNIPPET, LIST_END_ENVIRONMENT))
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS,
+            LIST_SNIPPET, LIST_END_ENVIRONMENT, CITATION_SNIPPET, REFERENCE_SNIPPET))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
 
   return TexCompleter
