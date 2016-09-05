@@ -156,6 +156,11 @@ define((require, exports, module) ->
         )
       else
         callback(null, @cache)
+
+  sleep = (ms) ->
+    start = new Date().getTime()
+    continue while new Date().getTime() - start < ms
+
   ###
   # Show popup if token.type at current pos is one of allowedTypes[i]
   # @ (editor) --> editor
