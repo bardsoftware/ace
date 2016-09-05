@@ -1,5 +1,17 @@
 define((require, exports, module) ->
 
+  EQUATION_ENVIRONMENTS = [
+      "equation"
+      "equation*"
+  ]
+
+  EQUATION_END_ENVIRONMENTS = for env in EQUATION_ENVIRONMENTS
+    caption: "\\end{#{env}}"
+    value: "\\end{#{env}}"
+    score: 0
+    meta: "End"
+    meta_score: 1
+
   SUMS_AND_INTEGRALS = [
     "\\sum"
     "\\int"
@@ -111,5 +123,5 @@ define((require, exports, module) ->
     meta_score: 2
 
 
-  return SUMS_AND_INTEGRALS.concat(MATH_SNIPPETS, GREEK_LETTERS)
+  return SUMS_AND_INTEGRALS.concat(MATH_SNIPPETS, GREEK_LETTERS, EQUATION_END_ENVIRONMENTS)
 );
