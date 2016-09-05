@@ -24,6 +24,7 @@ define((require, exports, module) ->
       snippet: SUMS_AND_INTEGRALS[i] + "^{${1:n}}_{${2:i=1}}{${3}}"
       score: 1000 - i
       meta: "Sums and integrals"
+      meta_score: 1
 
 
   MATH_SNIPPETS = [
@@ -32,28 +33,24 @@ define((require, exports, module) ->
       snippet: """
                 \\frac{${1:num}}{${2:denom}}
             """
-      meta: "Math"
     }
     {
       caption: "\\sqrt{n}"
       snippet: """
                 \\sqrt{${1:n}}
             """
-      meta: "Math"
     }
     {
       caption: "\\sqrt[k]{n}"
       snippet: """
                 \\sqrt[${1:k}]{${2:n}}
             """
-      meta: "Math"
     }
     {
       caption: "\\binom{n}{k}"
       snippet: """
                 \\binom{${1:n}}{${2:k}}
             """
-      meta: "Math"
     }
   ]
 
@@ -63,6 +60,7 @@ define((require, exports, module) ->
       snippet: MATH_SNIPPETS[i].snippet
       score: 1000 - i
       meta: "Math"
+      meta_score: 1
 
 
   GREEK_LETTERS = [
@@ -110,6 +108,7 @@ define((require, exports, module) ->
     value: GREEK_LETTERS[i]
     score: 1000 - i
     meta: "Greek Letter"
+    meta_score: 2
 
 
   return SUMS_AND_INTEGRALS.concat(MATH_SNIPPETS, GREEK_LETTERS)

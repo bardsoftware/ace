@@ -20,6 +20,7 @@ define((require, exports, module) ->
     "equation*"
   ]
 
+
   EQUATION_ENV_SNIPPETS = for env in EQUATION_ENVIRONMENTS
     {
       caption: "\\begin{#{env}}..."
@@ -29,6 +30,16 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "equation"
+      meta_score: 1
+    }
+
+  EQUATION_END_ENVIRONMENTS = for env in EQUATION_ENVIRONMENTS
+    {
+      caption: "\\end{#{env}}"
+      value: "\\end{#{env}}"
+      score: 0
+      meta: "End"
+      meta_score: 1000
     }
 
 
@@ -39,6 +50,8 @@ define((require, exports, module) ->
             \\ref{${1}}
         """
       meta: "reference"
+      meta_score: 1
+
   }
 
   BASIC_SNIPPETS = [
@@ -48,6 +61,7 @@ define((require, exports, module) ->
             \\usepackage{${1:package}}\n\
         """
       meta: "base"
+      meta_score: 1
     }
     {
       caption: "\\usepackage[options]{..."
@@ -55,6 +69,7 @@ define((require, exports, module) ->
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
       meta: "base"
+      meta_score: 1
     }
     {
       caption: "\\newcommand{..."
@@ -62,6 +77,7 @@ define((require, exports, module) ->
             \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
         """
       meta: "base"
+      meta_score: 1
     }
   ]
 
@@ -74,6 +90,7 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "list"
+      meta_score: 1
     }
 
 
@@ -82,6 +99,7 @@ define((require, exports, module) ->
     caption: word,
     value: word
     meta: "list"
+    meta_score: 1
   )
 
   init = (editor, bindKey) ->
@@ -117,6 +135,7 @@ define((require, exports, module) ->
             name: elem.caption
             value: elem.caption
             meta: elem.type + "-ref"
+            meta_score: 1
           }
     )
     getReferences: (url, callback) =>
@@ -183,7 +202,7 @@ define((require, exports, module) ->
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET))
           when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS, LIST_SNIPPET))
-          when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
+          when EQUATION_STATE then callback(null, EQUATION_END_ENVIRONMENTS.concat(EQUATION_SNIPPETS))
 
   return TexCompleter
 )
