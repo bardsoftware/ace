@@ -4,29 +4,38 @@ define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
     EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
     LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
+
+    EQUATION_TOKENTYPE  = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
+    LIST_TOKENTYPE  = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
+
+    # Specific for token"s system of type in ace
+    isType = (token, type) ->
+        return token.type.split(".").indexOf(type) > -1
+
     ###
-     * @param {Number} row
+     * @param {(number, number) pos}
      *
-     * Returns context at row.
+     * Returns context at cursor position.
     ###
-    getContext = (session, row) ->
+    getContext = (session, row, column) ->
+        state = getContextFromRow(session, row)
+        token = session.getTokenAt(row, column)
+        if token?
+            if isType(token, EQUATION_TOKENTYPE)
+                return EQUATION_STATE
+            if isType(token, LIST_TOKENTYPE)
+                return LIST_STATE
+        return state
+
+
+    getContextFromRow = (session, row) ->
         states = session.getState(row)
         if (Array.isArray(states))
             return states[states.length - 1]
         else
             return states
 
-    getNestedListDepth = (session, row) ->
-        states = session.getState(row)
-        count = 0
-        for state in states
-            if state == LIST_STATE
-                count++
-        # because we have 2 LIST_STATE for 1 level of nested
-        # and 3 LIST_STATE for more level
-        return count - 1
-
     exports.getContext = getContext
-    exports.getNestedListDepth = getNestedListDepth
+    exports.isType = isType
     return
 )

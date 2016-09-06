@@ -4,49 +4,87 @@ define((require, exports, module) ->
   HashHandler = require("ace/keyboard/hash_handler")
   PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
+
+
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  equationEnvironments = [
-    "equation"
-    "equation*"
-  ]
-  listEnvironments = [
+  EQUATION_SNIPPETS = require("./snippets/equation_snippets")
+
+  LIST_ENVIRONMENTS = [
     "itemize"
     "enumerate"
   ]
 
-  basicSnippets = [
-    {
+  EQUATION_ENVIRONMENTS = [
+      "equation"
+      "equation*"
+  ]
+
+
+  EQUATION_ENV_SNIPPETS = for env in EQUATION_ENVIRONMENTS
+      caption: "\\begin{#{env}}..."
+      snippet: """
+                \\begin{#{env}}
+                \t$1
+                \\end{#{env}}
+            """
+      meta: "equation"
+      meta_score: 10
+
+
+  LIST_END_ENVIRONMENT = for env in LIST_ENVIRONMENTS
+      caption: "\\end{#{env}}"
+      value: "\\end{#{env}}"
+      score: 0
+      meta: "End"
+      meta_score: 1
+
+  REFERENCE_SNIPPET =
       caption: "\\ref{..."
       snippet: """
             \\ref{${1}}
         """
-      meta: "base"
-    }
+      meta: "reference and citation"
+      meta_score: 10
+
+  CITATION_SNIPPET =
+      caption: "\\cite{..."
+      snippet: """
+            \\cite{${1}}
+        """
+      meta: "reference and citation"
+      meta_score: 10
+
+  compare = (a, b) -> a.caption.localeCompare(b.caption)
+  BASIC_SNIPPETS = [
     {
       caption: "\\usepackage[]{..."
       snippet: """
             \\usepackage{${1  :package}}\n\
         """
       meta: "base"
+      meta_score: 9
     }
     {
-      caption: "\\usepackage[]{..."
+      caption: "\\usepackage[options]{..."
       snippet: """
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
       meta: "base"
+      meta_score: 9
     }
     {
       caption: "\\newcommand{..."
       snippet: """
-            \\newcommand{\\${1:cmd}}[${2:opt}]{${3:realcmd}}${4}\n\
+            \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
         """
       meta: "base"
+      meta_score: 9
     }
   ]
-  listSnippets = for env in listEnvironments
-    {
+  BASIC_SNIPPETS = BASIC_SNIPPETS.sort(compare)
+
+  LIST_SNIPPET = for env in LIST_ENVIRONMENTS
       caption: "\\begin{#{env}}..."
       snippet: """
                 \\begin{#{env}}
@@ -54,53 +92,16 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "list"
-    }
-  equationSnippets = for env in equationEnvironments
-    {
-      caption: "\\begin{#{env}}..."
-      snippet: """
-                  \\begin{#{env}}
-                  \t$1
-                  \\end{#{env}}
-              """
-      meta: "equation"
-    }
-  formulasSnippets = [
-    {
-      caption: "\\frac{num}{denom}"
-      snippet: """
-                \\frac{${1:num}}{${2:denom}}
-            """
-      meta: "equation"
-    }
-    {
-      caption: "\\sum{n}{i=..}{..}"
-      snippet: """
-                  \\sum^{${1:n}}_{${2:i=1}}{${3}}
-            """
-      meta: "equation"
-    }
-  ]
+      meta_score: 10
 
-  equationKeywords = ["\\alpha"]
-  listKeywords = ["\\item"]
 
-  listKeywords = listKeywords.map((word) ->
+  LIST_KEYWORDS = ["\\item"]
+  LIST_KEYWORDS = LIST_KEYWORDS.map((word) ->
     caption: word,
     value: word
     meta: "list"
+    meta_score: 10
   )
-  equationKeywords = equationKeywords.map((word) ->
-    caption: word,
-    value: word
-    meta: "equation"
-  )
-
-  # Specific for token"s system of type in ace
-  # We saw such a realization in html_completions.js
-  isType = (token, type) ->
-    return token.type.split(".").indexOf(type) > -1
-
 
   init = (editor, bindKey) ->
     keyboardHandler = new HashHandler.HashHandler()
@@ -108,13 +109,17 @@ define((require, exports, module) ->
       name: "add item in list mode"
       bindKey: bindKey
       exec: (editor) ->
-        pos = editor.getCursorPosition()
-        curLine = editor.session.getLine(pos.row)
-        indentCount = LatexParsingContext.getNestedListDepth(editor.session, pos.row)
-        tabString = editor.getSession().getTabString()
-        # it"s temporary fix bug with added \item before \begin{itemize|enumerate}
-        if LatexParsingContext.getContext(editor.session, pos.row) == LIST_STATE && curLine.indexOf("begin") < pos.column
-          editor.insert("\n" + tabString.repeat(indentCount) + "\\item ")
+        cursor = editor.getCursorPosition();
+        line = editor.session.getLine(cursor.row);
+        tabString = editor.session.getTabString();
+        indentString = line.match(/^\s*/)[0];
+        indexOfBegin = line.indexOf("begin")
+
+        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+          if indexOfBegin > -1
+            editor.insert("\n" + tabString + indentString + "\\item ")
+          else
+            editor.insert("\n" + indentString + "\\item ")
           return true
         else
           return false
@@ -131,6 +136,7 @@ define((require, exports, module) ->
             name: elem.caption
             value: elem.caption
             meta: elem.type + "-ref"
+            meta_score: 10
           }
     )
     getReferences: (url, callback) =>
@@ -149,6 +155,7 @@ define((require, exports, module) ->
       @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
 
       setReferencesUrl: (url) => @referencesUrl = url
+
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
       # @param {object} error -- convention in node, the first argument to a callback
@@ -156,15 +163,17 @@ define((require, exports, module) ->
       # @param {array} response -- list of completions for adding to popup
       ###
       getCompletions: (editor, session, pos, prefix, callback) =>
-        context = LatexParsingContext.getContext(session, pos.row)
         token = session.getTokenAt(pos.row, pos.column)
+        context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
-        if isType(token, "ref") and @referencesUrl?
+        if LatexParsingContext.isType(token, "ref") and @referencesUrl?
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
-          when "start" then callback(null, listSnippets.concat(equationSnippets.concat(basicSnippets)))
-          when LIST_STATE then callback(null, listKeywords.concat(listSnippets.concat(equationSnippets)))
-          when EQUATION_STATE then callback(null, formulasSnippets.concat(equationKeywords))
+          when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
+          when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
 
   return TexCompleter
 )
