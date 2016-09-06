@@ -74,8 +74,8 @@ define((require, exports, module) ->
 
     getCurrentFormula: ->
       try
-        {row: startRow, column: startColumn} = @curRange.start
-        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curRange, startRow, startColumn)
+        {row: startRow, column: startColumn} = @curInnerRange.start
+        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
         tokenIterator.stepForward()
         [labelParameters, equationString] = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
         title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
@@ -100,7 +100,7 @@ define((require, exports, module) ->
 
     updateRange: ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      @curRange = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      [@curOuterRange, @curInnerRange] = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
 
     updatePopover: ->
       if @contextPreviewExists
@@ -149,7 +149,8 @@ define((require, exports, module) ->
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
     destroyContextPreview: ->
-      @curRange = null
+      @curInnerRange = null
+      @curOuterRange = null
       @contextPreviewExists = false
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
@@ -164,7 +165,7 @@ define((require, exports, module) ->
 
       # TODO: don't refresh on every cursor move, when the cursor is inside
       # start/end sequence
-      if @contextPreviewExists and not @curRange.contains(cursorRow, cursorColumn)
+      if @contextPreviewExists and not @curOuterRange.contains(cursorRow, cursorColumn)
         @destroyContextPreview()
 
       if not @contextPreviewExists and currentContext == "equation"
@@ -299,7 +300,8 @@ define((require, exports, module) ->
 
       curSequence = null
       curSequenceIndex = null
-      curEquationBoundary = null
+      curEquationOuterBoundary = null
+      curEquationInnerBoundary = null
       while true
         moveToBoundary()
         curToken = tokenIterator.getCurrentToken()
@@ -314,7 +316,8 @@ define((require, exports, module) ->
           else
             curSequence = null
             curSequenceIndex = null
-            curEquationBoundary = null
+            curEquationOuterBoundary = null
+            curEquationInnerBoundary = null
 
         if curSequence == null
           for boundarySequence in boundarySequences
@@ -324,28 +327,37 @@ define((require, exports, module) ->
               # next iteration we match the second one
               curSequenceIndex = 1
               curTokenPosition = tokenIterator.getCurrentTokenPosition()
-              curEquationBoundary = {
+              curEquationInnerBoundary = {
                 row: curTokenPosition.row
                 column: curTokenPosition.column + (if start then curToken.value.length else 0)
               }
 
         if curSequence? and curSequenceIndex >= curSequence.length
+          curTokenPosition = tokenIterator.getCurrentTokenPosition()
+          curEquationOuterBoundary = {
+            row: curTokenPosition.row
+            column: curTokenPosition.column + (if start then 0 else curToken.value.length)
+          }
           break
 
       # after finding boundary, tokenIterator is exactly on the last token
       # of ending sequence, so we step back once to avoid errors in case
       # of boundaries with identical starts and ends
       moveFromBoundary()
-      return curEquationBoundary
+      return [curEquationOuterBoundary, curEquationInnerBoundary]
 
+    # TODO: handle case when different boundaries were found
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getBoundary(tokenIterator, false)
       start = @getBoundary(tokenIterator, true)
-      # TODO: handle case when different boundaries were found
       if not (start? and end?)
-        return null
-      return new Range(start.row, start.column, end.row, end.column)
+        return [null, null]
+      [outerEnd, innerEnd] = end
+      [outerStart, innerStart] = start
+      outerRange = new Range(outerStart.row, outerStart.column, outerEnd.row, outerEnd.column)
+      innerRange = new Range(innerStart.row, innerStart.column, innerEnd.row, innerEnd.column)
+      return [outerRange, innerRange]
 
 
   exports.ContextHandler = ContextHandler
