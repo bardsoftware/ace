@@ -136,8 +136,8 @@ define((require, exports, module) ->
   # demo version
   processCitationJson = (elem) =>
     return {
-      name: elem.caption
-      value: elem.caption
+      name: elem.id
+      value: elem.id
       meta: elem.type
       meta_score: 10
     }
@@ -148,7 +148,7 @@ define((require, exports, module) ->
       @cache = []
       @processJson = processJson
     processData: (data) =>
-      @cache = data.Labels?.map(@processJson)
+      @cache = data?.map(@processJson)
 
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl

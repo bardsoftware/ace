@@ -1,5 +1,3 @@
-{
-    "Labels": [
+[
         {"type": "figure", "caption": "fig:nevergonna"}, {"type": "figure", "caption": "fig:chroma"}, {"type": "figure", "caption": "fig:chord1"}, {"type": "figure", "caption": "fig:chord2"}, {"type": "table", "caption": "my-label"}, {"type": "figure", "caption": "fig:mnb"}, {"type": "figure", "caption": "fig:mnbCrossVal"}, {"type": "figure", "caption": "fig:logisticregression"}, {"type": "figure", "caption": "fig:SVM"}, {"type": "figure", "caption": "fig:sgd"}, {"type": "figure", "caption": "fig:Stacking"}, {"type": "table", "caption": "my-label"}
-    ]
-}
+]
