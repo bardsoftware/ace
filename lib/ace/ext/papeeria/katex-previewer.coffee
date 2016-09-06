@@ -156,6 +156,8 @@ define((require, exports, module) ->
       @editor.getSession().off("changeScrollTop", @updatePosition)
       @popoverHandler.destroy()
 
+    # TODO: for some reason `{` and `}` inside the equations are not
+    # identified as equation
     handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
         return
@@ -163,8 +165,6 @@ define((require, exports, module) ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
-      # TODO: don't refresh on every cursor move, when the cursor is inside
-      # start/end sequence
       if @contextPreviewExists and not @curOuterRange.contains(cursorRow, cursorColumn)
         @destroyContextPreview()
 
