@@ -126,19 +126,30 @@ define((require, exports, module) ->
     )
     editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
-   class  ReferenceGetter
-    constructor: ->
+  processReferenceJson = (elem) =>
+    return {
+      name: elem.caption
+      value: elem.caption
+      meta: elem.type
+      meta_score: 10
+    }
+  # demo version
+  processCitationJson = (elem) =>
+    return {
+      name: elem.caption
+      value: elem.caption
+      meta: elem.type
+      meta_score: 10
+    }
+
+  class  PropertyGetter
+    constructor: (processJson) ->
       @lastFetchedUrl =  ""
       @cache = []
+      @processJson = processJson
     processData: (data) =>
-      @cache = data.Labels?.map((elem) =>
-          return {
-            name: elem.caption
-            value: elem.caption
-            meta: elem.type + "-ref"
-            meta_score: 10
-          }
-    )
+      @cache = data.Labels?.map(@processJson)
+
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl
         $.getJSON(url).done((data) =>
@@ -149,12 +160,41 @@ define((require, exports, module) ->
       else
         callback(null, @cache)
 
+  ###
+  # Show popup if token.type at current pos is one of allowedTypes[i]
+  # @ (editor) --> editor
+  # @ (list of strings) -- allowedTypes
+  ###
+  showPopupIfTokenIsOneOfTypes = (editor, allowedTypes) ->
+    if editor.completer?
+      pos = editor.getCursorPosition()
+      session = editor.getSession()
+      token = editor.session.getTokenAt(pos.row, pos.column)
+
+      if token?
+        for type in allowedTypes
+          if LatexParsingContext.isType(token, type)
+            editor.completer.showPopup(editor)
+
   class TexCompleter
       constructor: ->
-        @refGetter = new ReferenceGetter()
-      @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
+        @refGetter = new PropertyGetter(processReferenceJson)
+        @citeGetter = new PropertyGetter(processCitationJson)
+      @init: (editor) ->
+        init(editor,  {win: "enter", mac: "enter"})
 
+        # Auto showing popup in ref, cite and other context
+        editor.commands.on('afterExec', (event) ->
+          allowCommand = ["Return", "backspace"]
+          if  event.command.name in allowCommand
+            showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
+        );
+
+        editor.getSession().selection.on('changeCursor', (cursorEvent) ->
+          showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
+        );
       setReferencesUrl: (url) => @referencesUrl = url
+      setCitationsUrl: (url) => @citationsUrl = url
 
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
@@ -166,8 +206,11 @@ define((require, exports, module) ->
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
-        if LatexParsingContext.isType(token, "ref") and @referencesUrl?
-          @refGetter.getReferences(@referencesUrl, callback)
+        if LatexParsingContext.isType(token, "ref")
+          if @referencesUrl? then @refGetter.getReferences(@referencesUrl, callback)
+        else if LatexParsingContext.isType(token, "cite")
+          if @citationsUrl? then @citeGetter.getReferences(@citationsUrl, callback)
+
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
