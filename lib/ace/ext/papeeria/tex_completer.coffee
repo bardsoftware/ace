@@ -175,6 +175,7 @@ define((require, exports, module) ->
         for type in allowedTypes
           if LatexParsingContext.isType(token, type)
             editor.completer.showPopup(editor)
+            break
 
   class TexCompleter
       constructor: ->
