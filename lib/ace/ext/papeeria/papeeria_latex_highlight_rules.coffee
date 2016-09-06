@@ -2,8 +2,8 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 
 define((require, exports, module) ->
   "use strict"
-  oop = require("../../lib/oop")
-  TextHighlightRules = require("../../mode/text_highlight_rules").TextHighlightRules
+  oop = require("ace/lib/oop")
+  TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules
   LIST_REGEX = "itemize|enumerate"
   EQUATION_REGEX = "equation|equation\\*"
   LIST_STATE = "list"
