@@ -60,7 +60,7 @@ define((require, exports, module) ->
 
       return stack[stack.length - 1]
 
-    #specialized rules for context
+    # specialized rules for context
     basicRules = (tokenType) -> [
       if (tokenType?)
         addToken = "." + tokenType
@@ -211,12 +211,13 @@ define((require, exports, module) ->
           }
         ]
 
-    # For unknown reasons  we can"t use constants in block below, because background_tokenizer
-    # doesn"t like constants. It wants string literal
-    specificTokenForContext = {"list": LIST_TOKENTYPE, "equation": EQUATION_TOKENTYPE}
 
-    @$rules =
-      "start": [
+    specificTokenForContext = {}
+    specificTokenForContext[LIST_STATE] = LIST_TOKENTYPE
+    specificTokenForContext[EQUATION_STATE] = EQUATION_STATE
+
+    @$rules = {}
+    @$rules["start"] = [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
 
@@ -224,7 +225,7 @@ define((require, exports, module) ->
         endRule(LIST_REGEX)
       ]
 
-      "equation": [
+    @$rules[EQUATION_STATE] = [
         beginRule(EQUATION_REGEX, EQUATION_STATE)
         beginRule(LIST_REGEX, LIST_STATE)
 
@@ -232,20 +233,20 @@ define((require, exports, module) ->
         endRule(LIST_REGEX)
       ]
 
-      "list": [
+    @$rules[LIST_STATE] = [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
 
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
+    ]
 
-      ]
-
-      "math" : latexMathModeConstructor("\\${1,2}")
-      "math_latex" : latexMathModeConstructor("\\\\\\]")
+    @$rules["math"] = latexMathModeConstructor("\\${1,2}")
+    @$rules["math_latex"] = latexMathModeConstructor("\\\\\\]")
 
     for key of @$rules
         if (specificTokenForContext[key]?)
+          console.log("123")
           @$rules[key] = @$rules[key].concat(basicRules(specificTokenForContext[key]))
         else
           @$rules[key] = @$rules[key].concat(basicRules())
