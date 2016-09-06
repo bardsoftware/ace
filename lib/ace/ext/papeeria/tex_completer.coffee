@@ -8,7 +8,7 @@ define((require, exports, module) ->
 
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  EQUATION_SNIPPETS = require("./snippets/equation_snippets")
+  EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
 
   LIST_ENVIRONMENTS = [
     "itemize"
