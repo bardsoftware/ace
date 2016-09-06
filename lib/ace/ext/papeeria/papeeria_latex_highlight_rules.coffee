@@ -246,7 +246,6 @@ define((require, exports, module) ->
 
     for key of @$rules
         if (specificTokenForContext[key]?)
-          console.log("123")
           @$rules[key] = @$rules[key].concat(basicRules(specificTokenForContext[key]))
         else
           @$rules[key] = @$rules[key].concat(basicRules())
