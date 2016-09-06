@@ -171,8 +171,8 @@ define((require, exports, module) ->
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS,
-            LIST_SNIPPET, LIST_END_ENVIRONMENT, CITATION_SNIPPET, REFERENCE_SNIPPET))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
 
   return TexCompleter
