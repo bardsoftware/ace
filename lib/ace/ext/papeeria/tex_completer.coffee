@@ -20,8 +20,8 @@ define((require, exports, module) ->
       "equation*"
   ]
 
+
   EQUATION_ENV_SNIPPETS = for env in EQUATION_ENVIRONMENTS
-    {
       caption: "\\begin{#{env}}..."
       snippet: """
                 \\begin{#{env}}
@@ -29,18 +29,33 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "equation"
-    }
+      meta_score: 10
 
+
+  LIST_END_ENVIRONMENT = for env in LIST_ENVIRONMENTS
+      caption: "\\end{#{env}}"
+      value: "\\end{#{env}}"
+      score: 0
+      meta: "End"
+      meta_score: 1
 
   REFERENCE_SNIPPET =
-  {
       caption: "\\ref{..."
       snippet: """
             \\ref{${1}}
         """
-      meta: "reference"
-  }
+      meta: "reference and citation"
+      meta_score: 10
 
+  CITATION_SNIPPET =
+      caption: "\\cite{..."
+      snippet: """
+            \\cite{${1}}
+        """
+      meta: "reference and citation"
+      meta_score: 10
+
+  compare = (a, b) -> a.caption.localeCompare(b.caption)
   BASIC_SNIPPETS = [
     {
       caption: "\\usepackage[]{..."
@@ -48,6 +63,7 @@ define((require, exports, module) ->
             \\usepackage{${1  :package}}\n\
         """
       meta: "base"
+      meta_score: 9
     }
     {
       caption: "\\usepackage[options]{..."
@@ -55,6 +71,7 @@ define((require, exports, module) ->
             \\usepackage[${1:[options}]{${2:package}}\n\
         """
       meta: "base"
+      meta_score: 9
     }
     {
       caption: "\\newcommand{..."
@@ -62,11 +79,12 @@ define((require, exports, module) ->
             \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
         """
       meta: "base"
+      meta_score: 9
     }
   ]
+  BASIC_SNIPPETS = BASIC_SNIPPETS.sort(compare)
 
   LIST_SNIPPET = for env in LIST_ENVIRONMENTS
-    {
       caption: "\\begin{#{env}}..."
       snippet: """
                 \\begin{#{env}}
@@ -74,7 +92,7 @@ define((require, exports, module) ->
                 \\end{#{env}}
             """
       meta: "list"
-    }
+      meta_score: 10
 
 
   LIST_KEYWORDS = ["\\item"]
@@ -82,6 +100,7 @@ define((require, exports, module) ->
     caption: word,
     value: word
     meta: "list"
+    meta_score: 10
   )
 
   init = (editor, bindKey) ->
@@ -117,6 +136,7 @@ define((require, exports, module) ->
             name: elem.caption
             value: elem.caption
             meta: elem.type + "-ref"
+            meta_score: 10
           }
     )
     getReferences: (url, callback) =>
@@ -150,8 +170,9 @@ define((require, exports, module) ->
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
-            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET))
-          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(EQUATION_ENV_SNIPPETS, LIST_SNIPPET))
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
+          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
 
   return TexCompleter
