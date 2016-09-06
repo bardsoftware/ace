@@ -130,19 +130,25 @@ define((require, exports, module) ->
     return {
       name: elem.caption
       value: elem.caption
-      meta: elem.type
-      meta_score: 10
-    }
-  # demo version
-  processCitationJson = (elem) =>
-    return {
-      name: elem.id
-      value: elem.id
+      score: 1000
       meta: elem.type
       meta_score: 10
     }
 
-  class  PropertyGetter
+  processCitationJson = (elem) =>
+    return {
+      name: elem.id
+      value: elem.id
+      score: 1000
+      meta: elem.type
+      meta_score: 10
+    }
+
+  class CompletionsCache
+    ###
+    * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
+    * return object with fields name, value and (optional) meta, meta_score, score
+    ###
     constructor: (processJson) ->
       @lastFetchedUrl =  ""
       @cache = []
@@ -179,17 +185,20 @@ define((require, exports, module) ->
 
   class TexCompleter
       constructor: ->
-        @refGetter = new PropertyGetter(processReferenceJson)
-        @citeGetter = new PropertyGetter(processCitationJson)
+        @refCache = new CompletionsCache(processReferenceJson)
+        @citeCache = new CompletionsCache(processCitationJson)
       @init: (editor) ->
         init(editor,  {win: "enter", mac: "enter"})
 
-        # Auto showing popup in ref, cite and other context
+        # we need two event handler becouse handler below work fine as well when we in
+        # existing \ref{|} or \cite{|}
+        # But doesn't work correct when we haven't ready block yet
+
         editor.commands.on('afterExec', (event) ->
           allowCommand = ["Return", "backspace"]
           if  event.command.name in allowCommand
             showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-        );
+          );
 
         editor.getSession().selection.on('changeCursor', (cursorEvent) ->
           showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
@@ -208,9 +217,9 @@ define((require, exports, module) ->
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
         if LatexParsingContext.isType(token, "ref")
-          if @referencesUrl? then @refGetter.getReferences(@referencesUrl, callback)
+          if @referencesUrl? then @refCache.getReferences(@referencesUrl, callback)
         else if LatexParsingContext.isType(token, "cite")
-          if @citationsUrl? then @citeGetter.getReferences(@citationsUrl, callback)
+          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
 
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
