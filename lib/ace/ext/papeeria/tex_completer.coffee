@@ -68,7 +68,7 @@ define((require, exports, module) ->
     {
       caption: "\\usepackage[options]{..."
       snippet: """
-            \\usepackage[${1:[options}]{${2:package}}\n\
+            \\usepackage[${1:options}]{${2:package}}\n\
         """
       meta: "base"
       meta_score: 9
