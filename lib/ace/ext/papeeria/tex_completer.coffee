@@ -167,9 +167,9 @@ define((require, exports, module) ->
         callback(null, @cache)
 
   ###
-  # Show popup if token.type at current pos is one of allowedTypes[i]
-  # @ (editor) --> editor
-  # @ (list of strings) -- allowedTypes
+  * Show popup if token type at the current pos is one of the given array elements.
+  * @ (editor) --> editor
+  * @ (list of strings) -- allowedTypes
   ###
   showPopupIfTokenIsOneOfTypes = (editor, allowedTypes) ->
     if editor.completer?
@@ -190,10 +190,9 @@ define((require, exports, module) ->
       @init: (editor) ->
         init(editor,  {win: "enter", mac: "enter"})
 
-        # we need two event handler becouse handler below work fine as well when we in
+        # we need two event handlers because handlers below work fine when we in
         # existing \ref{|} or \cite{|}
-        # But doesn't work correct when we haven't ready block yet
-
+        # But doesn't work correct when we added block (\ref{}. \cite. etc) using autocomplete
         editor.commands.on('afterExec', (event) ->
           allowCommand = ["Return", "backspace"]
           if  event.command.name in allowCommand
