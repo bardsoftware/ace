@@ -74,6 +74,8 @@ define((require, exports, module) ->
 
     getCurrentFormula: ->
       try
+        if @curStartString != @curEndString
+          return ["Error!", "Starting and ending sequences don't match: #{JSON.stringify(@curStartString)} and #{JSON.stringify(@curEndString)}"]
         {row: startRow, column: startColumn} = @curInnerRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
         tokenIterator.stepForward()
@@ -100,7 +102,7 @@ define((require, exports, module) ->
 
     updateRange: ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      [@curOuterRange, @curInnerRange] = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      [@curOuterRange, @curInnerRange, @curStartString, @curEndString] = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
 
     updatePopover: ->
       if @contextPreviewExists
@@ -344,20 +346,22 @@ define((require, exports, module) ->
       # of ending sequence, so we step back once to avoid errors in case
       # of boundaries with identical starts and ends
       moveFromBoundary()
-      return [curEquationOuterBoundary, curEquationInnerBoundary]
+      return [curSequence.join(""), curEquationOuterBoundary, curEquationInnerBoundary]
 
-    # TODO: handle case when different boundaries were found
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getBoundary(tokenIterator, false)
       start = @getBoundary(tokenIterator, true)
+
       if not (start? and end?)
         return [null, null]
-      [outerEnd, innerEnd] = end
-      [outerStart, innerStart] = start
+
+      [endString, outerEnd, innerEnd] = end
+      [startString, outerStart, innerStart] = start
+
       outerRange = new Range(outerStart.row, outerStart.column, outerEnd.row, outerEnd.column)
       innerRange = new Range(innerStart.row, innerStart.column, innerEnd.row, innerEnd.column)
-      return [outerRange, innerRange]
+      return [outerRange, innerRange, startString, endString]
 
 
   exports.ContextHandler = ContextHandler
