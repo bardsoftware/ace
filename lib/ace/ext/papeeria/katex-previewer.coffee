@@ -74,8 +74,10 @@ define((require, exports, module) ->
 
     getCurrentFormula: ->
       try
-        if @curStartString != @curEndString
-          return ["Error!", "Starting and ending sequences don't match: #{JSON.stringify(@curStartString)} and #{JSON.stringify(@curEndString)}"]
+        if @curStartId != @curEndId
+          startString = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse().join("")
+          endString = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId].join("")
+          return ["Error!", "Starting and ending sequences don't match: #{startString} and #{endString}"]
         {row: startRow, column: startColumn} = @curInnerRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
         tokenIterator.stepForward()
@@ -102,7 +104,7 @@ define((require, exports, module) ->
 
     updateRange: ->
       {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      [@curOuterRange, @curInnerRange, @curStartString, @curEndString] = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      [@curOuterRange, @curInnerRange, @curStartId, @curEndId] = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
 
     updatePopover: ->
       if @contextPreviewExists
@@ -235,6 +237,12 @@ define((require, exports, module) ->
         { type: "storage.type", value: "\\begin" }
       ]
       [
+        { type: "rparen", value: "}" }
+        { type: "variable.parameter", value: "equation*" }
+        { type: "lparen", value: "{" }
+        { type: "storage.type", value: "\\begin" }
+      ]
+      [
         { type: "string", value: "\\[" }
       ]
       [
@@ -249,6 +257,12 @@ define((require, exports, module) ->
         { type: "storage.type", value: "\\end" }
         { type: "lparen", value: "{" }
         { type: "variable.parameter", value: "equation" }
+        { type: "rparen", value: "}" }
+      ]
+      [
+        { type: "storage.type", value: "\\end" }
+        { type: "lparen", value: "{" }
+        { type: "variable.parameter", value: "equation*" }
         { type: "rparen", value: "}" }
       ]
       [
@@ -300,7 +314,10 @@ define((require, exports, module) ->
             if curToken? and EquationRangeHandler.equalTokens(token, curToken)
               moveFromBoundary()
 
+      allowedSequences = Array(boundarySequences.length)
+      allowedSequences.fill(true)
       curSequence = null
+      curSequenceId = null
       curSequenceIndex = null
       curEquationOuterBoundary = null
       curEquationInnerBoundary = null
@@ -316,15 +333,30 @@ define((require, exports, module) ->
               curToken)
             curSequenceIndex += 1
           else
+            allowedSequences[curSequenceId] = false
+            anyAllowed = false
+            for allowance in allowedSequences
+              anyAllowed = anyAllowed or allowance
+            if not anyAllowed
+              allowedSequences.fill(true)
+            else
+              for i in [0..curSequenceIndex - 1]
+                moveFromBoundary()
+
             curSequence = null
+            curSequenceId = null
             curSequenceIndex = null
             curEquationOuterBoundary = null
             curEquationInnerBoundary = null
 
         if curSequence == null
-          for boundarySequence in boundarySequences
-            if EquationRangeHandler.equalTokens(boundarySequence[0], curToken)
+          foundSequence = false
+          curToken = tokenIterator.getCurrentToken()
+          for i in [0..boundarySequences.length - 1]
+            boundarySequence = boundarySequences[i]
+            if allowedSequences[i] and EquationRangeHandler.equalTokens(boundarySequence[0], curToken)
               curSequence = boundarySequence
+              curSequenceId = i
               # the first token already matches, so in the 
               # next iteration we match the second one
               curSequenceIndex = 1
@@ -333,6 +365,10 @@ define((require, exports, module) ->
                 row: curTokenPosition.row
                 column: curTokenPosition.column + (if start then curToken.value.length else 0)
               }
+              foundSequence = true
+              break
+          if not foundSequence
+            allowedSequences.fill(true)
 
         if curSequence? and curSequenceIndex >= curSequence.length
           curTokenPosition = tokenIterator.getCurrentTokenPosition()
@@ -343,10 +379,12 @@ define((require, exports, module) ->
           break
 
       # after finding boundary, tokenIterator is exactly on the last token
-      # of ending sequence, so we step back once to avoid errors in case
-      # of boundaries with identical starts and ends
-      moveFromBoundary()
-      return [curSequence.join(""), curEquationOuterBoundary, curEquationInnerBoundary]
+      # of ending sequence, so we step back until we're inside the equation
+      # to avoid errors
+      for i in [0..curSequence.length]
+        moveFromBoundary()
+
+      return [curSequenceId, curEquationOuterBoundary, curEquationInnerBoundary]
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
@@ -356,12 +394,12 @@ define((require, exports, module) ->
       if not (start? and end?)
         return [null, null]
 
-      [endString, outerEnd, innerEnd] = end
-      [startString, outerStart, innerStart] = start
+      [endId, outerEnd, innerEnd] = end
+      [startId, outerStart, innerStart] = start
 
       outerRange = new Range(outerStart.row, outerStart.column, outerEnd.row, outerEnd.column)
       innerRange = new Range(innerStart.row, innerStart.column, innerEnd.row, innerEnd.column)
-      return [outerRange, innerRange, startString, endString]
+      return [outerRange, innerRange, startId, endId]
 
 
   exports.ContextHandler = ContextHandler
