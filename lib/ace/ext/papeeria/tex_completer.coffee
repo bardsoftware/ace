@@ -13,6 +13,7 @@ define((require, exports, module) ->
   LIST_ENVIRONMENTS = [
     "itemize"
     "enumerate"
+    "description"
   ]
 
   EQUATION_ENVIRONMENTS = [
@@ -60,23 +61,61 @@ define((require, exports, module) ->
     {
       caption: "\\usepackage[]{..."
       snippet: """
-            \\usepackage{${1  :package}}\n\
+            \\usepackage{${1:package}}\n\
         """
       meta: "base"
       meta_score: 9
     }
     {
-      caption: "\\usepackage[options]{..."
+      caption: "\\section{..."
       snippet: """
-            \\usepackage[${1:options}]{${2:package}}\n\
+            \\section{${1:name}}\n\
         """
       meta: "base"
       meta_score: 9
     }
     {
-      caption: "\\newcommand{..."
+      caption: "\\subsection{..."
       snippet: """
-            \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
+            \\subsection{${1:name}}\n\
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\subsubsection{..."
+      snippet: """
+            \\subsubsection{${1:name}}\n\
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\chapter{..."
+      snippet: """
+            \\chapter{${1:name}}\n\
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\begin{table}..."
+      snippet: """
+            \\begin{table}\n\
+            \\begin{tabular}{${1:tablespec}}\n\
+            \\\\\\\\\n\
+            \\end{tabular}\n\
+            \\end{table}
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\begin{figure}..."
+      snippet: """
+            \\begin{figure}[${1:placement}]\n\
+            \n\
+            \\end{figure}
         """
       meta: "base"
       meta_score: 9
