@@ -228,6 +228,28 @@ define((require, exports, module) ->
       @outOfRange = not @range.contains(row, column)
 
 
+  class TokenSequenceFinder
+    constructor: (@tokenSequences, @equalTokens) ->
+      @nSequences = @tokenSequences.length
+      @currentIndices = Array(@nSequences)
+      @currentIndices.fill(0)
+
+    progressIndices: (token) ->
+      for i in [0..@nSequences-1]
+        tokenSequence = @tokenSequences[i]
+        currentIndex = @currentIndices[i]
+        if @equalTokens(token, tokenSequence[currentIndex])
+          @currentIndices[i] += 1
+        else
+          @currentIndices[i] = 0
+
+    getMaybeFinishedSequenceId: ->
+      for i in [0..@nSequences-1]
+        if @currentIndices[i] == @tokenSequences[i].length
+          return i
+      return null
+
+
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCES: [
       [
@@ -314,77 +336,38 @@ define((require, exports, module) ->
             if curToken? and EquationRangeHandler.equalTokens(token, curToken)
               moveFromBoundary()
 
-      allowedSequences = Array(boundarySequences.length)
-      allowedSequences.fill(true)
-      curSequence = null
-      curSequenceId = null
-      curSequenceIndex = null
-      curEquationOuterBoundary = null
-      curEquationInnerBoundary = null
+      tokenSequenceFinder = new TokenSequenceFinder(boundarySequences, EquationRangeHandler.equalTokens)
       while true
         moveToBoundary()
         curToken = tokenIterator.getCurrentToken()
         if not curToken?
           return null
 
-        if curSequence != null
-          if EquationRangeHandler.equalTokens(
-              curSequence[curSequenceIndex],
-              curToken)
-            curSequenceIndex += 1
-          else
-            allowedSequences[curSequenceId] = false
-            anyAllowed = false
-            for allowance in allowedSequences
-              anyAllowed = anyAllowed or allowance
-            if not anyAllowed
-              allowedSequences.fill(true)
-            else
-              for i in [0..curSequenceIndex - 1]
-                moveFromBoundary()
+        tokenSequenceFinder.progressIndices(curToken)
 
-            curSequence = null
-            curSequenceId = null
-            curSequenceIndex = null
-            curEquationOuterBoundary = null
-            curEquationInnerBoundary = null
+        maybeFinishedSequenceId = tokenSequenceFinder.getMaybeFinishedSequenceId()
+        if maybeFinishedSequenceId?
+          {row: curTokenRow, column: curTokenColumn} = tokenIterator.getCurrentTokenPosition()
+          curTokenLength = curToken.value.length
+          finishedSequence = boundarySequences[maybeFinishedSequenceId]
+          finishedSequenceStringLength = (token.value for token in finishedSequence).join("").length
 
-        if curSequence == null
-          foundSequence = false
-          curToken = tokenIterator.getCurrentToken()
-          for i in [0..boundarySequences.length - 1]
-            boundarySequence = boundarySequences[i]
-            if allowedSequences[i] and EquationRangeHandler.equalTokens(boundarySequence[0], curToken)
-              curSequence = boundarySequence
-              curSequenceId = i
-              # the first token already matches, so in the 
-              # next iteration we match the second one
-              curSequenceIndex = 1
-              curTokenPosition = tokenIterator.getCurrentTokenPosition()
-              curEquationInnerBoundary = {
-                row: curTokenPosition.row
-                column: curTokenPosition.column + (if start then curToken.value.length else 0)
-              }
-              foundSequence = true
-              break
-          if not foundSequence
-            allowedSequences.fill(true)
-
-        if curSequence? and curSequenceIndex >= curSequence.length
-          curTokenPosition = tokenIterator.getCurrentTokenPosition()
-          curEquationOuterBoundary = {
-            row: curTokenPosition.row
-            column: curTokenPosition.column + (if start then 0 else curToken.value.length)
+          equationOuterBoundary = {
+            row: curTokenRow
+            column: curTokenColumn + (if start then 0 else curTokenLength)
           }
-          break
+          equationInnerBoundary = {
+            row: curTokenRow
+            column: curTokenColumn + (if start then finishedSequenceStringLength else curTokenLength - finishedSequenceStringLength)
+          }
 
-      # after finding boundary, tokenIterator is exactly on the last token
-      # of ending sequence, so we step back until we're inside the equation
-      # to avoid errors
-      for i in [0..curSequence.length]
-        moveFromBoundary()
+          # after finding boundary, tokenIterator is exactly on the last token
+          # of ending sequence, so we step back until we're inside the equation
+          # to avoid errors
+          for i in [0..finishedSequence.length]
+            moveFromBoundary()
 
-      return [curSequenceId, curEquationOuterBoundary, curEquationInnerBoundary]
+          return [maybeFinishedSequenceId, equationOuterBoundary, equationInnerBoundary]
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
