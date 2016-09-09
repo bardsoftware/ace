@@ -19,7 +19,7 @@ define((require, exports, module) ->
 
   class ContextHandler
     @UPDATE_DELAY: 1000
-    @KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+    @KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
     @getMacrosArgumentRange: (session, argumentStartPos) ->
       argumentRange = findSurroundingBrackets(session, argumentStartPos)
@@ -48,7 +48,7 @@ define((require, exports, module) ->
           curLine = session.getLine(tokenPosition.row)
           bracketPosition = tokenPosition.column + "\\label".length
           if curLine[bracketPosition] == "{"
-            argumentRange = ContextHandler.getMacrosArgumentRange(session, {row: tokenPosition.row, column: bracketPosition + 1})
+            argumentRange = ContextHandler.getMacrosArgumentRange(session, { row: tokenPosition.row, column: bracketPosition + 1 })
             if argumentRange?
               acceptToken = false
               labelParameters.push(session.getTextRange(argumentRange))
@@ -61,7 +61,7 @@ define((require, exports, module) ->
         token = tokenIterator.getCurrentToken()
         tokenPosition = tokenIterator.getCurrentTokenPosition()
 
-      return [labelParameters, tokenValues.join("")]
+      return { params: labelParameters, equation: tokenValues.join("") }
 
     constructor: (@editor, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
       @jqEditorContainer = $(@editor.container)
@@ -77,19 +77,19 @@ define((require, exports, module) ->
         if @curStartId != @curEndId
           startString = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse().join("")
           endString = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId].join("")
-          return ["Error!", "Starting and ending sequences don't match: #{startString} and #{endString}"]
-        {row: startRow, column: startColumn} = @curInnerRange.start
+          return { title: "Error!", content: "Starting and ending sequences don't match: #{startString} and #{endString}" }
+        { row: startRow, column: startColumn } = @curInnerRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
         tokenIterator.stepForward()
-        [labelParameters, equationString] = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
+        { params: labelParameters, equation: equationString } = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
         title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
-        return [title, katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS)]
+        return { title: title, content: katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS) }
       catch e
-        return ["Error!", e]
+        return { title: "Error!", content: e }
 
     initPopover: => setTimeout((=>
       popoverPosition = @getPopoverPosition(@getEquationEndRow())
-      [title, rendered] = @getCurrentFormula()
+      { title: title, content: rendered } = @getCurrentFormula()
       @popoverHandler.show(title, rendered, popoverPosition)
     ), 0)
 
@@ -103,12 +103,17 @@ define((require, exports, module) ->
       @popoverHandler.setPosition(@getPopoverPosition(@getEquationEndRow()))
 
     updateRange: ->
-      {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      [@curOuterRange, @curInnerRange, @curStartId, @curEndId] = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
+      {
+        outer: @curOuterRange
+        inner: @curInnerRange
+        start: @curStartId
+        end: @curEndId
+      } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
 
     updatePopover: ->
       if @contextPreviewExists
-        [title, rendered] = @getCurrentFormula()
+        { title: title, content: rendered } = @getCurrentFormula()
         @popoverHandler.setContent(title, rendered)
 
     updateCallback: =>
@@ -121,7 +126,7 @@ define((require, exports, module) ->
       else
         @currentDelayedUpdateId = null
         if @contextPreviewExists
-          {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
+          { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
           curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
           if curContext != "equation"
             @destroyContextPreview()
@@ -166,7 +171,7 @@ define((require, exports, module) ->
       if @currentDelayedUpdateId?
         return
 
-      {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
+      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
       if @contextPreviewExists and not @curOuterRange.contains(cursorRow, cursorColumn)
@@ -183,7 +188,7 @@ define((require, exports, module) ->
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
         @outOfRange = false
-      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       @outOfRange = not @range.containsRange(tokenRange)
 
@@ -198,7 +203,7 @@ define((require, exports, module) ->
         @outOfRange = true
         return null
 
-      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
         @outOfRange = false
@@ -214,7 +219,7 @@ define((require, exports, module) ->
         @outOfRange = true
         return null
 
-      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
         @outOfRange = false
@@ -347,7 +352,7 @@ define((require, exports, module) ->
 
         maybeFinishedSequenceId = tokenSequenceFinder.getMaybeFinishedSequenceId()
         if maybeFinishedSequenceId?
-          {row: curTokenRow, column: curTokenColumn} = tokenIterator.getCurrentTokenPosition()
+          { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
           curTokenLength = curToken.value.length
           finishedSequence = boundarySequences[maybeFinishedSequenceId]
           finishedSequenceStringLength = (token.value for token in finishedSequence).join("").length
@@ -367,7 +372,11 @@ define((require, exports, module) ->
           for i in [0..finishedSequence.length]
             moveFromBoundary()
 
-          return [maybeFinishedSequenceId, equationOuterBoundary, equationInnerBoundary]
+          return {
+            id: maybeFinishedSequenceId
+            outer: equationOuterBoundary
+            inner: equationInnerBoundary
+          }
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
@@ -375,14 +384,24 @@ define((require, exports, module) ->
       start = @getBoundary(tokenIterator, true)
 
       if not (start? and end?)
-        return [null, null]
+        return {
+          outer: null
+          inner: null
+          start: null
+          end: null
+        }
 
-      [endId, outerEnd, innerEnd] = end
-      [startId, outerStart, innerStart] = start
+      { id: endId, outer: outerEnd, inner: innerEnd } = end
+      { id: startId, outer: outerStart, inner: innerStart } = start
 
       outerRange = new Range(outerStart.row, outerStart.column, outerEnd.row, outerEnd.column)
       innerRange = new Range(innerStart.row, innerStart.column, innerEnd.row, innerEnd.column)
-      return [outerRange, innerRange, startId, endId]
+      return {
+        outer: outerRange
+        inner: innerRange
+        start: startId
+        end: endId
+      }
 
 
   exports.ContextHandler = ContextHandler
@@ -439,7 +458,7 @@ define((require, exports, module) ->
       }
 
     jqEditorContainer = $(editor.container)
-    KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+    KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
@@ -454,7 +473,7 @@ define((require, exports, module) ->
         return
 
       renderSelectionUnderCursor: ->
-        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        { row: cursorRow, column: cursorColumn } = editor.getCursorPosition()
         cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
         popoverPosition = {
           top: "#{cursorPosition.pageY + 24}px"
@@ -480,7 +499,7 @@ define((require, exports, module) ->
 
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
-      bindKey: {win: "Alt-p", mac: "Alt-p"}
+      bindKey: { win: "Alt-p", mac: "Alt-p" }
       exec: SelectionHandler.createPopover
     )
 
