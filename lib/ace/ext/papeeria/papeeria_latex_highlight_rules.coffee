@@ -262,7 +262,7 @@ define((require, exports, module) ->
     for key of @$rules
         if (specificTokenForContext[key]?)
           @$rules[key] = @$rules[key].concat(basicRules(specificTokenForContext[key]))
-        else
+        else if key == "start"
           @$rules[key] = @$rules[key].concat(basicRules())
     return
 
