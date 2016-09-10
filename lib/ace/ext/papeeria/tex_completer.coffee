@@ -72,12 +72,22 @@ define((require, exports, module) ->
   compare = (a, b) -> a.caption.localeCompare(b.caption)
   BASIC_SNIPPETS = [
     {
+      caption: "\\begin{env}...\\end{env}"
+      snippet: """
+              \\begin{$1}
+              \t $2
+              \\end{$1}
+            """
+      meta: "Any environment"
+      meta_score: 100
+    }
+    {
       caption: "\\begin{...}"
       snippet: """
                 \\begin{$1}
             """
       meta: "Any environment"
-      meta_score: 100
+      meta_score: 8
     }
     {
       caption: "\\end{...}"
@@ -85,7 +95,7 @@ define((require, exports, module) ->
                 \\end{$1}
             """
       meta: "Any environment"
-      meta_score: 100
+      meta_score: 8
     }
 
     {
