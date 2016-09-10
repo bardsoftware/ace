@@ -8,8 +8,9 @@ define((require, exports, module) ->
 
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
+  ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
 
+  EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
     "itemize"
     "enumerate"
@@ -20,6 +21,17 @@ define((require, exports, module) ->
       "equation"
       "equation*"
   ]
+
+  OTHER_ENVIRONMENTS = [
+      "table"
+      "figure"
+  ]
+
+  ENVIRONMENT_LABELS = for env in EQUATION_ENVIRONMENTS.concat(OTHER_ENVIRONMENTS, LIST_ENVIRONMENTS)
+    caption: env
+    value: env
+    meta: "environments"
+    meta_score: 10
 
 
   EQUATION_ENV_SNIPPETS = for env in EQUATION_ENVIRONMENTS
@@ -101,23 +113,23 @@ define((require, exports, module) ->
     {
       caption: "\\begin{table}..."
       snippet: """
-            \\begin{table}\n\
-            \\begin{tabular}{${1:tablespec}}\n\
-            \\\\\\\\\n\
-            \\end{tabular}\n\
+            \\begin{table}
+            \t\\begin{tabular}{${1:tablespec}}
+            \t\t $2
+            \t\\end{tabular}
             \\end{table}
         """
-      meta: "base"
+      meta: "table"
       meta_score: 9
     }
     {
       caption: "\\begin{figure}..."
       snippet: """
             \\begin{figure}[${1:placement}]\n\
-            \n\
+            \n\t $2
             \\end{figure}
         """
-      meta: "base"
+      meta: "figure"
       meta_score: 9
     }
   ]
@@ -204,7 +216,6 @@ define((require, exports, module) ->
       getCompletions: (editor, session, pos, prefix, callback) =>
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
-
         if LatexParsingContext.isType(token, "ref") and @referencesUrl?
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
@@ -213,6 +224,7 @@ define((require, exports, module) ->
           when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
+          when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
 
   return TexCompleter
 )

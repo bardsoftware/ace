@@ -8,13 +8,17 @@ define((require, exports, module) ->
   EQUATION_REGEX = "equation|equation\\*"
   LIST_STATE = "list"
   EQUATION_STATE = "equation"
+  ENVIRONMENT_STATE = "environment"
+
   LIST_TOKENTYPE = "list"
   EQUATION_TOKENTYPE = "equation"
-
+  ENVIRONMENT_TOKENTYPE = "environment"
   exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
+  exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
+  exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
     ###*
     * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
@@ -95,13 +99,24 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
+          "lparen." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
+          "rparen"
           "lparen"
           "variable.parameter"
           "rparen"
         ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+        regex: "(\\\\(?:begin|end))({)(tabular)(})({)(.*)(})"
       }
-
+      {
+        token: [
+          "storage.type"
+          "lparen.environment." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
+          "rparen"
+        ]
+        regex: "(\\\\(?:begin|end))({)(.*)(})"
+      }
       {
         token: [
             "storage.type"
@@ -164,8 +179,8 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          "lparen"
-          "variable.parameter"
+          "lparen." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
           "rparen"
         ]
         regex: "(\\\\(?:begin))({)(" + text + ")(})"
@@ -176,8 +191,8 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          "lparen"
-          "variable.parameter"
+          "lparen." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
           "rparen"
         ]
         regex: "(\\\\(?:end))({)(" + text + ")(})"
