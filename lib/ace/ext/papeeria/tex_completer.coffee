@@ -103,28 +103,7 @@ define((require, exports, module) ->
     meta_score: 10
   )
 
-  init = (editor, bindKey) ->
-    keyboardHandler = new HashHandler.HashHandler()
-    keyboardHandler.addCommand(
-      name: "add item in list mode"
-      bindKey: bindKey
-      exec: (editor) ->
-        cursor = editor.getCursorPosition();
-        line = editor.session.getLine(cursor.row);
-        tabString = editor.session.getTabString();
-        indentString = line.match(/^\s*/)[0];
-        indexOfBegin = line.indexOf("begin")
 
-        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
-          if indexOfBegin > -1
-            editor.insert("\n" + tabString + indentString + "\\item ")
-          else
-            editor.insert("\n" + indentString + "\\item ")
-          return true
-        else
-          return false
-    )
-    editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
   processReferenceJson = (elem) =>
     return {
@@ -175,7 +154,7 @@ define((require, exports, module) ->
     if editor.completer?
       pos = editor.getCursorPosition()
       session = editor.getSession()
-      token = editor.session.getTokenAt(pos.row, pos.column)
+      token = session.getTokenAt(pos.row, pos.column)
 
       if token?
         for type in allowedTypes
@@ -188,6 +167,29 @@ define((require, exports, module) ->
         @refCache = new CompletionsCache(processReferenceJson)
         @citeCache = new CompletionsCache(processCitationJson)
       @init: (editor) ->
+        init = (editor, bindKey) ->
+          keyboardHandler = new HashHandler.HashHandler()
+          keyboardHandler.addCommand(
+            name: "add item in list mode"
+            bindKey: bindKey
+            exec: (editor) ->
+              cursor = editor.getCursorPosition();
+              line = editor.session.getLine(cursor.row);
+              tabString = editor.session.getTabString();
+              indentString = line.match(/^\s*/)[0];
+              indexOfBegin = line.indexOf("begin")
+
+              if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+                if indexOfBegin > -1
+                  editor.insert("\n" + tabString + indentString + "\\item ")
+                else
+                  editor.insert("\n" + indentString + "\\item ")
+                return true
+              else
+                return false
+          )
+          editor.keyBinding.addKeyboardHandler(keyboardHandler)
+
         init(editor,  {win: "enter", mac: "enter"})
 
         # we need two event handlers because handlers below work fine when we in
