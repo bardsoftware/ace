@@ -301,7 +301,7 @@ require([
 
     TexCompleter.init(editor)
     var texCompleter = new TexCompleter();
-    langTools.setCompleters([texCompleter]);
+    langTools.addCompleter(texCompleter);
     texCompleter.setReferencesUrl("/demo/example.json")
     console.log("Simple Latex Completer successfully added");
     //Initialization bind for highlight brackets.
