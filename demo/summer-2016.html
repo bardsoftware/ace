@@ -303,6 +303,8 @@ require([
     var texCompleter = new TexCompleter();
     langTools.addCompleter(texCompleter);
     texCompleter.setReferencesUrl("/demo/example.json")
+    texCompleter.setCitationsUrl("/demo/biblio.json")
+
     console.log("Simple Latex Completer successfully added");
     //Initialization bind for highlight brackets.
     highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
