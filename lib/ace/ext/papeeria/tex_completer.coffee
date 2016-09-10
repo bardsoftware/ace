@@ -167,30 +167,27 @@ define((require, exports, module) ->
         @refCache = new CompletionsCache(processReferenceJson)
         @citeCache = new CompletionsCache(processCitationJson)
       @init: (editor) ->
-        init = (editor, bindKey) ->
-          keyboardHandler = new HashHandler.HashHandler()
-          keyboardHandler.addCommand(
-            name: "add item in list mode"
-            bindKey: bindKey
-            exec: (editor) ->
-              cursor = editor.getCursorPosition();
-              line = editor.session.getLine(cursor.row);
-              tabString = editor.session.getTabString();
-              indentString = line.match(/^\s*/)[0];
-              indexOfBegin = line.indexOf("begin")
+        keyboardHandler = new HashHandler.HashHandler()
+        keyboardHandler.addCommand(
+          name: "add item in list mode"
+          bindKey: {win: "enter", mac: "enter"}
+          exec: (editor) ->
+            cursor = editor.getCursorPosition();
+            line = editor.session.getLine(cursor.row);
+            tabString = editor.session.getTabString();
+            indentString = line.match(/^\s*/)[0];
+            indexOfBegin = line.indexOf("begin")
 
-              if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
-                if indexOfBegin > -1
-                  editor.insert("\n" + tabString + indentString + "\\item ")
-                else
-                  editor.insert("\n" + indentString + "\\item ")
-                return true
+            if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+              if indexOfBegin > -1
+                editor.insert("\n" + tabString + indentString + "\\item ")
               else
-                return false
-          )
-          editor.keyBinding.addKeyboardHandler(keyboardHandler)
-
-        init(editor,  {win: "enter", mac: "enter"})
+                editor.insert("\n" + indentString + "\\item ")
+              return true
+            else
+              return false
+        )
+        editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
         # we need two event handlers because handlers below work fine when we in
         # existing \ref{|} or \cite{|}
