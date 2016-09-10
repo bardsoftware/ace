@@ -118,23 +118,11 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "lparen." + ENVIRONMENT_TOKENTYPE
-          "variable.parameter." + ENVIRONMENT_TOKENTYPE
-          "rparen"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:begin|end))({)(tabular)(})({)(.*)(})"
-      }
-      {
-        token: [
-          "storage.type"
           "lparen.environment." + ENVIRONMENT_TOKENTYPE
           "variable.parameter." + ENVIRONMENT_TOKENTYPE
           "rparen"
         ]
-        regex: "(\\\\(?:begin|end))({)(.*)(})"
+        regex: "(\\\\(?:begin|end))({)([\\w\\s]*)(})"
       }
       {
         token: [
@@ -194,7 +182,7 @@ define((require, exports, module) ->
     ]
 
 
-    beginRule = (text = "\\w*", pushedState = "start") ->
+    beginRule = (text = "[\\w\\s]*", pushedState = "start") ->
       return {
         token: [
           "storage.type"
@@ -206,7 +194,7 @@ define((require, exports, module) ->
         next: pushState(pushedState)
       }
 
-    endRule = (text = "\\w*") ->
+    endRule = (text = "[\\w\\s]*") ->
       return {
         token: [
           "storage.type"
