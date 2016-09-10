@@ -5,10 +5,11 @@ define((require, exports, module) ->
   PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
 
-
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
   ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
+  TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
+  FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
 
   EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
@@ -71,6 +72,23 @@ define((require, exports, module) ->
   compare = (a, b) -> a.caption.localeCompare(b.caption)
   BASIC_SNIPPETS = [
     {
+      caption: "\\begin{...}"
+      snippet: """
+                \\begin{$1}
+            """
+      meta: "Any environment"
+      meta_score: 100
+    }
+    {
+      caption: "\\end{...}"
+      snippet: """
+                \\end{$1}
+            """
+      meta: "Any environment"
+      meta_score: 100
+    }
+
+    {
       caption: "\\usepackage[]{..."
       snippet: """
             \\usepackage{${1:package}}\n\
@@ -126,7 +144,7 @@ define((require, exports, module) ->
       caption: "\\begin{figure}..."
       snippet: """
             \\begin{figure}[${1:placement}]\n\
-            \n\t $2
+            \t $2
             \\end{figure}
         """
       meta: "figure"
@@ -216,6 +234,7 @@ define((require, exports, module) ->
       getCompletions: (editor, session, pos, prefix, callback) =>
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
+
         if LatexParsingContext.isType(token, "ref") and @referencesUrl?
           @refGetter.getReferences(@referencesUrl, callback)
         else switch context
@@ -225,6 +244,8 @@ define((require, exports, module) ->
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
           when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
+          else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
 
   return TexCompleter
 )
