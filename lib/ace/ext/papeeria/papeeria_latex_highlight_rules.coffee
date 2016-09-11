@@ -6,15 +6,38 @@ define((require, exports, module) ->
   TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules
   LIST_REGEX = "itemize|enumerate"
   EQUATION_REGEX = "equation|equation\\*"
+
+  TABLE_REGEX = "table"
+  FIGURE_REGEX = "figure"
+
   LIST_STATE = "list"
   EQUATION_STATE = "equation"
+  ENVIRONMENT_STATE = "environment"
+  TABLE_STATE = 'table'
+  FIGURE_STATE = 'figure'
+
+
+  TABLE_TOKENTYPE = 'table'
+  FIGURE_TOKENTYPE = 'figure'
   LIST_TOKENTYPE = "list"
   EQUATION_TOKENTYPE = "equation"
+  ENVIRONMENT_TOKENTYPE = "environment"
+
+
 
   exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
+  exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE
+  exports.TABLE_STATE = TABLE_STATE
+  exports.FIGURE_STATE = FIGURE_STATE
+
+
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
+  exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE
+  exports.FIGURE_TOKENTYPE = FIGURE_TOKENTYPE
+  exports.TABLE_TOKENTYPE = TABLE_TOKENTYPE
+
   PapeeriaLatexHighlightRules = ->
     ###*
     * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
@@ -95,13 +118,12 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "lparen"
-          "variable.parameter"
+          "lparen.environment." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
           "rparen"
         ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+        regex: "(\\\\(?:begin|end))({)([\\w\\s]*)(})"
       }
-
       {
         token: [
             "storage.type"
@@ -160,24 +182,24 @@ define((require, exports, module) ->
     ]
 
 
-    beginRule = (text = "\\w*", pushedState = "start") ->
+    beginRule = (text = "[\\w\\s]*", pushedState = "start") ->
       return {
         token: [
           "storage.type"
-          "lparen"
-          "variable.parameter"
+          "lparen." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
           "rparen"
         ]
         regex: "(\\\\(?:begin))({)(" + text + ")(})"
         next: pushState(pushedState)
       }
 
-    endRule = (text = "\\w*") ->
+    endRule = (text = "[\\w\\s]*") ->
       return {
         token: [
           "storage.type"
-          "lparen"
-          "variable.parameter"
+          "lparen." + ENVIRONMENT_TOKENTYPE
+          "variable.parameter." + ENVIRONMENT_TOKENTYPE
           "rparen"
         ]
         regex: "(\\\\(?:end))({)(" + text + ")(})"
@@ -214,31 +236,39 @@ define((require, exports, module) ->
 
     specificTokenForContext = {}
     specificTokenForContext[LIST_STATE] = LIST_TOKENTYPE
-    specificTokenForContext[EQUATION_STATE] = EQUATION_STATE
+    specificTokenForContext[EQUATION_STATE] = EQUATION_TOKENTYPE
+    specificTokenForContext[TABLE_STATE] = TABLE_TOKENTYPE
+    specificTokenForContext[FIGURE_STATE] = FIGURE_TOKENTYPE
 
     @$rules = {}
     @$rules["start"] = [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
+        beginRule(FIGURE_REGEX, FIGURE_STATE)
+        beginRule(TABLE_REGEX, TABLE_STATE)
 
-        endRule(EQUATION_REGEX)
-        endRule(LIST_REGEX)
       ]
 
     @$rules[EQUATION_STATE] = [
-        beginRule(EQUATION_REGEX, EQUATION_STATE)
-        beginRule(LIST_REGEX, LIST_STATE)
 
         endRule(EQUATION_REGEX)
-        endRule(LIST_REGEX)
-      ]
+    ]
 
     @$rules[LIST_STATE] = [
         beginRule(LIST_REGEX, LIST_STATE)
         beginRule(EQUATION_REGEX, EQUATION_STATE)
 
-        endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
+    ]
+
+    @$rules[TABLE_STATE] = [
+      endRule(TABLE_REGEX)
+    ]
+
+    @$rules[FIGURE_STATE] = [
+      endRule(FIGURE_REGEX)
+
+      #should be filled
     ]
 
     @$rules["math"] = latexMathModeConstructor("\\${1,2}")
@@ -247,7 +277,7 @@ define((require, exports, module) ->
     for key of @$rules
         if (specificTokenForContext[key]?)
           @$rules[key] = @$rules[key].concat(basicRules(specificTokenForContext[key]))
-        else
+        else if key == "start"
           @$rules[key] = @$rules[key].concat(basicRules())
     return
 

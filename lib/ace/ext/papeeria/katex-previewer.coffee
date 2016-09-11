@@ -222,14 +222,14 @@ define((require, exports, module) ->
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCE: [
       { type: "storage.type", value: "\\begin" }
-      { type: "lparen", value: "{" }
-      { type: "variable.parameter", value: "equation" }
+      { type: "lparen.environment", value: "{" }
+      { type: "variable.parameter.environment", value: "equation" }
       { type: "rparen", value: "}" }
     ]
     @END_EQUATION_TOKEN_SEQUENCE: [
       { type: "storage.type", value: "\\end" }
-      { type: "lparen", value: "{" }
-      { type: "variable.parameter", value: "equation" }
+      { type: "lparen.environment", value: "{" }
+      { type: "variable.parameter.environment", value: "equation" }
       { type: "rparen", value: "}" }
     ]
 
