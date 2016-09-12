@@ -212,7 +212,7 @@ define((require, exports, module) ->
       @cache = []
       @processJson = processJson
     processData: (data) =>
-      @cache = data?.map(@processJson)
+      @cache = data?.Labels?.map(@processJson)
 
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl
