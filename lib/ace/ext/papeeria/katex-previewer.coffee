@@ -80,9 +80,9 @@ define((require, exports, module) ->
       try
         if @curStartId != @curEndId
           startSequence = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse()
-          startString = (JSON.stringify(token.value) for token in startSequence).join("")
+          startString = (token.value for token in startSequence).join("")
           endSequence = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId]
-          endString = (JSON.stringify(token.value) for token in endSequence).join("")
+          endString = (token.value for token in endSequence).join("")
           return { title: "Error!", content: "Starting and ending sequences don't match: #{startString} and #{endString}" }
         { row: startRow, column: startColumn } = @curInnerRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
