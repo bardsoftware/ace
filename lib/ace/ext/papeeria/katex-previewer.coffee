@@ -365,16 +365,23 @@ define((require, exports, module) ->
             row: curTokenRow
             column: curTokenColumn + (if start then 0 else curTokenLength)
           }
-          equationInnerBoundary = {
-            row: curTokenRow
-            column: curTokenColumn + (if start then finishedSequenceStringLength else curTokenLength - finishedSequenceStringLength)
-          }
 
           # after finding boundary, tokenIterator is exactly on the last token
-          # of ending sequence, so we step back until we're inside the equation
-          # to avoid errors
-          for i in [0..finishedSequence.length]
+          # of ending sequence, so we step back until we're on the last token
+          # to determine inner boundary
+          for i in [0...finishedSequence.length-1]
             moveFromBoundary()
+
+          { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
+          curTokenLength = tokenIterator.getCurrentToken().value.length
+
+          equationInnerBoundary = {
+            row: curTokenRow
+            column: curTokenColumn + (if start then curTokenLength else 0)
+          }
+
+          # to move inside the sequence, we move token iterator one more time
+          moveFromBoundary()
 
           return {
             id: maybeFinishedSequenceId
