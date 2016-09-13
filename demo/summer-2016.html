@@ -182,6 +182,12 @@ Richard & Miles & $2$ \\
 
 \lipsum[5] % Dummy text
 
+\[\alpha\]
+
+$\beta$
+
+$$\gamma$$
+
 \begin{equation}
 \label{eq:emc}
 \label{notemc}
@@ -194,6 +200,10 @@ Richard & Miles & $2$ \\
 \alpha_{pt} - 1} { \sum_{n=1}^{N} \gamma(z_{np}) + \sum_{l=1}^{L} (\alpha_{pl} - 1)} = \pi_{pt}
 
 \end{equation}
+
+\begin{equation*}
+    \text{hello}
+\end{equation*}
 
 \lipsum[6] % Dummy text
 
@@ -244,10 +254,18 @@ require([
   "ace/ext/papeeria/highlighter",
   "ace/ext/papeeria/tex_completer",
   "ace/ext/papeeria/spellchecker_popup"
+  , "ace/token_iterator" // TODO: delete
+  , "ace/ext/papeeria/latex_parsing_context" // TODO: delete
   ],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup) {
-    var editor = ace.edit("editor");
-    var session = editor.getSession();
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup
+      , TokenIteratorModule, LatexParsingContext // TODO: delete
+      ) {
+    // var editor = ace.edit("editor"); // TODO: uncomment
+    // var session = editor.getSession(); // TODO: uncomment
+    editor = ace.edit("editor"); // TODO: delete
+    session = editor.getSession(); // TODO: delete
+    TokenIterator = TokenIteratorModule.TokenIterator; // TODO: delete
+    getContext = LatexParsingContext.getContext; // TODO: delete
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
 
