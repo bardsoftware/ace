@@ -17,6 +17,10 @@ define((require, exports, module) ->
     return
 
 
+  equalTokens = (token1, token2) ->
+    return token1.type == token2.type and token1.value.trim() == token2.value.trim()
+
+
   class ContextHandler
     @UPDATE_DELAY: 1000
     @KATEX_OPTIONS = { displayMode: true, throwOnError: false }
@@ -236,7 +240,7 @@ define((require, exports, module) ->
 
 
   class TokenSequenceFinder
-    constructor: (@tokenSequences, @equalTokens) ->
+    constructor: (@tokenSequences) ->
       @nSequences = @tokenSequences.length
       @currentIndices = Array(@nSequences)
       @currentIndices.fill(0)
@@ -245,7 +249,7 @@ define((require, exports, module) ->
       for i in [0..@nSequences-1]
         tokenSequence = @tokenSequences[i]
         currentIndex = @currentIndices[i]
-        if @equalTokens(token, tokenSequence[currentIndex])
+        if equalTokens(token, tokenSequence[currentIndex])
           @currentIndices[i] += 1
         else
           @currentIndices[i] = 0
@@ -308,9 +312,6 @@ define((require, exports, module) ->
     # empty constructor
     constructor: (@editor) ->
 
-    @equalTokens: (token1, token2) ->
-      return token1.type == token2.type and token1.value.trim() == token2.value.trim()
-
     getBoundary: (tokenIterator, start) ->
       moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
       moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
@@ -340,10 +341,10 @@ define((require, exports, module) ->
         for boundarySequence in boundarySequences
           for token in boundarySequence.slice(0).reverse()
             curToken = tokenIterator.getCurrentToken()
-            if curToken? and EquationRangeHandler.equalTokens(token, curToken)
+            if curToken? and equalTokens(token, curToken)
               moveFromBoundary()
 
-      tokenSequenceFinder = new TokenSequenceFinder(boundarySequences, EquationRangeHandler.equalTokens)
+      tokenSequenceFinder = new TokenSequenceFinder(boundarySequences)
       while true
         moveToBoundary()
         curToken = tokenIterator.getCurrentToken()
