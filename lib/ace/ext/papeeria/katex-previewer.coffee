@@ -241,12 +241,13 @@ define((require, exports, module) ->
 
   class TokenSequenceFinder
     constructor: (@tokenSequences) ->
-      @nSequences = @tokenSequences.length
-      @currentIndices = Array(@nSequences)
-      @currentIndices.fill(0)
+      @numSequences = @tokenSequences.length
+      @currentIndices = Array(@numSequences)
+      for i in [0..@numSequences-1]
+        @currentIndices[i] = 0
 
     progressIndices: (token) ->
-      for i in [0..@nSequences-1]
+      for i in [0..@numSequences-1]
         tokenSequence = @tokenSequences[i]
         currentIndex = @currentIndices[i]
         if equalTokens(token, tokenSequence[currentIndex])
@@ -255,7 +256,7 @@ define((require, exports, module) ->
           @currentIndices[i] = 0
 
     getMaybeFinishedSequenceId: ->
-      for i in [0..@nSequences-1]
+      for i in [0..@numSequences-1]
         if @currentIndices[i] == @tokenSequences[i].length
           return i
       return null
