@@ -67,8 +67,7 @@ define((require, exports, module) ->
 
       return { params: labelParameters, equation: tokenValues.join("") }
 
-    constructor: (@editor, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
-      @jqEditorContainer = $(@editor.container)
+    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
       @contextPreviewExists = false
 
     getPopoverPosition: (row) -> {
@@ -473,7 +472,7 @@ define((require, exports, module) ->
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler)
+    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler)
 
     sh = SelectionHandler = {
       hideSelectionPopover: ->
