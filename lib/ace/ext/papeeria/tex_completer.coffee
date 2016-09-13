@@ -8,11 +8,12 @@ define((require, exports, module) ->
 
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  EQUATION_SNIPPETS = require("./snippets/equation_snippets")
+  EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
 
   LIST_ENVIRONMENTS = [
     "itemize"
     "enumerate"
+    "description"
   ]
 
   EQUATION_ENVIRONMENTS = [
@@ -60,23 +61,61 @@ define((require, exports, module) ->
     {
       caption: "\\usepackage[]{..."
       snippet: """
-            \\usepackage{${1  :package}}\n\
+            \\usepackage{${1:package}}\n\
         """
       meta: "base"
       meta_score: 9
     }
     {
-      caption: "\\usepackage[options]{..."
+      caption: "\\section{..."
       snippet: """
-            \\usepackage[${1:[options}]{${2:package}}\n\
+            \\section{${1:name}}\n\
         """
       meta: "base"
       meta_score: 9
     }
     {
-      caption: "\\newcommand{..."
+      caption: "\\subsection{..."
       snippet: """
-            \\newcommand{${1:cmd}}[${2:opt}]{${3:realcmd}}${0}\n\
+            \\subsection{${1:name}}\n\
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\subsubsection{..."
+      snippet: """
+            \\subsubsection{${1:name}}\n\
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\chapter{..."
+      snippet: """
+            \\chapter{${1:name}}\n\
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\begin{table}..."
+      snippet: """
+            \\begin{table}\n\
+            \\begin{tabular}{${1:tablespec}}\n\
+            \\\\\\\\\n\
+            \\end{tabular}\n\
+            \\end{table}
+        """
+      meta: "base"
+      meta_score: 9
+    }
+    {
+      caption: "\\begin{figure}..."
+      snippet: """
+            \\begin{figure}[${1:placement}]\n\
+            \n\
+            \\end{figure}
         """
       meta: "base"
       meta_score: 9
@@ -103,42 +142,38 @@ define((require, exports, module) ->
     meta_score: 10
   )
 
-  init = (editor, bindKey) ->
-    keyboardHandler = new HashHandler.HashHandler()
-    keyboardHandler.addCommand(
-      name: "add item in list mode"
-      bindKey: bindKey
-      exec: (editor) ->
-        cursor = editor.getCursorPosition();
-        line = editor.session.getLine(cursor.row);
-        tabString = editor.session.getTabString();
-        indentString = line.match(/^\s*/)[0];
-        indexOfBegin = line.indexOf("begin")
 
-        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
-          if indexOfBegin > -1
-            editor.insert("\n" + tabString + indentString + "\\item ")
-          else
-            editor.insert("\n" + indentString + "\\item ")
-          return true
-        else
-          return false
-    )
-    editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
-   class  ReferenceGetter
-    constructor: ->
+  processReferenceJson = (elem) =>
+    return {
+      name: elem.caption
+      value: elem.caption
+      score: 1000
+      meta: elem.type
+      meta_score: 10
+    }
+
+  processCitationJson = (elem) =>
+    return {
+      name: elem.id
+      value: elem.id
+      score: 1000
+      meta: elem.type
+      meta_score: 10
+    }
+
+  class CompletionsCache
+    ###
+    * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
+    * return object with fields name, value and (optional) meta, meta_score, score
+    ###
+    constructor: (processJson) ->
       @lastFetchedUrl =  ""
       @cache = []
+      @processJson = processJson
     processData: (data) =>
-      @cache = data.Labels?.map((elem) =>
-          return {
-            name: elem.caption
-            value: elem.caption
-            meta: elem.type + "-ref"
-            meta_score: 10
-          }
-    )
+      @cache = data?.map(@processJson)
+
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl
         $.getJSON(url).done((data) =>
@@ -149,12 +184,64 @@ define((require, exports, module) ->
       else
         callback(null, @cache)
 
+  ###
+  * Show popup if token type at the current pos is one of the given array elements.
+  * @ (editor) --> editor
+  * @ (list of strings) -- allowedTypes
+  ###
+  showPopupIfTokenIsOneOfTypes = (editor, allowedTypes) ->
+    if editor.completer?
+      pos = editor.getCursorPosition()
+      session = editor.getSession()
+      token = session.getTokenAt(pos.row, pos.column)
+
+      if token?
+        for type in allowedTypes
+          if LatexParsingContext.isType(token, type)
+            editor.completer.showPopup(editor)
+            break
+
   class TexCompleter
       constructor: ->
-        @refGetter = new ReferenceGetter()
-      @init: (editor) ->  init(editor,  {win: "enter", mac: "enter"})
+        @refCache = new CompletionsCache(processReferenceJson)
+        @citeCache = new CompletionsCache(processCitationJson)
+      @init: (editor) ->
+        keyboardHandler = new HashHandler.HashHandler()
+        keyboardHandler.addCommand(
+          name: "add item in list mode"
+          bindKey: {win: "enter", mac: "enter"}
+          exec: (editor) ->
+            cursor = editor.getCursorPosition();
+            line = editor.session.getLine(cursor.row);
+            tabString = editor.session.getTabString();
+            indentString = line.match(/^\s*/)[0];
+            indexOfBegin = line.indexOf("begin")
 
+            if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+              if indexOfBegin > -1
+                editor.insert("\n" + tabString + indentString + "\\item ")
+              else
+                editor.insert("\n" + indentString + "\\item ")
+              return true
+            else
+              return false
+        )
+        editor.keyBinding.addKeyboardHandler(keyboardHandler)
+
+        # we need two event handlers because handlers below work fine when we in
+        # existing \ref{|} or \cite{|}
+        # But doesn't work correct when we added block (\ref{}. \cite. etc) using autocomplete
+        editor.commands.on('afterExec', (event) ->
+          allowCommand = ["Return", "backspace"]
+          if  event.command.name in allowCommand
+            showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
+          );
+
+        editor.getSession().selection.on('changeCursor', (cursorEvent) ->
+          showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
+        );
       setReferencesUrl: (url) => @referencesUrl = url
+      setCitationsUrl: (url) => @citationsUrl = url
 
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
@@ -166,8 +253,11 @@ define((require, exports, module) ->
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
-        if LatexParsingContext.isType(token, "ref") and @referencesUrl?
-          @refGetter.getReferences(@referencesUrl, callback)
+        if LatexParsingContext.isType(token, "ref")
+          if @referencesUrl? then @refCache.getReferences(@referencesUrl, callback)
+        else if LatexParsingContext.isType(token, "cite")
+          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
+
         else switch context
           when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
