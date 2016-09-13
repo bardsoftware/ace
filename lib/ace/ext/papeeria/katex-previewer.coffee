@@ -75,8 +75,10 @@ define((require, exports, module) ->
     getCurrentFormula: ->
       try
         if @curStartId != @curEndId
-          startString = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse().join("")
-          endString = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId].join("")
+          startSequence = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse()
+          startString = (JSON.stringify(token.value) for token in startSequence).join("")
+          endSequence = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId]
+          endString = (JSON.stringify(token.value) for token in endSequence).join("")
           return { title: "Error!", content: "Starting and ending sequences don't match: #{startString} and #{endString}" }
         { row: startRow, column: startColumn } = @curInnerRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
