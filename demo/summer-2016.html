@@ -254,18 +254,10 @@ require([
   "ace/ext/papeeria/highlighter",
   "ace/ext/papeeria/tex_completer",
   "ace/ext/papeeria/spellchecker_popup"
-  , "ace/token_iterator" // TODO: delete
-  , "ace/ext/papeeria/latex_parsing_context" // TODO: delete
   ],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup
-      , TokenIteratorModule, LatexParsingContext // TODO: delete
-      ) {
-    // var editor = ace.edit("editor"); // TODO: uncomment
-    // var session = editor.getSession(); // TODO: uncomment
-    editor = ace.edit("editor"); // TODO: delete
-    session = editor.getSession(); // TODO: delete
-    TokenIterator = TokenIteratorModule.TokenIterator; // TODO: delete
-    getContext = LatexParsingContext.getContext; // TODO: delete
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup) {
+    var editor = ace.edit("editor");
+    var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
 
