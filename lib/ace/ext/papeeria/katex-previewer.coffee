@@ -243,11 +243,11 @@ define((require, exports, module) ->
     constructor: (@tokenSequences) ->
       @numSequences = @tokenSequences.length
       @currentIndices = Array(@numSequences)
-      for i in [0..@numSequences-1]
+      for i in [0...@numSequences]
         @currentIndices[i] = 0
 
     progressIndices: (token) ->
-      for i in [0..@numSequences-1]
+      for i in [0...@numSequences]
         tokenSequence = @tokenSequences[i]
         currentIndex = @currentIndices[i]
         if equalTokens(token, tokenSequence[currentIndex])
@@ -256,7 +256,7 @@ define((require, exports, module) ->
           @currentIndices[i] = 0
 
     getMaybeFinishedSequenceId: ->
-      for i in [0..@numSequences-1]
+      for i in [0...@numSequences]
         if @currentIndices[i] == @tokenSequences[i].length
           return i
       return null
