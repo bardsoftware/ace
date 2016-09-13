@@ -233,7 +233,7 @@ define((require, exports, module) ->
         @outOfRange = true
         return null
 
-     stepTo: (row, column) ->
+    stepTo: (row, column) ->
       @tokenIterator = new TokenIterator(@session, row, column)
       @outOfRange = not @range.contains(row, column)
 
@@ -358,7 +358,6 @@ define((require, exports, module) ->
           { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
           curTokenLength = curToken.value.length
           finishedSequence = boundarySequences[maybeFinishedSequenceId]
-          finishedSequenceStringLength = (token.value for token in finishedSequence).join("").length
 
           equationOuterBoundary = {
             row: curTokenRow
