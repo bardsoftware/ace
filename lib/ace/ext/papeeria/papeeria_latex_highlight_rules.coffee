@@ -215,6 +215,8 @@ define((require, exports, module) ->
     specificTokenForContext = {}
     specificTokenForContext[LIST_STATE] = LIST_TOKENTYPE
     specificTokenForContext[EQUATION_STATE] = EQUATION_STATE
+    specificTokenForContext["math"] = EQUATION_STATE
+    specificTokenForContext["math_latex"] = EQUATION_STATE
 
     @$rules = {}
     @$rules["start"] = [
