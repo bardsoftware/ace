@@ -17,7 +17,7 @@ define((require, exports, module) ->
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
     ###*
-    * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list"
+    * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
     * to be able to provide context for autocompletion and other functions.
     * Stack is constructed by the background highlighter;
     * its elements are then propagated to * the editor session and become
@@ -40,7 +40,7 @@ define((require, exports, module) ->
 
       if not Array.isArray(stack)
         if stack != "start"
-          throw new Error("papeeria_highlight_rules -- stack error: stack must be  'stack' of array")
+          throw new Error("papeeria_highlight_rules -- stack error: stack must be 'stack' of array")
 
         return "start"
 
@@ -52,7 +52,8 @@ define((require, exports, module) ->
 
       # here we know stack is not empty
       errorMessage = "papeeria_highlight_rules -- stack error: expected " + currentState + " found " + stack[stack.length - 1]
-      if currentState != stack[stack.length-1] then throw new Error(errorMessage)
+      if currentState != stack[stack.length-1]
+        throw new Error(errorMessage)
 
       stack.pop()
       if stack.length == 0
@@ -61,104 +62,69 @@ define((require, exports, module) ->
       return stack[stack.length - 1]
 
     # specialized rules for context
-    basicRules = (tokenType) -> [
+    basicRules = (tokenType) ->
       if (tokenType?)
         addToken = "." + tokenType
       else
         addToken = ""
-      {
-        token: "comment"
-        regex: "%.*$"
-      }
-
-      {
-        token: "lparen"
-        regex: "[[({]"
-      }
-      {
-        token: "rparen"
-        regex: "[\\])}]"
-      }
-
-      {
-        token: [
-          "keyword"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-          "lparen"
-          "storage.type"
-          "rparen"
-        ]
-        regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
-      }
-      {
-        token: [
-          "storage.type"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
-      }
-
-      {
-        token: [
-            "storage.type"
-            "lparen.ref"
-            "variable.parameter.ref"
+      return [
+        { token: "comment", regex: "%.*$" }
+        { token: "lparen", regex: "[[({]" }
+        { token: "rparen", regex: "[\\])}]" }
+        { token: "string", regex: "\\\\\\[", next: pushState("math_latex") }
+        { token: "string", regex: "\\${1,2}", next: pushState("math") }
+        { token: "storage.type" + addToken, regex: "\\\\[a-zA-Z]+" }
+        { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?" }
+        {
+          token: [
+            "keyword"
+            "lparen"
+            "variable.parameter"
             "rparen"
-        ]
-        regex: "(\\\\(?:ref))({)(\\w*)(})"
-      }
-
-      {
-        token: [
+            "lparen"
             "storage.type"
-            "lparen.cite"
-            "variable.parameter.cite"
             "rparen"
-        ]
-        regex: "(\\\\(?:cite))({)(\\w*)(})"
-      }
-
-      {
-        token: [
-          "keyword"
-          "lparen" + addToken
-          "variable.parameter" + addToken
-          "rparen"
-        ]
-        regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
-      }
-      {
-        token : "string",
-        regex : "\\\\\\[",
-        next  : pushState("math_latex")
-      }
-
-      {
-        token : "string",
-        regex : "\\${1,2}",
-        next  : pushState("math")
-      }
-
-      {
-        token: "storage.type" + addToken
-        regex: "\\\\[a-zA-Z]+"
-      }
-
-      {
-        token: "constant.character.escape" + addToken
-        regex: "\\\\[^a-zA-Z]?"
-      }
-
-      {
-          defaultToken : "text" + addToken
-      }
-
-    ]
-
+          ]
+          regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
+        }
+        {
+          token: [
+            "storage.type"
+            "lparen"
+            "variable.parameter"
+            "rparen"
+          ]
+          regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+        }
+        {
+          token: [
+              "storage.type"
+              "lparen.ref"
+              "variable.parameter.ref"
+              "rparen"
+          ]
+          regex: "(\\\\(?:ref))({)(\\w*)(})"
+        }
+        {
+          token: [
+              "storage.type"
+              "lparen.cite"
+              "variable.parameter.cite"
+              "rparen"
+          ]
+          regex: "(\\\\(?:cite))({)(\\w*)(})"
+        }
+        {
+          token: [
+            "keyword"
+            "lparen" + addToken
+            "variable.parameter" + addToken
+            "rparen"
+          ]
+          regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
+        }
+        { defaultToken : "text" + addToken }
+      ]
 
     beginRule = (text = "\\w*", pushedState = "start") ->
       return {
@@ -184,7 +150,6 @@ define((require, exports, module) ->
 
         next: popState
       }
-
 
     # Function for constructing $$ $$ and \[ \] rules
     # regex -- (String) -- regex for definition end of Equation
@@ -228,8 +193,8 @@ define((require, exports, module) ->
       ]
 
     @$rules[EQUATION_STATE] = [
-        beginRule(EQUATION_REGEX, EQUATION_STATE)
         beginRule(LIST_REGEX, LIST_STATE)
+        beginRule(EQUATION_REGEX, EQUATION_STATE)
 
         endRule(EQUATION_REGEX)
         endRule(LIST_REGEX)
