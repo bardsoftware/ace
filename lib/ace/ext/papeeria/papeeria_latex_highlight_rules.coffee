@@ -4,12 +4,22 @@ define((require, exports, module) ->
   "use strict"
   oop = require("ace/lib/oop")
   TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules
-  LIST_REGEX = "itemize|enumerate"
-  EQUATION_REGEX = "equation|equation\\*"
+
+  START_STATE = "start"
+
   LIST_STATE = "list"
-  EQUATION_STATE = "equation"
+  LIST_REGEX = "itemize|enumerate"
   LIST_TOKENTYPE = "list"
+
+  EQUATION_STATE = "equation"
+  EQUATION_REGEX = "equation|equation\\*"
   EQUATION_TOKENTYPE = "equation"
+
+  MATH_STATE = "math"
+  MATH_CLOSING_REGEX = "\\${1,2}"
+
+  MATH_LATEX_STATE = "math_latex"
+  MATH_LATEX_CLOSING_REGEX = "\\\\\\]"
 
   exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
@@ -68,61 +78,11 @@ define((require, exports, module) ->
       else
         addToken = ""
       return [
-        { token: "comment", regex: "%.*$" }
-        { token: "lparen", regex: "[[({]" }
-        { token: "rparen", regex: "[\\])}]" }
-        { token: "string", regex: "\\\\\\[", next: pushState("math_latex") }
-        { token: "string", regex: "\\${1,2}", next: pushState("math") }
+        { token: "comment" + addToken, regex: "%.*$" }
+        { token: "lparen" + addToken, regex: "[[({]" }
+        { token: "rparen" + addToken, regex: "[\\])}]" }
         { token: "storage.type" + addToken, regex: "\\\\[a-zA-Z]+" }
         { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?" }
-        {
-          token: [
-            "keyword"
-            "lparen"
-            "variable.parameter"
-            "rparen"
-            "lparen"
-            "storage.type"
-            "rparen"
-          ]
-          regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
-        }
-        {
-          token: [
-            "storage.type"
-            "lparen"
-            "variable.parameter"
-            "rparen"
-          ]
-          regex: "(\\\\(?:begin|end))({)(\\w*)(})"
-        }
-        {
-          token: [
-              "storage.type"
-              "lparen.ref"
-              "variable.parameter.ref"
-              "rparen"
-          ]
-          regex: "(\\\\(?:ref))({)(\\w*)(})"
-        }
-        {
-          token: [
-              "storage.type"
-              "lparen.cite"
-              "variable.parameter.cite"
-              "rparen"
-          ]
-          regex: "(\\\\(?:cite))({)(\\w*)(})"
-        }
-        {
-          token: [
-            "keyword"
-            "lparen" + addToken
-            "variable.parameter" + addToken
-            "rparen"
-          ]
-          regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
-        }
         { defaultToken : "text" + addToken }
       ]
 
@@ -151,71 +111,93 @@ define((require, exports, module) ->
         next: popState
       }
 
-    # Function for constructing $$ $$ and \[ \] rules
-    # regex -- (String) -- regex for definition end of Equation
-    latexMathModeConstructor = (closingRegex) ->
-        [{
-            token : "comment",
-            regex : "%.*$"
-          }, {
-            token : "string",
-            regex : closingRegex,
-            next  : popState
-          }, {
-            token: "storage.type." + EQUATION_TOKENTYPE
-            regex: "\\\\[a-zA-Z]+"
-          }, {
-            token: "constant.character.escape." + EQUATION_TOKENTYPE
-            regex: "\\\\[^a-zA-Z]?"
-          }, {
-            token : "error." + EQUATION_TOKENTYPE,
-            regex : "^\\s*$",
-            next : popState
-          }, {
-            defaultToken : "string." + EQUATION_TOKENTYPE
-          }
-        ]
-
-
-    specificTokenForContext = {}
-    specificTokenForContext[LIST_STATE] = LIST_TOKENTYPE
-    specificTokenForContext[EQUATION_STATE] = EQUATION_STATE
-    specificTokenForContext["math"] = EQUATION_STATE
-    specificTokenForContext["math_latex"] = EQUATION_STATE
+    specificTokenForState = {}
+    specificTokenForState[LIST_STATE] = LIST_TOKENTYPE
+    specificTokenForState[EQUATION_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_LATEX_STATE] = EQUATION_TOKENTYPE
 
     @$rules = {}
-    @$rules["start"] = [
-        beginRule(LIST_REGEX, LIST_STATE)
-        beginRule(EQUATION_REGEX, EQUATION_STATE)
-
-        endRule(EQUATION_REGEX)
-        endRule(LIST_REGEX)
-      ]
-
-    @$rules[EQUATION_STATE] = [
-        beginRule(LIST_REGEX, LIST_STATE)
-        beginRule(EQUATION_REGEX, EQUATION_STATE)
-
-        endRule(EQUATION_REGEX)
-        endRule(LIST_REGEX)
-      ]
-
-    @$rules[LIST_STATE] = [
-        beginRule(LIST_REGEX, LIST_STATE)
-        beginRule(EQUATION_REGEX, EQUATION_STATE)
-
-        endRule(EQUATION_REGEX)
-        endRule(LIST_REGEX)
+    @$rules[START_STATE] = [
+      {
+        token: [
+          "keyword"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+          "lparen"
+          "storage.type"
+          "rparen"
+        ]
+        regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
+      }
+      {
+        token: [
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+        ]
+        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+      }
+      {
+        token: [
+          "storage.type"
+          "lparen.ref"
+          "variable.parameter.ref"
+          "rparen"
+        ]
+        regex: "(\\\\(?:ref))({)(\\w*)(})"
+      }
+      {
+        token: [
+          "storage.type"
+          "lparen.cite"
+          "variable.parameter.cite"
+          "rparen"
+        ]
+        regex: "(\\\\(?:cite))({)(\\w*)(})"
+      }
+      {
+        token: [
+          "keyword"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+        ]
+        regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
+      }
+      { token: "string", regex: "\\\\\\[", next: pushState(MATH_LATEX_STATE) }
+      { token: "string", regex: "\\${1,2}", next: pushState(MATH_STATE) }
+      beginRule(LIST_REGEX, LIST_STATE)
+      beginRule(EQUATION_REGEX, EQUATION_STATE)
     ]
 
-    @$rules["math"] = latexMathModeConstructor("\\${1,2}")
-    @$rules["math_latex"] = latexMathModeConstructor("\\\\\\]")
+    @$rules[EQUATION_STATE] = [
+      endRule(EQUATION_REGEX)
+    ]
 
-    for key of @$rules
-        if (specificTokenForContext[key]?)
-          @$rules[key] = @$rules[key].concat(basicRules(specificTokenForContext[key]))
-        else
-          @$rules[key] = @$rules[key].concat(basicRules())
+    @$rules[LIST_STATE] = [
+      beginRule(EQUATION_REGEX, EQUATION_STATE)
+      endRule(LIST_REGEX)
+    ]
+
+    @$rules[MATH_STATE] = [
+      { token: "string", regex: MATH_CLOSING_REGEX, next: popState }
+      { token: "error", regex : "^\\s*$", next: popState }
+    ]
+
+    @$rules[MATH_LATEX_STATE] = [
+      { token: "string", regex: MATH_LATEX_CLOSING_REGEX, next: popState }
+      { token: "error", regex : "^\\s*$", next: popState }
+    ]
+
+    # if there is no specific token for `state` (like for "start"), then
+    # `specificTokenForState[state]` is just undefined, and this is handled
+    # inside `basicRules` function
+    for state of @$rules
+      @$rules[state] = @$rules[state].concat(basicRules(specificTokenForState[state]))
+
     return
 
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
