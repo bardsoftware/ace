@@ -207,7 +207,7 @@ define((require, exports, module) ->
         @citeCache = new CompletionsCache(processCitationJson)
         @enabled = true
 
-      @init: (editor) =>
+      init: (editor) =>
         keyboardHandler = new HashHandler.HashHandler()
         keyboardHandler.addCommand(
           name: "add item in list mode"
