@@ -245,26 +245,14 @@ define((require, exports, module) ->
       constructor: ->
         @refCache = new CompletionsCache(processReferenceJson)
         @citeCache = new CompletionsCache(processCitationJson)
-      @init: (editor) ->
+        @enabled = true
+
+      @init: (editor) =>
         keyboardHandler = new HashHandler.HashHandler()
         keyboardHandler.addCommand(
           name: "add item in list mode"
           bindKey: {win: "enter", mac: "enter"}
-          exec: (editor) ->
-            cursor = editor.getCursorPosition();
-            line = editor.session.getLine(cursor.row);
-            tabString = editor.session.getTabString();
-            indentString = line.match(/^\s*/)[0];
-            indexOfBegin = line.indexOf("begin")
-
-            if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
-              if indexOfBegin > -1
-                editor.insert("\n" + tabString + indentString + "\\item ")
-              else
-                editor.insert("\n" + indentString + "\\item ")
-              return true
-            else
-              return false
+          exec: (editor) => return if @enabled then @completeLinebreak(editor) else false
         )
         editor.keyBinding.addKeyboardHandler(keyboardHandler)
 
@@ -280,9 +268,26 @@ define((require, exports, module) ->
         editor.getSession().selection.on('changeCursor', (cursorEvent) ->
           showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
         );
+
+      setEnabled: (enabled) => @enabled = enabled
       setReferencesUrl: (url) => @referencesUrl = url
       setCitationsUrl: (url) => @citationsUrl = url
 
+      completeLinebreak: (editor) =>
+        cursor = editor.getCursorPosition();
+        line = editor.session.getLine(cursor.row);
+        tabString = editor.session.getTabString();
+        indentString = line.match(/^\s*/)[0];
+        indexOfBegin = line.indexOf("begin")
+
+        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+          if indexOfBegin > -1
+            editor.insert("\n" + tabString + indentString + "\\item ")
+          else
+            editor.insert("\n" + indentString + "\\item ")
+          return true
+        else
+          return false
       ###
       # callback -- this function is adding list of completions to our popup. Provide by ACE completions API
       # @param {object} error -- convention in node, the first argument to a callback
