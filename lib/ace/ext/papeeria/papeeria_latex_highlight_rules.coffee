@@ -119,6 +119,8 @@ define((require, exports, module) ->
 
     @$rules = {}
     @$rules[START_STATE] = [
+      beginRule(LIST_REGEX, LIST_STATE)
+      beginRule(EQUATION_REGEX, EQUATION_STATE)
       {
         token: [
           "keyword"
@@ -169,8 +171,6 @@ define((require, exports, module) ->
       }
       { token: "string", regex: "\\\\\\[", next: pushState(MATH_LATEX_STATE) }
       { token: "string", regex: "\\${1,2}", next: pushState(MATH_STATE) }
-      beginRule(LIST_REGEX, LIST_STATE)
-      beginRule(EQUATION_REGEX, EQUATION_STATE)
     ]
 
     @$rules[EQUATION_STATE] = [
