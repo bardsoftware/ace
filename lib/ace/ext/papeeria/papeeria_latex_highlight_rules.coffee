@@ -26,17 +26,17 @@ define((require, exports, module) ->
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
-    ###*
-    * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
-    * to be able to provide context for autocompletion and other functions.
-    * Stack is constructed by the background highlighter;
-    * its elements are then propagated to * the editor session and become
-    * available through getContext method.
-    *
-    * The exact semantics of the rules for the use described in the file tokenizer.js
-    * @param {pushedState} string
-    * @return {function} function, which correctly puts new type(pushedState) on stack
-   ###
+    ###
+      * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
+      * to be able to provide context for autocompletion and other functions.
+      * Stack is constructed by the background highlighter;
+      * its elements are then propagated to * the editor session and become
+      * available through getContext method.
+      *
+      * The exact semantics of the rules for the use described in the file tokenizer.js
+      * @param {pushedState} string
+      * @return {function} function, which correctly puts new type(pushedState) on stack
+    ###
 
 
     pushState = (pushedState) ->
