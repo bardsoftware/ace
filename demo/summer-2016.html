@@ -319,8 +319,8 @@ require([
       $("#highlightInfo").popover("destroy");
     };
 
-    TexCompleter.init(editor)
     var texCompleter = new TexCompleter();
+    texCompleter.init(editor);
     langTools.addCompleter(texCompleter);
     texCompleter.setReferencesUrl("/demo/example.json")
     texCompleter.setCitationsUrl("/demo/biblio.json")

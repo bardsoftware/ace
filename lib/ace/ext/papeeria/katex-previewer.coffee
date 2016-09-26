@@ -265,14 +265,14 @@ define((require, exports, module) ->
     @BEGIN_EQUATION_TOKEN_SEQUENCES: [
       [
         { type: "rparen", value: "}" }
-        { type: "variable.parameter.environment", value: "equation" }
-        { type: "lparen.environment", value: "{" }
+        { type: "variable.parameter", value: "equation" }
+        { type: "lparen", value: "{" }
         { type: "storage.type", value: "\\begin" }
       ]
       [
         { type: "rparen", value: "}" }
-        { type: "variable.parameter.environment", value: "equation*" }
-        { type: "lparen.environment", value: "{" }
+        { type: "variable.parameter", value: "equation*" }
+        { type: "lparen", value: "{" }
         { type: "storage.type", value: "\\begin" }
       ]
       [
@@ -288,14 +288,14 @@ define((require, exports, module) ->
     @END_EQUATION_TOKEN_SEQUENCES: [
       [
         { type: "storage.type", value: "\\end" }
-        { type: "lparen.environment", value: "{" }
-        { type: "variable.parameter.environment", value: "equation" }
+        { type: "lparen", value: "{" }
+        { type: "variable.parameter", value: "equation" }
         { type: "rparen", value: "}" }
       ]
       [
         { type: "storage.type", value: "\\end" }
-        { type: "lparen.environment", value: "{" }
-        { type: "variable.parameter.environment", value: "equation*" }
+        { type: "lparen", value: "{" }
+        { type: "variable.parameter", value: "equation*" }
         { type: "rparen", value: "}" }
       ]
       [
