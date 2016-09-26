@@ -13,12 +13,12 @@ define((require, exports, module) ->
   LIST_STATE = "list"
   EQUATION_STATE = "equation"
   ENVIRONMENT_STATE = "environment"
-  TABLE_STATE = 'table'
-  FIGURE_STATE = 'figure'
+  TABLE_STATE = "table"
+  FIGURE_STATE = "figure"
 
 
-  TABLE_TOKENTYPE = 'table'
-  FIGURE_TOKENTYPE = 'figure'
+  TABLE_TOKENTYPE = "table"
+  FIGURE_TOKENTYPE = "figure"
   LIST_TOKENTYPE = "list"
   EQUATION_TOKENTYPE = "equation"
   ENVIRONMENT_TOKENTYPE = "environment"
@@ -69,7 +69,7 @@ define((require, exports, module) ->
 
       if stack.length == 0
         if currentState != "start"
-          throw new Error('papeeria_highlight_rules -- stack error: stack should not be empty here')
+          throw new Error("papeeria_highlight_rules -- stack error: stack should not be empty here")
         else
           return "start"
 
