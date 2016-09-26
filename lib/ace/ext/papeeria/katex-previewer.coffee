@@ -4,6 +4,7 @@ define((require, exports, module) ->
   Range = require("ace/range").Range
   findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
 
+
   myKatexLoader = null
   katex = null
   initKaTeX = (onLoaded) ->
@@ -16,9 +17,13 @@ define((require, exports, module) ->
     return
 
 
+  equalTokens = (token1, token2) ->
+    return token1.type == token2.type and token1.value.trim() == token2.value.trim()
+
+
   class ContextHandler
     @UPDATE_DELAY: 1000
-    @KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+    @KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
     @getMacrosArgumentRange: (session, argumentStartPos) ->
       argumentRange = findSurroundingBrackets(session, argumentStartPos)
@@ -43,11 +48,11 @@ define((require, exports, module) ->
 
       while token?
         acceptToken = true
-        if token.type == "storage.type" and token.value == "\\label"
+        if token.type == "storage.type.equation" and token.value == "\\label"
           curLine = session.getLine(tokenPosition.row)
           bracketPosition = tokenPosition.column + "\\label".length
           if curLine[bracketPosition] == "{"
-            argumentRange = ContextHandler.getMacrosArgumentRange(session, {row: tokenPosition.row, column: bracketPosition + 1})
+            argumentRange = ContextHandler.getMacrosArgumentRange(session, { row: tokenPosition.row, column: bracketPosition + 1 })
             if argumentRange?
               acceptToken = false
               labelParameters.push(session.getTextRange(argumentRange))
@@ -60,10 +65,9 @@ define((require, exports, module) ->
         token = tokenIterator.getCurrentToken()
         tokenPosition = tokenIterator.getCurrentTokenPosition()
 
-      return [labelParameters, tokenValues.join("")]
+      return { params: labelParameters, equation: tokenValues.join("") }
 
-    constructor: (@editor, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
-      @jqEditorContainer = $(@editor.container)
+    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
       @contextPreviewExists = false
 
     getPopoverPosition: (row) -> {
@@ -73,18 +77,24 @@ define((require, exports, module) ->
 
     getCurrentFormula: ->
       try
-        {row: startRow, column: startColumn} = @curRange.start
-        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curRange, startRow, startColumn)
+        if @curStartId != @curEndId
+          startSequence = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse()
+          startString = (token.value for token in startSequence).join("")
+          endSequence = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId]
+          endString = (token.value for token in endSequence).join("")
+          return { title: "Error!", content: "Starting and ending sequences don't match: #{startString} and #{endString}" }
+        { row: startRow, column: startColumn } = @curInnerRange.start
+        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
         tokenIterator.stepForward()
-        [labelParameters, equationString] = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
+        { params: labelParameters, equation: equationString } = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
         title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
-        return [title, katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS)]
+        return { title: title, content: katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS) }
       catch e
-        return ["Error!", e]
+        return { title: "Error!", content: e }
 
     initPopover: => setTimeout((=>
       popoverPosition = @getPopoverPosition(@getEquationEndRow())
-      [title, rendered] = @getCurrentFormula()
+      { title: title, content: rendered } = @getCurrentFormula()
       @popoverHandler.show(title, rendered, popoverPosition)
     ), 0)
 
@@ -98,12 +108,17 @@ define((require, exports, module) ->
       @popoverHandler.setPosition(@getPopoverPosition(@getEquationEndRow()))
 
     updateRange: ->
-      {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      @curRange = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
+      {
+        outer: @curOuterRange
+        inner: @curInnerRange
+        start: @curStartId
+        end: @curEndId
+      } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
 
     updatePopover: ->
       if @contextPreviewExists
-        [title, rendered] = @getCurrentFormula()
+        { title: title, content: rendered } = @getCurrentFormula()
         @popoverHandler.setContent(title, rendered)
 
     updateCallback: =>
@@ -116,7 +131,8 @@ define((require, exports, module) ->
       else
         @currentDelayedUpdateId = null
         if @contextPreviewExists
-          curContext = LatexParsingContext.getContext(@editor.getSession(), @editor.getCursorPosition().row)
+          { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
+          curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
           if curContext != "equation"
             @destroyContextPreview()
           else
@@ -147,23 +163,26 @@ define((require, exports, module) ->
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
     destroyContextPreview: ->
-      @curRange = null
+      @curInnerRange = null
+      @curOuterRange = null
       @contextPreviewExists = false
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
       @popoverHandler.destroy()
 
+    # TODO: for some reason `{` and `}` inside the equations are not
+    # identified as equation
     handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
         return
 
-      {row: cursorRow, column: cursorColumn} = @editor.getCursorPosition()
-      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow)
+      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
+      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
-      if @contextPreviewExists and currentContext != "equation"
+      if @contextPreviewExists and not @curOuterRange.contains(cursorRow, cursorColumn)
         @destroyContextPreview()
 
-      else if not @contextPreviewExists and currentContext == "equation"
+      if not @contextPreviewExists and currentContext == "equation"
         @createContextPreview()
     ), 0)
 
@@ -174,7 +193,7 @@ define((require, exports, module) ->
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
         @outOfRange = false
-      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       @outOfRange = not @range.containsRange(tokenRange)
 
@@ -189,7 +208,7 @@ define((require, exports, module) ->
         @outOfRange = true
         return null
 
-      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
         @outOfRange = false
@@ -205,7 +224,7 @@ define((require, exports, module) ->
         @outOfRange = true
         return null
 
-      {row: tokenRow, column: tokenColumn} = @tokenIterator.getCurrentTokenPosition()
+      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
       tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
       if @range.containsRange(tokenRange)
         @outOfRange = false
@@ -214,118 +233,184 @@ define((require, exports, module) ->
         @outOfRange = true
         return null
 
-     stepTo: (row, column) ->
+    stepTo: (row, column) ->
       @tokenIterator = new TokenIterator(@session, row, column)
       @outOfRange = not @range.contains(row, column)
 
 
+  class TokenSequenceFinder
+    constructor: (@tokenSequences) ->
+      @numSequences = @tokenSequences.length
+      @currentIndices = Array(@numSequences)
+      for i in [0...@numSequences]
+        @currentIndices[i] = 0
+
+    progressIndices: (token) ->
+      for i in [0...@numSequences]
+        tokenSequence = @tokenSequences[i]
+        currentIndex = @currentIndices[i]
+        if equalTokens(token, tokenSequence[currentIndex])
+          @currentIndices[i] += 1
+        else
+          @currentIndices[i] = 0
+
+    getMaybeFinishedSequenceId: ->
+      for i in [0...@numSequences]
+        if @currentIndices[i] == @tokenSequences[i].length
+          return i
+      return null
+
+
   class EquationRangeHandler
-    @BEGIN_EQUATION_TOKEN_SEQUENCE: [
-      { type: "storage.type", value: "\\begin" }
-      { type: "lparen.environment", value: "{" }
-      { type: "variable.parameter.environment", value: "equation" }
-      { type: "rparen", value: "}" }
+    @BEGIN_EQUATION_TOKEN_SEQUENCES: [
+      [
+        { type: "rparen", value: "}" }
+        { type: "variable.parameter.environment", value: "equation" }
+        { type: "lparen.environment", value: "{" }
+        { type: "storage.type", value: "\\begin" }
+      ]
+      [
+        { type: "rparen", value: "}" }
+        { type: "variable.parameter.environment", value: "equation*" }
+        { type: "lparen.environment", value: "{" }
+        { type: "storage.type", value: "\\begin" }
+      ]
+      [
+        { type: "string", value: "\\[" }
+      ]
+      [
+        { type: "string", value: "$" }
+      ]
+      [
+        { type: "string", value: "$$" }
+      ]
     ]
-    @END_EQUATION_TOKEN_SEQUENCE: [
-      { type: "storage.type", value: "\\end" }
-      { type: "lparen.environment", value: "{" }
-      { type: "variable.parameter.environment", value: "equation" }
-      { type: "rparen", value: "}" }
+    @END_EQUATION_TOKEN_SEQUENCES: [
+      [
+        { type: "storage.type", value: "\\end" }
+        { type: "lparen.environment", value: "{" }
+        { type: "variable.parameter.environment", value: "equation" }
+        { type: "rparen", value: "}" }
+      ]
+      [
+        { type: "storage.type", value: "\\end" }
+        { type: "lparen.environment", value: "{" }
+        { type: "variable.parameter.environment", value: "equation*" }
+        { type: "rparen", value: "}" }
+      ]
+      [
+        { type: "string", value: "\\]" }
+      ]
+      [
+        { type: "string", value: "$" }
+      ]
+      [
+        { type: "string", value: "$$" }
+      ]
     ]
 
     # empty constructor
     constructor: (@editor) ->
 
-    @equalTokens: (token1, token2) ->
-      return token1.type == token2.type and token1.value == token2.value
+    getBoundary: (tokenIterator, start) ->
+      moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
+      moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
+      boundarySequences = (
+        if start
+        then EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES
+        else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
+      )
 
-    getEquationStart: (tokenIterator) ->
       # if tokenIterator is initially on the empty line, its current token is null
       if not tokenIterator.getCurrentToken()?
-        tokenIterator.stepForward()
+        moveFromBoundary()
         # if tokenIterator.getCurrentToken() is still null, then we're at the end of a file
         if not tokenIterator.getCurrentToken()?
           return null
       else
         # following loop pushes tokenIterator to the end of
-        # beginning sequence, if it is inside one
+        # boundary sequence, if it is inside one
         # The loop isn't executed, if current token is null, because:
         #   a) we don't need to -- if `tokenIterator` is initially on
-        #      the empty line, then it is guaranteed not to be inside end sequence
-        #   b) it can cause bugs -- if `tokenIterator` is initially before the start of a document,
+        #      the empty line, then it is guaranteed not to be inside boundary sequence
+        #   b) it can cause bugs -- if we are looking for start sequence and
+        #      `tokenIterator` is initially before the start of a document,
         #      current token is null, and after stepping forward `tokenIterator` is on the
         #      start of a document. If start sequence happens to be there, then equation start is
         #      then found without any problem, whereas in this case null should be returned
-        for token in EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE
-          if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-            tokenIterator.stepForward()
+        for boundarySequence in boundarySequences
+          for token in boundarySequence.slice(0).reverse()
+            curToken = tokenIterator.getCurrentToken()
+            if curToken? and equalTokens(token, curToken)
+              moveFromBoundary()
 
-      curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-      curEquationStart = null
-      while curSequenceIndex >= 0
-        curToken = tokenIterator.stepBackward()
-        if not curToken
+      tokenSequenceFinder = new TokenSequenceFinder(boundarySequences)
+      while true
+        moveToBoundary()
+        curToken = tokenIterator.getCurrentToken()
+        if not curToken?
           return null
-        if EquationRangeHandler.equalTokens(
-            EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-            curToken)
-          if curSequenceIndex == EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-            curTokenPosition = tokenIterator.getCurrentTokenPosition()
-            curEquationStart = {
-              row: curTokenPosition.row
-              column: curTokenPosition.column + curToken.value.length
-            }
-          curSequenceIndex -= 1
-        else
-          curSequenceIndex = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCE.length - 1
-          curEquationStart = null
-      return curEquationStart
 
-    getEquationEnd: (tokenIterator) ->
-      # if tokenIterator is initially on the empty line, its current token is null
-      if not tokenIterator.getCurrentToken()?
-        tokenIterator.stepBackward()
-        # if tokenIterator is still null, then we're at the end of a file
-        if not tokenIterator.getCurrentToken()?
-          return null
-      else
-        # following cycle pushes tokenIterator to the start of
-        # ending sequence, if it is inside one
-        # The loop isn't executed, if current token is null, because:
-        #   a) we don't need to -- if `tokenIterator` is initially on
-        #      the empty line, then it is guaranteed not to be inside start sequence
-        #   b) it can cause bugs -- if `tokenIterator` is initially after the end of a document,
-        #      current token is null, and after stepping backward `tokenIterator` is on the
-        #      end of a document. If end sequence happens to be there, then equation end is
-        #      then found without any problem, whereas in this case null should be returned
-        for token in EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.slice(0).reverse()
-          if EquationRangeHandler.equalTokens(token, tokenIterator.getCurrentToken())
-            tokenIterator.stepBackward()
+        tokenSequenceFinder.progressIndices(curToken)
 
-      curSequenceIndex = 0
-      curEquationStart = null
-      while curSequenceIndex < EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE.length
-        curToken = tokenIterator.stepForward()
-        if not curToken
-          return null
-        if EquationRangeHandler.equalTokens(
-            EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCE[curSequenceIndex],
-            curToken)
-          if curSequenceIndex == 0
-            curEquationStart = tokenIterator.getCurrentTokenPosition()
-          curSequenceIndex += 1
-        else
-          curSequenceIndex = 0
-          curEquationStart = null
-      return curEquationStart
+        maybeFinishedSequenceId = tokenSequenceFinder.getMaybeFinishedSequenceId()
+        if maybeFinishedSequenceId?
+          { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
+          curTokenLength = curToken.value.length
+          finishedSequence = boundarySequences[maybeFinishedSequenceId]
+
+          equationOuterBoundary = {
+            row: curTokenRow
+            column: curTokenColumn + (if start then 0 else curTokenLength)
+          }
+
+          # after finding boundary, tokenIterator is exactly on the last token
+          # of ending sequence, so we step back until we're on the last token
+          # to determine inner boundary
+          for i in [0...finishedSequence.length-1]
+            moveFromBoundary()
+
+          { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
+          curTokenLength = tokenIterator.getCurrentToken().value.length
+
+          equationInnerBoundary = {
+            row: curTokenRow
+            column: curTokenColumn + (if start then curTokenLength else 0)
+          }
+
+          # to move inside the sequence, we move token iterator one more time
+          moveFromBoundary()
+
+          return {
+            id: maybeFinishedSequenceId
+            outer: equationOuterBoundary
+            inner: equationInnerBoundary
+          }
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
-      end = @getEquationEnd(tokenIterator)
-      start = @getEquationStart(tokenIterator)
+      end = @getBoundary(tokenIterator, false)
+      start = @getBoundary(tokenIterator, true)
+
       if not (start? and end?)
-        return null
-      return new Range(start.row, start.column, end.row, end.column)
+        return {
+          outer: null
+          inner: null
+          start: null
+          end: null
+        }
+
+      { id: endId, outer: outerEnd, inner: innerEnd } = end
+      { id: startId, outer: outerStart, inner: innerStart } = start
+
+      outerRange = new Range(outerStart.row, outerStart.column, outerEnd.row, outerEnd.column)
+      innerRange = new Range(innerStart.row, innerStart.column, innerEnd.row, innerEnd.column)
+      return {
+        outer: outerRange
+        inner: innerRange
+        start: startId
+        end: endId
+      }
 
 
   exports.ContextHandler = ContextHandler
@@ -382,11 +467,11 @@ define((require, exports, module) ->
       }
 
     jqEditorContainer = $(editor.container)
-    KATEX_OPTIONS = {displayMode: true, throwOnError: false}
+    KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler)
+    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler)
 
     sh = SelectionHandler = {
       hideSelectionPopover: ->
@@ -397,7 +482,7 @@ define((require, exports, module) ->
         return
 
       renderSelectionUnderCursor: ->
-        {row: cursorRow, column: cursorColumn} = editor.getCursorPosition()
+        { row: cursorRow, column: cursorColumn } = editor.getCursorPosition()
         cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
         popoverPosition = {
           top: "#{cursorPosition.pageY + 24}px"
@@ -423,7 +508,7 @@ define((require, exports, module) ->
 
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
-      bindKey: {win: "Alt-p", mac: "Alt-p"}
+      bindKey: { win: "Alt-p", mac: "Alt-p" }
       exec: SelectionHandler.createPopover
     )
 
