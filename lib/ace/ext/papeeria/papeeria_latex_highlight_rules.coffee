@@ -29,8 +29,8 @@ define((require, exports, module) ->
   MATH_ALTERNATIVE_OPENING_REGEX = "\\\\\\["
   MATH_ALTERNATIVE_CLOSING_REGEX = "\\\\\\]"
 
-  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
-  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
+  exports.LIST_TOKEN_TYPE = LIST_TOKEN_TYPE = "list"
+  exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
 
   PapeeriaLatexHighlightRules = ->
     ###
@@ -130,13 +130,13 @@ define((require, exports, module) ->
     ]
 
     specificTokenForState = {}
-    specificTokenForState[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
-    specificTokenForState[LIST_ENUMERATE_STATE] = LIST_TOKENTYPE
-    specificTokenForState[EQUATION_REGULAR_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[EQUATION_ASTERISK_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_INLINE_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_MULTILINE_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_ALTERNATIVE_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[LIST_ITEMIZE_STATE] = LIST_TOKEN_TYPE
+    specificTokenForState[LIST_ENUMERATE_STATE] = LIST_TOKEN_TYPE
+    specificTokenForState[EQUATION_REGULAR_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState[EQUATION_ASTERISK_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState[MATH_INLINE_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState[MATH_MULTILINE_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState[MATH_ALTERNATIVE_STATE] = EQUATION_TOKEN_TYPE
 
     equationStartRules = [
       beginRule(EQUATION_REGULAR_REGEX, EQUATION_REGULAR_STATE)
