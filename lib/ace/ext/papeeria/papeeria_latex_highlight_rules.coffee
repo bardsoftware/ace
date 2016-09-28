@@ -182,6 +182,17 @@ define((require, exports, module) ->
       beginRule(LIST_ENUMERATE_REGEX, LIST_ENUMERATE_STATE)
     ]
 
+    genericEnvironmentRule = {
+      token: [
+        "storage.type"
+        "lparen"
+        "variable.parameter"
+        "rparen"
+      ]
+      regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+    }
+
+
     @$rules = {}
     @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       {
@@ -196,41 +207,17 @@ define((require, exports, module) ->
         ]
         regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
       }
-      {
-        token: [
-          "storage.type"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
-      }
+      genericEnvironmentRule
     ])
 
     @$rules[LIST_ITEMIZE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       endRule(LIST_ITEMIZE_REGEX)
-      {
-        token: [
-          "storage.type"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
-      }
+      genericEnvironmentRule
     ])
 
     @$rules[LIST_ENUMERATE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       endRule(LIST_ENUMERATE_REGEX)
-      {
-        token: [
-          "storage.type"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
-      }
+      genericEnvironmentRule
     ])
 
     @$rules[EQUATION_REGULAR_STATE] = [
