@@ -279,6 +279,9 @@ define((require, exports, module) ->
         { type: "string", value: "\\[" }
       ]
       [
+        { type: "string", value: "\\(" }
+      ]
+      [
         { type: "string", value: "$" }
       ]
       [
@@ -300,6 +303,9 @@ define((require, exports, module) ->
       ]
       [
         { type: "string", value: "\\]" }
+      ]
+      [
+        { type: "string", value: "\\)" }
       ]
       [
         { type: "string", value: "$" }

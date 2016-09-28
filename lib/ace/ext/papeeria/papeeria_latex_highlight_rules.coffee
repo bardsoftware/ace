@@ -29,6 +29,10 @@ define((require, exports, module) ->
   MATH_LATEX_DISPLAYED_OPENING_REGEX = "\\\\\\["
   MATH_LATEX_DISPLAYED_CLOSING_REGEX = "\\\\\\]"
 
+  exports.MATH_LATEX_INLINE_STATE = MATH_LATEX_INLINE_STATE = "math.latex.inline"
+  MATH_LATEX_INLINE_OPENING_REGEX = "\\\\\\("
+  MATH_LATEX_INLINE_CLOSING_REGEX = "\\\\\\)"
+
   exports.LIST_TOKEN_TYPE = LIST_TOKEN_TYPE = "list"
   exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
 
@@ -136,6 +140,7 @@ define((require, exports, module) ->
     specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_TEX_INLINE_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState[MATH_LATEX_INLINE_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
 
     equationStartRules = [
@@ -144,6 +149,7 @@ define((require, exports, module) ->
       mathStartRule(MATH_TEX_DISPLAYED_OPENING_REGEX, MATH_TEX_DISPLAYED_STATE)
       mathStartRule(MATH_TEX_INLINE_OPENING_REGEX, MATH_TEX_INLINE_STATE)
       mathStartRule(MATH_LATEX_DISPLAYED_OPENING_REGEX, MATH_LATEX_DISPLAYED_STATE)
+      mathStartRule(MATH_LATEX_INLINE_OPENING_REGEX, MATH_LATEX_INLINE_STATE)
     ]
 
     citationsRules = [
@@ -231,6 +237,8 @@ define((require, exports, module) ->
     @$rules[MATH_TEX_INLINE_STATE] = mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX)
 
     @$rules[MATH_TEX_DISPLAYED_STATE] = mathEndRules(MATH_TEX_DISPLAYED_CLOSING_REGEX)
+
+    @$rules[MATH_LATEX_INLINE_STATE] = mathEndRules(MATH_LATEX_INLINE_CLOSING_REGEX)
 
     @$rules[MATH_LATEX_DISPLAYED_STATE] = mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX)
 
