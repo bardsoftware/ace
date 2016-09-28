@@ -2,11 +2,11 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 
 define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
-    EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
-    LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
+    EQUATION_STATE = "equation"
+    LIST_STATE = "list"
 
-    EQUATION_TOKENTYPE  = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
-    LIST_TOKENTYPE  = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
+    EQUATION_TOKEN_TYPE  = PapeeriaLatexHighlightRules.EQUATION_TOKEN_TYPE
+    LIST_TOKEN_TYPE  = PapeeriaLatexHighlightRules.LIST_TOKEN_TYPE
 
     # Specific for token"s system of type in ace
     isType = (token, type) ->
@@ -21,9 +21,9 @@ define((require, exports, module) ->
         state = getContextFromRow(session, row)
         token = session.getTokenAt(row, column)
         if token?
-            if isType(token, EQUATION_TOKENTYPE)
+            if isType(token, EQUATION_TOKEN_TYPE)
                 return EQUATION_STATE
-            if isType(token, LIST_TOKENTYPE)
+            if isType(token, LIST_TOKEN_TYPE)
                 return LIST_STATE
         return state
 
