@@ -98,7 +98,7 @@ define((require, exports, module) ->
         { defaultToken : "text" + addToken }
       ]
 
-    beginRule = (text = "\\w*", pushedState = "start") ->
+    beginRule = (text, pushedState) ->
       return {
         token: [
           "storage.type"
@@ -110,7 +110,7 @@ define((require, exports, module) ->
         next: pushState(pushedState)
       }
 
-    endRule = (text = "\\w*") ->
+    endRule = (text) ->
       return {
         token: [
           "storage.type"
