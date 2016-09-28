@@ -5,39 +5,33 @@ define((require, exports, module) ->
   oop = require("ace/lib/oop")
   TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules
 
-  START_STATE = "start"
+  exports.START_STATE = START_STATE = "start"
 
-  LIST_ITEMIZE_STATE = "list.itemize"
+  exports.LIST_ITEMIZE_STATE = LIST_ITEMIZE_STATE = "list.itemize"
   LIST_ITEMIZE_REGEX = "itemize"
 
-  LIST_ENUMERATE_STATE = "list.enumerate"
+  exports.LIST_ENUMERATE_STATE = LIST_ENUMERATE_STATE = "list.enumerate"
   LIST_ENUMERATE_REGEX = "enumerate"
 
-  EQUATION_REGULAR_STATE = "equation.regular"
+  exports.EQUATION_REGULAR_STATE = EQUATION_REGULAR_STATE = "equation.regular"
   EQUATION_REGULAR_REGEX = "equation"
 
-  EQUATION_ASTERISK_STATE = "equation.asterisk"
+  exports.EQUATION_ASTERISK_STATE = EQUATION_ASTERISK_STATE = "equation.asterisk"
   EQUATION_ASTERISK_REGEX = "equation\\*"
 
-  MATH_MULTILINE_STATE = "math.multiline"
+  exports.MATH_MULTILINE_STATE = MATH_MULTILINE_STATE = "math.multiline"
   MATH_MULTILINE_OPENING_REGEX = MATH_MULTILINE_CLOSING_REGEX = "\\$\\$"
 
-  MATH_INLINE_STATE = "math.inline"
+  exports.MATH_INLINE_STATE = MATH_INLINE_STATE = "math.inline"
   MATH_INLINE_OPENING_REGEX = MATH_INLINE_CLOSING_REGEX = "\\$"
 
-  MATH_ALTERNATIVE_STATE = "math.alternative"
+  exports.MATH_ALTERNATIVE_STATE = MATH_ALTERNATIVE_STATE = "math.alternative"
   MATH_ALTERNATIVE_OPENING_REGEX = "\\\\\\["
   MATH_ALTERNATIVE_CLOSING_REGEX = "\\\\\\]"
 
-  LIST_STATE = "list"
-  LIST_TOKENTYPE = "list"
-  EQUATION_STATE = "equation"
-  EQUATION_TOKENTYPE = "equation"
+  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
+  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
 
-  exports.LIST_STATE = LIST_STATE
-  exports.LIST_TOKENTYPE = LIST_TOKENTYPE
-  exports.EQUATION_STATE = EQUATION_STATE
-  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
     ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
