@@ -39,7 +39,7 @@ define((require, exports, module) ->
   exports.EQUATION_STATE = EQUATION_STATE
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
-    ###*
+    ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
       * to be able to provide context for autocompletion and other functions.
       * Stack is constructed by the background highlighter;
