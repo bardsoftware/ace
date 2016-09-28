@@ -165,6 +165,7 @@ define((require, exports, module) ->
         ]
         regex: "(\\\\(?:cite))({)(\\w*)(})"
       }
+      # this rule is for `vref` and `vcite` citations
       {
         token: [
           "keyword"
