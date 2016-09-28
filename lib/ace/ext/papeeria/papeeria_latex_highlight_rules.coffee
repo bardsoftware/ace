@@ -7,26 +7,39 @@ define((require, exports, module) ->
 
   START_STATE = "start"
 
-  LIST_STATE = "list"
-  LIST_REGEX = "itemize|enumerate"
-  LIST_TOKENTYPE = "list"
+  LIST_ITEMIZE_STATE = "list.itemize"
+  LIST_ITEMIZE_REGEX = "itemize"
 
+  LIST_ENUMERATE_STATE = "list.enumerate"
+  LIST_ENUMERATE_REGEX = "enumerate"
+
+  EQUATION_REGULAR_STATE = "equation.regular"
+  EQUATION_REGULAR_REGEX = "equation"
+
+  EQUATION_ASTERISK_STATE = "equation.asterisk"
+  EQUATION_ASTERISK_REGEX = "equation\\*"
+
+  MATH_MULTILINE_STATE = "math.multiline"
+  MATH_MULTILINE_OPENING_REGEX = MATH_MULTILINE_CLOSING_REGEX = "\\$\\$"
+
+  MATH_INLINE_STATE = "math.inline"
+  MATH_INLINE_OPENING_REGEX = MATH_INLINE_CLOSING_REGEX = "\\$"
+
+  MATH_ALTERNATIVE_STATE = "math.alternative"
+  MATH_ALTERNATIVE_OPENING_REGEX = "\\\\\\["
+  MATH_ALTERNATIVE_CLOSING_REGEX = "\\\\\\]"
+
+  LIST_STATE = "list"
+  LIST_TOKENTYPE = "list"
   EQUATION_STATE = "equation"
-  EQUATION_REGEX = "equation|equation\\*"
   EQUATION_TOKENTYPE = "equation"
 
-  MATH_STATE = "math"
-  MATH_CLOSING_REGEX = "\\${1,2}"
-
-  MATH_LATEX_STATE = "math_latex"
-  MATH_LATEX_CLOSING_REGEX = "\\\\\\]"
-
-  exports.EQUATION_STATE = EQUATION_STATE
   exports.LIST_STATE = LIST_STATE
-  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
+  exports.EQUATION_STATE = EQUATION_STATE
+  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   PapeeriaLatexHighlightRules = ->
-    ###
+    ###*
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
       * to be able to provide context for autocompletion and other functions.
       * Stack is constructed by the background highlighter;
@@ -71,7 +84,6 @@ define((require, exports, module) ->
 
       return stack[stack.length - 1]
 
-    # specialized rules for context
     basicRules = (tokenType) ->
       if (tokenType?)
         addToken = "." + tokenType
@@ -111,37 +123,36 @@ define((require, exports, module) ->
         next: popState
       }
 
-    specificTokenForState = {}
-    specificTokenForState[LIST_STATE] = LIST_TOKENTYPE
-    specificTokenForState[EQUATION_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_LATEX_STATE] = EQUATION_TOKENTYPE
+    mathStartRule = (openingRegex, state) -> {
+      token: "string"
+      regex: openingRegex
+      next: pushState(state)
+      merge: false
+    }
 
-    @$rules = {}
-    @$rules[START_STATE] = [
-      beginRule(LIST_REGEX, LIST_STATE)
-      beginRule(EQUATION_REGEX, EQUATION_STATE)
-      {
-        token: [
-          "keyword"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-          "lparen"
-          "storage.type"
-          "rparen"
-        ]
-        regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
-      }
-      {
-        token: [
-          "storage.type"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
-      }
+    mathEndRules = (closingRegex) -> [
+      { token: "string", regex: closingRegex, next: popState }
+      { token: "error", regex : "^\\s*$", next: popState }
+    ]
+
+    specificTokenForState = {}
+    specificTokenForState[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
+    specificTokenForState[LIST_ENUMERATE_STATE] = LIST_TOKENTYPE
+    specificTokenForState[EQUATION_REGULAR_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[EQUATION_ASTERISK_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_INLINE_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_MULTILINE_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_ALTERNATIVE_STATE] = EQUATION_TOKENTYPE
+
+    equationStartRules = [
+      beginRule(EQUATION_REGULAR_REGEX, EQUATION_REGULAR_STATE)
+      beginRule(EQUATION_ASTERISK_REGEX, EQUATION_ASTERISK_STATE)
+      mathStartRule(MATH_MULTILINE_OPENING_REGEX, MATH_MULTILINE_STATE)
+      mathStartRule(MATH_INLINE_OPENING_REGEX, MATH_INLINE_STATE)
+      mathStartRule(MATH_ALTERNATIVE_OPENING_REGEX, MATH_ALTERNATIVE_STATE)
+    ]
+
+    citationsRules = [
       {
         token: [
           "storage.type"
@@ -169,28 +180,77 @@ define((require, exports, module) ->
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
-      { token: "string", regex: "\\\\\\[", next: pushState(MATH_LATEX_STATE) }
-      { token: "string", regex: "\\${1,2}", next: pushState(MATH_STATE) }
     ]
 
-    @$rules[EQUATION_STATE] = [
-      endRule(EQUATION_REGEX)
+    listStartRules = [
+      beginRule(LIST_ITEMIZE_REGEX, LIST_ITEMIZE_STATE)
+      beginRule(LIST_ENUMERATE_REGEX, LIST_ENUMERATE_STATE)
     ]
 
-    @$rules[LIST_STATE] = [
-      beginRule(EQUATION_REGEX, EQUATION_STATE)
-      endRule(LIST_REGEX)
+    @$rules = {}
+    @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
+      {
+        token: [
+          "keyword"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+          "lparen"
+          "storage.type"
+          "rparen"
+        ]
+        regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
+      }
+      {
+        token: [
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+        ]
+        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+      }
+    ])
+
+    @$rules[LIST_ITEMIZE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
+      endRule(LIST_ITEMIZE_REGEX)
+      {
+        token: [
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+        ]
+        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+      }
+    ])
+
+    @$rules[LIST_ENUMERATE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
+      endRule(LIST_ENUMERATE_REGEX)
+      {
+        token: [
+          "storage.type"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+        ]
+        regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+      }
+    ])
+
+    @$rules[EQUATION_REGULAR_STATE] = [
+      endRule(EQUATION_REGULAR_REGEX)
     ]
 
-    @$rules[MATH_STATE] = [
-      { token: "string", regex: MATH_CLOSING_REGEX, next: popState }
-      { token: "error", regex : "^\\s*$", next: popState }
+    @$rules[EQUATION_ASTERISK_STATE] = [
+      endRule(EQUATION_ASTERISK_REGEX)
     ]
 
-    @$rules[MATH_LATEX_STATE] = [
-      { token: "string", regex: MATH_LATEX_CLOSING_REGEX, next: popState }
-      { token: "error", regex : "^\\s*$", next: popState }
-    ]
+    @$rules[MATH_INLINE_STATE] = mathEndRules(MATH_INLINE_CLOSING_REGEX)
+
+    @$rules[MATH_MULTILINE_STATE] = mathEndRules(MATH_MULTILINE_CLOSING_REGEX)
+
+    @$rules[MATH_ALTERNATIVE_STATE] = mathEndRules(MATH_ALTERNATIVE_CLOSING_REGEX)
 
     # if there is no specific token for `state` (like for "start"), then
     # `specificTokenForState[state]` is just undefined, and this is handled
