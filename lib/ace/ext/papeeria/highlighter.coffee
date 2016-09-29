@@ -1,9 +1,9 @@
 foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
 
-define([], ->
+define((require, exports, module) ->
     ourOffscreenTextDisplay = null
-    TokenIterator = null
-    Range = null
+    Range = require("ace/range").Range
+    TokenIterator = require("ace/token_iterator").TokenIterator
     clearCurrentHighlight = (editor, session, placeholderRange = null) ->
         if session.$bracketMatchHighlight || session.$bracketMismatchHighlight
             session.removeMarker(session.$bracketMatchHighlight)
@@ -178,8 +178,6 @@ define([], ->
             ourOffscreenTextDisplay?(editor, left, right)
 
     init = (ace, editor, bindKey, offscreenTextDisplay) ->
-        Range = ace.require("ace/range").Range
-        TokenIterator = ace.require("ace/token_iterator").TokenIterator
         ourOffscreenTextDisplay = offscreenTextDisplay
         session = editor.getSession()
         keyboardHandler =
