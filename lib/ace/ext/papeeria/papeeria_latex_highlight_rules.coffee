@@ -11,7 +11,8 @@ define((require, exports, module) ->
   LIST_REGEX = "itemize|enumerate"
   LIST_TOKENTYPE = "list"
 
-  ENVIRONMENT_STATE = ENVIRONMENT_TOKENTYPE = "environment"
+  ENVIRONMENT_STATE = "environment"
+  ENVIRONMENT_TOKENTYPE = "environment"
   EQUATION_STATE = "equation"
   EQUATION_REGEX = "equation|equation\\*"
   EQUATION_TOKENTYPE = "equation"
@@ -26,7 +27,7 @@ define((require, exports, module) ->
   exports.LIST_STATE = LIST_STATE
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
-  exports.ENVIRONMENT_STATE = "environment"
+  exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE
   exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE
   exports.TABLE_STATE = "table"
   exports.TABLE_TOKENTYPE = "table"
