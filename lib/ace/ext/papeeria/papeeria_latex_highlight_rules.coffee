@@ -11,6 +11,8 @@ define((require, exports, module) ->
   LIST_REGEX = "itemize|enumerate"
   LIST_TOKENTYPE = "list"
 
+  ENVIRONMENT_STATE = "environment"
+  ENVIRONMENT_TOKENTYPE = "environment"
   EQUATION_STATE = "equation"
   EQUATION_REGEX = "equation|equation\\*"
   EQUATION_TOKENTYPE = "equation"
@@ -25,6 +27,12 @@ define((require, exports, module) ->
   exports.LIST_STATE = LIST_STATE
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE
+  exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE
+  exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE
+  exports.TABLE_STATE = "table"
+  exports.TABLE_TOKENTYPE = "table"
+  exports.FIGURE_STATE = "figure"
+  exports.FIGURE_TOKENTYPE = "figure"
   PapeeriaLatexHighlightRules = ->
     ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
@@ -136,8 +144,8 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "lparen"
-          "variable.parameter"
+          "lparen.environment"
+          "variable.parameter.environment"
           "rparen"
         ]
         regex: "(\\\\(?:begin|end))({)(\\w*)(})"
