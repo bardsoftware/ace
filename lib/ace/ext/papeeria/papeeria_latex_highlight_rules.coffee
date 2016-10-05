@@ -36,6 +36,16 @@ define((require, exports, module) ->
   exports.LIST_TOKEN_TYPE = LIST_TOKEN_TYPE = "list"
   exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
 
+  exports.LIST_STATE = LIST_STATE = "list"
+  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
+  exports.EQUATION_STATE = EQUATION_STATE = "equation"
+  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
+  exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE = "environment"
+  exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
+  exports.TABLE_STATE = "table"
+  exports.TABLE_TOKENTYPE = "table"
+  exports.FIGURE_STATE = "figure"
+  exports.FIGURE_TOKENTYPE = "figure"
   PapeeriaLatexHighlightRules = ->
     ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
@@ -191,8 +201,8 @@ define((require, exports, module) ->
     genericEnvironmentRule = {
       token: [
         "storage.type"
-        "lparen"
-        "variable.parameter"
+        "lparen.environment"
+        "variable.parameter.environment"
         "rparen"
       ]
       regex: "(\\\\(?:begin|end))({)(\\w*)(})"

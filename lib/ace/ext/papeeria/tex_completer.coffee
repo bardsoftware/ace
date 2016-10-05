@@ -5,11 +5,13 @@ define((require, exports, module) ->
   PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
 
-
   EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
   LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
+  ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
+  TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
+  FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
 
+  EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
     "itemize"
     "enumerate"
@@ -20,6 +22,17 @@ define((require, exports, module) ->
       "equation"
       "equation*"
   ]
+
+  OTHER_ENVIRONMENTS = [
+      "table"
+      "figure"
+  ]
+
+  ENVIRONMENT_LABELS = for env in EQUATION_ENVIRONMENTS.concat(OTHER_ENVIRONMENTS, LIST_ENVIRONMENTS)
+    caption: env
+    value: env
+    meta: "environments"
+    meta_score: 10
 
 
   EQUATION_ENV_SNIPPETS = for env in EQUATION_ENVIRONMENTS
@@ -58,6 +71,33 @@ define((require, exports, module) ->
 
   compare = (a, b) -> a.caption.localeCompare(b.caption)
   BASIC_SNIPPETS = [
+    {
+      caption: "\\begin{env}...\\end{env}"
+      snippet: """
+              \\begin{$1}
+              \t $2
+              \\end{$1}
+            """
+      meta: "Any environment"
+      meta_score: 100
+    }
+    {
+      caption: "\\begin{...}"
+      snippet: """
+                \\begin{$1}
+            """
+      meta: "Any environment"
+      meta_score: 8
+    }
+    {
+      caption: "\\end{...}"
+      snippet: """
+                \\end{$1}
+            """
+      meta: "Any environment"
+      meta_score: 8
+    }
+
     {
       caption: "\\usepackage[]{..."
       snippet: """
@@ -101,23 +141,23 @@ define((require, exports, module) ->
     {
       caption: "\\begin{table}..."
       snippet: """
-            \\begin{table}\n\
-            \\begin{tabular}{${1:tablespec}}\n\
-            \\\\\\\\\n\
-            \\end{tabular}\n\
+            \\begin{table}
+            \t\\begin{tabular}{${1:tablespec}}
+            \t\t $2
+            \t\\end{tabular}
             \\end{table}
         """
-      meta: "base"
+      meta: "table"
       meta_score: 9
     }
     {
       caption: "\\begin{figure}..."
       snippet: """
             \\begin{figure}[${1:placement}]\n\
-            \n\
+            \t $2
             \\end{figure}
         """
-      meta: "base"
+      meta: "figure"
       meta_score: 9
     }
   ]
@@ -269,6 +309,9 @@ define((require, exports, module) ->
           when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
             EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
           when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
+          when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
+          else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
 
   return TexCompleter
 )

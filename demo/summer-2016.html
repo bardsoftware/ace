@@ -327,7 +327,8 @@ require([
     var texCompleter = new TexCompleter;
     texCompleter.init(editor);
     var texCompleter = new TexCompleter();
-    langTools.setCompleters([texCompleter]);
+    texCompleter.init(editor);
+    langTools.addCompleter(texCompleter);
     texCompleter.setReferencesUrl("/demo/example.json")
     texCompleter.setCitationsUrl("/demo/biblio.json")
 
