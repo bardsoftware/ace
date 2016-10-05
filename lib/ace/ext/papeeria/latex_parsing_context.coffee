@@ -9,7 +9,6 @@ define((require, exports, module) ->
     TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
     FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
 
-
     EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
     LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
     ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
