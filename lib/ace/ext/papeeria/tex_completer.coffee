@@ -184,24 +184,29 @@ define((require, exports, module) ->
 
 
 
-  processReferenceJson = (elem) =>
-    return {
+  processReferenceJson = (json) =>
+    return json.Labels?.map((elem) => {
       name: elem.caption
       value: elem.caption
       score: 1000
       meta: elem.type
       meta_score: 10
-    }
+    })
 
-  processCitationJson = (elem) =>
-    return {
-      name: elem.id
-      value: elem.id
-      score: 1000
-      meta: elem.type
-      meta_score: 10
-    }
-
+  processCitationJson = (json) =>
+    result = []
+    for bibfile, bibentries of json
+      bibentries.map((entry) =>
+        result.push(
+          name: "#{elem.id} #{elem.title}"
+          value: elem.id
+          score: 1000
+          meta: bibfile
+          meta_score: 10
+        )
+      )
+    return result
+    
   class CompletionsCache
     ###
     * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
@@ -211,15 +216,14 @@ define((require, exports, module) ->
       @lastFetchedUrl =  ""
       @cache = []
       @processJson = processJson
-    processData: (data) =>
-      @cache = data?.map(@processJson)
 
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl
         $.getJSON(url).done((data) =>
-          @processData(data)
-          callback(null, @cache)
-          @lastFetchedUrl = url
+          if data?
+            @cache = @processJson(data)
+            callback(null, @cache)
+            @lastFetchedUrl = url
         )
       else
         callback(null, @cache)
