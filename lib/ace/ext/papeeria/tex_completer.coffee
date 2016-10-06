@@ -196,17 +196,18 @@ define((require, exports, module) ->
   processCitationJson = (json) =>
     result = []
     for bibfile, bibentries of json
-      bibentries.map((entry) =>
-        result.push(
-          name: "#{elem.id} #{elem.title}"
-          value: elem.id
-          score: 1000
-          meta: bibfile
-          meta_score: 10
+      if bibfile != "" && bibentries != ""
+        bibentries.map((entry) =>
+          result.push(
+            name: entry.id
+            value: entry.id
+            score: 1000
+            meta: bibfile
+            meta_score: 10
+          )
         )
-      )
     return result
-    
+
   class CompletionsCache
     ###
     * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
