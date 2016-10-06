@@ -275,15 +275,10 @@ define((require, exports, module) ->
         { type: "lparen", value: "{" }
         { type: "storage.type", value: "\\begin" }
       ]
-      [
-        { type: "string", value: "\\[" }
-      ]
-      [
-        { type: "string", value: "$" }
-      ]
-      [
-        { type: "string", value: "$$" }
-      ]
+      [ { type: "string", value: "\\[" } ]
+      [ { type: "string", value: "\\(" } ]
+      [ { type: "string", value: "$" } ]
+      [ { type: "string", value: "$$" } ]
     ]
     @END_EQUATION_TOKEN_SEQUENCES: [
       [
@@ -298,15 +293,10 @@ define((require, exports, module) ->
         { type: "variable.parameter", value: "equation*" }
         { type: "rparen", value: "}" }
       ]
-      [
-        { type: "string", value: "\\]" }
-      ]
-      [
-        { type: "string", value: "$" }
-      ]
-      [
-        { type: "string", value: "$$" }
-      ]
+      [ { type: "string", value: "\\]" } ]
+      [ { type: "string", value: "\\)" } ]
+      [ { type: "string", value: "$" } ]
+      [ { type: "string", value: "$$" } ]
     ]
 
     # empty constructor
