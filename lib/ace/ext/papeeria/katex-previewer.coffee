@@ -463,7 +463,7 @@ define((require, exports, module) ->
 
     contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler)
 
-    sh = SelectionHandler = {
+    sh = selectionHandler = {
       hideSelectionPopover: ->
         popoverHandler.destroy()
         editor.off("changeSelection", sh.hideSelectionPopover)
@@ -489,7 +489,7 @@ define((require, exports, module) ->
         return
 
       createPopover: (editor) ->
-        unless ch.contextPreviewExists
+        unless contextHandler.contextPreviewExists
           unless katex?
             initKaTeX(sh.renderSelectionUnderCursor)
             return
@@ -499,7 +499,7 @@ define((require, exports, module) ->
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
       bindKey: { win: "Alt-p", mac: "Alt-p" }
-      exec: SelectionHandler.createPopover
+      exec: selectionHandler.createPopover
     )
 
     editor.on("changeSelection", contextHandler.handleCurrentContext)
