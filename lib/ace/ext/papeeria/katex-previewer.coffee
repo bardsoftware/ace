@@ -495,12 +495,7 @@ define((require, exports, module) ->
             return
           sh.renderSelectionUnderCursor()
     }
-
-    editor.commands.addCommand(
-      name: "previewLaTeXFormula"
-      bindKey: { win: "Alt-p", mac: "Alt-p" }
-      exec: selectionHandler.createPopover
-    )
+    exports.SelectionHandler = selectionHandler
 
     editor.on("changeSelection", contextHandler.handleCurrentContext)
     return
