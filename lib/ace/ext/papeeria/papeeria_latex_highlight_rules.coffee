@@ -152,6 +152,7 @@ define((require, exports, module) ->
     specificTokenForState[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_LATEX_INLINE_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState["cite"] = "variable.parameter.cite"
 
     equationStartRules = [
       beginRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX, MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE)
@@ -176,10 +177,9 @@ define((require, exports, module) ->
         token: [
           "storage.type"
           "lparen.cite"
-          "variable.parameter.cite"
-          "rparen"
         ]
-        regex: "(\\\\(?:cite))({)(\\w*)(})"
+        next: pushState("cite")
+        regex: "(\\\\(?:cite))({)"
       }
       # this rule is for `vref` and `vcite` citations
       {
@@ -251,6 +251,8 @@ define((require, exports, module) ->
     @$rules[MATH_LATEX_INLINE_STATE] = mathEndRules(MATH_LATEX_INLINE_CLOSING_REGEX)
 
     @$rules[MATH_LATEX_DISPLAYED_STATE] = mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX)
+
+    @$rules["cite"] = [{ token: "rparen", regex: "(})", next: popState }]
 
     # if there is no specific token for `state` (like for "start"), then
     # `specificTokenForState[state]` is just undefined, and this is handled
