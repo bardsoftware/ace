@@ -406,6 +406,7 @@ define((require, exports, module) ->
   exports.ContextHandler = ContextHandler
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
+  exports.SelectionHandler = selectionHandler
   exports.setupPreviewer = (editor, popoverHandler, katexLoader) ->
     myKatexLoader = katexLoader
     if not popoverHandler?
