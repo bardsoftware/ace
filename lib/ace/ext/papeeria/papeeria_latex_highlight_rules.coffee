@@ -152,7 +152,6 @@ define((require, exports, module) ->
     specificTokenForState[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_LATEX_INLINE_STATE] = EQUATION_TOKEN_TYPE
     specificTokenForState[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
-    specificTokenForState["cite"] = "variable.parameter.cite"
 
     equationStartRules = [
       beginRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX, MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE)
@@ -163,35 +162,30 @@ define((require, exports, module) ->
       mathStartRule(MATH_LATEX_INLINE_OPENING_REGEX, MATH_LATEX_INLINE_STATE)
     ]
 
-    citationsRules = [
-      {
-        token: [
-          "storage.type"
-          "lparen.ref"
-          "variable.parameter.ref"
-          "rparen"
-        ]
-        regex: "(\\\\(?:ref))({)(\\w*)(})"
-      }
-      {
-        token: [
-          "storage.type"
-          "lparen.cite"
-        ]
-        next: pushState("cite")
-        regex: "(\\\\(?:cite))({)"
-      }
-      # this rule is for `vref` and `vcite` citations
-      {
-        token: [
-          "keyword"
-          "lparen"
-          "variable.parameter"
-          "rparen"
-        ]
-        regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
-      }
-    ]
+    ## This class generates rules for a simple command \commandName{commandBody}
+    ## Generated rules:
+    ##  -- append given stateName to the list of token types of \commandName and left {
+    ##  -- append given instateTokenType to the tokens in the command body
+    ## Rules are appended to the arrays which need to be passed afterwards  to other rules
+    ## or to the state map @$rules
+    class SimpleCommandState
+      constructor: (@commandName, @stateName, @instateTokenType) -> {}
+      generateRules: (openingRules, instateRules) =>
+        opening =
+          token: [
+            "storage.type"
+            "lparen.#{@stateName}"
+          ]
+          next: pushState(@stateName)
+          regex: "(\\\\(?:#{@commandName}))({)"
+        openingRules.push(opening)
+
+        closing =
+          token: "rparen"
+          regex: "(})"
+          next: popState
+        instateRules.push(closing)
+        basicRules(@instateTokenType).forEach((rule) -> instateRules.push(rule))
 
     listStartRules = [
       beginRule(LIST_ITEMIZE_REGEX, LIST_ITEMIZE_STATE)
@@ -209,7 +203,34 @@ define((require, exports, module) ->
     }
 
 
+    citationsRules = []
     @$rules = {}
+
+    citeCommandState = new SimpleCommandState("cite", "cite", "variable.parameter.cite")
+    citationsInstateRules = []
+    citeCommandState.generateRules(citationsRules, citationsInstateRules)
+
+    citationsRules = citationsRules.concat([
+      {
+        token: [
+          "storage.type"
+          "lparen.ref"
+          "variable.parameter.ref"
+          "rparen"
+        ]
+        regex: "(\\\\(?:ref))({)(\\w*)(})"
+      }
+      # this rule is for `vref` and `vcite` citations
+      {
+        token: [
+          "keyword"
+          "lparen"
+          "variable.parameter"
+          "rparen"
+        ]
+        regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
+      }
+    ])
     @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       {
         token: [
@@ -252,14 +273,12 @@ define((require, exports, module) ->
 
     @$rules[MATH_LATEX_DISPLAYED_STATE] = mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX)
 
-    @$rules["cite"] = [{ token: "rparen", regex: "(})", next: popState }]
-
     # if there is no specific token for `state` (like for "start"), then
     # `specificTokenForState[state]` is just undefined, and this is handled
     # inside `basicRules` function
     for state of @$rules
       @$rules[state] = @$rules[state].concat(basicRules(specificTokenForState[state]))
-
+    @$rules[citeCommandState.stateName] = citationsInstateRules
     return
 
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
