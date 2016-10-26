@@ -496,6 +496,8 @@ define((require, exports, module) ->
           sh.renderSelectionUnderCursor()
     }
 
+    exports.SelectionHandler = selectionHandler
+
     editor.commands.addCommand(
       name: "previewLaTeXFormula"
       bindKey: { win: "Alt-p", mac: "Alt-p" }
