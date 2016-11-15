@@ -299,7 +299,10 @@ define((require, exports, module) ->
       # @param {array} response -- list of completions for adding to popup
       ###
       getCompletions: (editor, session, pos, prefix, callback) =>
-        if not @enabled then return
+        if not @enabled
+          callback(null, [])
+          return
+
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
