@@ -8,7 +8,6 @@
     body {
         overflow: hidden;
     }
-
     #editor {
         margin: 0;
         position: absolute;
@@ -17,7 +16,6 @@
         left: 0;
         right: 0;
     }
-
     .typo {
       border-bottom: 1px dotted red;
     }
@@ -210,15 +208,15 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 
 \end{document}</pre>
 
-<script src="../build/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="../build/src-noconflict/ext-language_tools.js"></script>
+<script src="kitchen-sink/require.js"></script>
 <script>
-    ace.require("ace/ext/language_tools");
+require.config({ paths : { "ace" : "../lib/ace" } });
+require(["ace/ace", "ace/ext/language_tools", "ace/ext/katex"], function(ace, langTools, katex) {
+    console.log("KaTeX loaded successfully " + katex);
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
-
     window.onload = function() {
       session._emit("changeSpellingCheckSettings", {
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
@@ -234,11 +232,22 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
         }
       });
     };
+
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: false
+        enableLiveAutocompletion: true
     });
+
+
+    require(["ace/autocomplete/papeeria/tex_completer"], function(completer) {
+      var texCompleter = completer;
+      langTools.addCompleter(texCompleter);
+      console.log("Simple Latex Completer successfully added");
+    });
+
+    langTools.snippetCompleter.getDocTooltip = null;
+});
 </script>
 
 </body>
