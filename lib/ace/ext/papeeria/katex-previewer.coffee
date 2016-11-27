@@ -69,7 +69,9 @@ define((require, exports, module) ->
 
     constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
       @contextPreviewExists = false
-      @ok = true
+      @rangeExists = false
+      @rangeCorrect = false
+      @currentRange = null
 
     getPopoverPosition: (row) -> {
         top: "#{@editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -105,8 +107,12 @@ define((require, exports, module) ->
     updateRange: ->
       { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
       @currentRange = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
-      if not @currentRange
-        @ok = false
+      @rangeExists = true
+      @rangeCorrect = @currentRange?
+
+    destroyRange: ->
+      @currentRange = null
+      @rangeExists = @rangeCorrect = false
 
     updatePopover: ->
       if @contextPreviewExists
@@ -125,14 +131,16 @@ define((require, exports, module) ->
         if @contextPreviewExists
           { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
           curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
-          if curContext != "equation"
-            @destroyContextPreview()
-          else
+
+          if curContext == "equation"
             @updateRange()
-            if @ok
-              @updatePopover()
-            else
-              @destroyContextPreview()
+          else
+            @destroyRange()
+
+          if @rangeExists and @rangeCorrect
+            @updatePopover()
+          else
+            @destroyContextPreview()
 
     delayedUpdatePopover: =>
       curDocLength = @editor.getSession().getLength()
@@ -147,9 +155,6 @@ define((require, exports, module) ->
       @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY)
 
     createContextPreview: ->
-      @updateRange()
-      if not @ok
-        return
       @contextPreviewExists = true
       if not katex?
         initKaTeX(@initPopover)
@@ -160,8 +165,6 @@ define((require, exports, module) ->
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
     destroyContextPreview: ->
-      @currentRange = null
-      @ok = true
       @contextPreviewExists = false
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
@@ -174,14 +177,17 @@ define((require, exports, module) ->
       { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
-      if not @ok and currentContext != "equation"
-        @ok = true
+      if not @rangeExists and currentContext == "equation"
+        @updateRange()
 
-      if @contextPreviewExists and currentContext != "equation"
-        @destroyContextPreview()
+      if @rangeExists and currentContext != "equation"
+        @destroyRange()
 
-      if @ok and not @contextPreviewExists and currentContext == "equation"
+      if @rangeExists and @rangeCorrect and not @contextPreviewExists
         @createContextPreview()
+
+      if not (@rangeExists and @rangeCorrect) and @contextPreviewExists
+        @destroyContextPreview()
     ), 0)
 
 
