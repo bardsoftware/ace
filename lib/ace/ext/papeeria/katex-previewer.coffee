@@ -238,29 +238,6 @@ define((require, exports, module) ->
       @outOfRange = not @range.contains(row, column)
 
 
-  class TokenSequenceFinder
-    constructor: (@tokenSequences) ->
-      @numSequences = @tokenSequences.length
-      @currentIndices = Array(@numSequences)
-      for i in [0...@numSequences]
-        @currentIndices[i] = 0
-
-    progressIndices: (token) ->
-      for i in [0...@numSequences]
-        tokenSequence = @tokenSequences[i]
-        currentIndex = @currentIndices[i]
-        if equalTokens(token, tokenSequence[currentIndex])
-          @currentIndices[i] += 1
-        else
-          @currentIndices[i] = 0
-
-    getMaybeFinishedSequenceId: ->
-      for i in [0...@numSequences]
-        if @currentIndices[i] == @tokenSequences[i].length
-          return i
-      return null
-
-
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCES: [
       [
