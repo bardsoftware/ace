@@ -167,8 +167,6 @@ define((require, exports, module) ->
       @editor.getSession().off("changeScrollTop", @updatePosition)
       @popoverHandler.destroy()
 
-    # TODO: for some reason `{` and `}` inside the equations are not
-    # identified as equation
     handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
         return
