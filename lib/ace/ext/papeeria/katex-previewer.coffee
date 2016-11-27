@@ -89,11 +89,10 @@ define((require, exports, module) ->
       catch e
         return { title: "Error!", content: e }
 
-    initPopover: => setTimeout((=>
+    initPopover: =>
       popoverPosition = @getPopoverPosition(@getEquationEndRow())
       { title: title, content: rendered } = @getCurrentFormula()
       @popoverHandler.show(title, rendered, popoverPosition)
-    ), 0)
 
     getEquationEndRow: ->
       i = @editor.getCursorPosition().row
@@ -106,9 +105,8 @@ define((require, exports, module) ->
 
     updateRange: ->
       { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-      @currentRange = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      { correct: @rangeCorrect, range: @currentRange } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
       @rangeExists = true
-      @rangeCorrect = @currentRange?
 
     destroyRange: ->
       @currentRange = null
@@ -128,23 +126,26 @@ define((require, exports, module) ->
         @lastChangeTime = null
       else
         @currentDelayedUpdateId = null
-        if @contextPreviewExists
-          { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-          curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
+        { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
+        curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
-          if curContext == "equation"
-            @updateRange()
-          else
-            @destroyRange()
+        if curContext == "equation"
+          @updateRange()
+        else
+          @destroyRange()
+          @disableUpdates()
 
-          if @rangeExists and @rangeCorrect
+        if @rangeExists and @rangeCorrect
+          if @contextPreviewExists
             @updatePopover()
           else
-            @destroyContextPreview()
+            @createContextPreview()
+        else
+          @destroyContextPreview()
 
     delayedUpdatePopover: =>
       curDocLength = @editor.getSession().getLength()
-      if curDocLength != @prevDocLength
+      if @contextPreviewExists and curDocLength != @prevDocLength
         setTimeout(@updatePosition, 0)
         @prevDocLength = curDocLength
 
@@ -160,35 +161,40 @@ define((require, exports, module) ->
         initKaTeX(@initPopover)
       else
         @initPopover()
+
+    enableUpdates: ->
       @prevDocLength = @editor.getSession().getLength()
       @editor.on("change", @delayedUpdatePopover)
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
-    destroyContextPreview: ->
-      @contextPreviewExists = false
+    disableUpdates: ->
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
+
+    destroyContextPreview: ->
+      @contextPreviewExists = false
       @popoverHandler.destroy()
 
-    handleCurrentContext: => setTimeout((=>
+    handleCurrentContext: =>
       if @currentDelayedUpdateId?
         return
 
       { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
-      if not @rangeExists and currentContext == "equation"
-        @updateRange()
-
-      if @rangeExists and currentContext != "equation"
+      if @rangeExists and not @currentRange.contains(cursorRow, cursorColumn)
         @destroyRange()
-
-      if @rangeExists and @rangeCorrect and not @contextPreviewExists
-        @createContextPreview()
+        @disableUpdates()
 
       if not (@rangeExists and @rangeCorrect) and @contextPreviewExists
         @destroyContextPreview()
-    ), 0)
+
+      if not @rangeExists and currentContext == "equation"
+        @updateRange()
+        @enableUpdates()
+
+      if @rangeExists and @rangeCorrect and not @contextPreviewExists
+        @createContextPreview()
 
 
   class ConstrainedTokenIterator
@@ -302,6 +308,7 @@ define((require, exports, module) ->
       currentToken = tokenIterator.getCurrentToken()
       { row: prevRow } = tokenIterator.getCurrentTokenPosition()
       # TODO: magic string? importing is hard though
+      boundaryCorrect = true
       while LatexParsingContext.isType(currentToken, "equation")
         currentToken = moveToBoundary()
         if not currentToken?
@@ -309,19 +316,19 @@ define((require, exports, module) ->
         { row: currentRow } = tokenIterator.getCurrentTokenPosition()
         # Empty string always means that equation state is popped from state stack.
         # Unfortunately, empty string is not tokenized at all, and TokenIterator
-        # just skips it altogether, so we have to handle this manually here
-        if currentRow - prevRow > 1
-          return null
+        # just skips it altogether, so we have to handle this manually here.
+        if Math.abs(currentRow - prevRow) > 1
+          boundaryCorrect = false
+          break
         prevRow = currentRow
 
-
       if LatexParsingContext.isType(currentToken, "error")
-        return null
+        boundaryCorrect = false
 
       { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
       curTokenLength = tokenIterator.getCurrentToken().value.length
       return {
-        token: currentToken
+        correct: boundaryCorrect
         row: curTokenRow
         column: curTokenColumn + (if start then curTokenLength else 0)
       }
@@ -333,13 +340,13 @@ define((require, exports, module) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getBoundary(tokenIterator, false)
 
-      if not (start? and end?)
-        return null
+      { correct: startCorrect, row: startRow, column: startColumn } = start
+      { correct: endCorrect,   row: endRow,   column: endColumn } = end
 
-      { token: startToken, row: startRow, column: startColumn } = start
-      { token: endToken, row: endRow, column: endColumn } = end
-
-      return new Range(startRow, startColumn, endRow, endColumn)
+      return {
+        correct: startCorrect and endCorrect
+        range: new Range(startRow, startColumn, endRow, endColumn)
+      }
 
 
   exports.ContextHandler = ContextHandler
