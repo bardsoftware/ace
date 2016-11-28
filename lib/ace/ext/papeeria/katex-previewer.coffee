@@ -298,13 +298,6 @@ define((require, exports, module) ->
         else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
       )
 
-      # if tokenIterator is initially on the empty line, its current token is null
-      if not tokenIterator.getCurrentToken()?
-        moveFromBoundary()
-        # if tokenIterator.getCurrentToken() is still null, then we're at the end of a file
-        if not tokenIterator.getCurrentToken()?
-          return null
-
       currentToken = tokenIterator.getCurrentToken()
       { row: prevRow } = tokenIterator.getCurrentTokenPosition()
       # TODO: magic string? importing is hard though
@@ -312,7 +305,8 @@ define((require, exports, module) ->
       while LatexParsingContext.isType(currentToken, "equation")
         currentToken = moveToBoundary()
         if not currentToken?
-          return null
+          boundaryCorrect = false
+          break
         { row: currentRow } = tokenIterator.getCurrentTokenPosition()
         # Empty string always means that equation state is popped from state stack.
         # Unfortunately, empty string is not tokenized at all, and TokenIterator
@@ -322,21 +316,22 @@ define((require, exports, module) ->
           break
         prevRow = currentRow
 
-      if LatexParsingContext.isType(currentToken, "error")
+      if currentToken? and LatexParsingContext.isType(currentToken, "error")
         boundaryCorrect = false
+
+      moveFromBoundary()
 
       { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
       curTokenLength = tokenIterator.getCurrentToken().value.length
       return {
         correct: boundaryCorrect
         row: curTokenRow
-        column: curTokenColumn + (if start then curTokenLength else 0)
+        column: curTokenColumn + if start then 0 else curTokenLength
       }
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       start = @getBoundary(tokenIterator, true)
-      # TODO: maybe not reset `tokenIterator`
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getBoundary(tokenIterator, false)
 
