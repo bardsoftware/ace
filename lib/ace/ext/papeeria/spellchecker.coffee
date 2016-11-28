@@ -1,39 +1,66 @@
 define( ->
-  # This will be removed and replaced with real data from server.
-  # BTW, this is kinda template for data to send from server.
-  TEST_JSON_TYPOS = {
-    "blablabla": [
-      "blah-blah-blah"
-      "blabber"
-      "blabbed"
-      "salable"
-    ]
-  }
+
+  STATE_COMPLETE = 4
+
+  getJson = (url, data, onSuccess) ->
+    xhr = new XMLHttpRequest()
+    xhr.open("GET", url, true)
+    xhr.onreadystatechange = ->
+      if xhr.readyState == STATE_COMPLETE and xhr.status == 200
+        onSuccess(JSON.parse(xhr.responseText))
+    xhr.send(data)
 
 
-  # Class by now provides words checking (used for highlighting)
-  # and also provides corrections list for a given word.
-  class SpellChecker
-    # By now it's just a stub, but I guess this function will take data from
-    # server somehow in future.
-    # @return {Object} JSON-list of incorrect words.
-    getJson: ->
-      return TEST_JSON_TYPOS
+  class Spellchecker
+    constructor: (@editor) ->
+      @_init(null)
+
+    _init: (language) =>
+      @language = language      # language code, e.g. `en_US`
+      @typos = {}               # set of typos
+      @typosUrl = null          # url used to fetch typos
+      @correctionsUrl = null    # url used to fetch corrections for a word
+      @typosHash = null         # hash used to check whether the typos list has been changed
+
+    _fetchTypos: =>
+      getJson(@typosUrl, null, (typosArray) =>
+        tmp = {}
+        for typo in typosArray
+          tmp[typo] = true
+        @typos = tmp
+        @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
+      )
+
+    onSettingsUpdated: (language) => @_init(language)
+
+    onSpellcheckingSessionUpdated: ({typosHash, typosUrl, suggestionsUrl}) =>
+      @typosUrl = typosUrl
+      @suggestionsUrl = suggestionsUrl
+      if @typosHash != typosHash
+        @typosHash = typosHash
+        @_fetchTypos()
 
     # Check whether token is in JSON incorrect words list.
     # @param {String} token: Token to check.
     # @return {Boolean} False if token is in list, true otherwise.
-    check: (token) =>
-      return not @getJson()[token]
+    check: (token) => token not of @typos
 
-    # Return corrections list for token if exists.
-    # @param {String} token: token to search in corrections list from server.
-    # @return {Array}: list of corrections.
-    getCorrections: (token) ->
-      return if not @check(token) then @getJson()[token]
+    # TODO: document
+    # TODO: fix popup
+    getCorrections: (token, callback) =>
+      if not @check(token)
+        getJson(@suggestionsUrl, {typo: token, language: @language}, callback)
+
+
+  mySpellchecker = null
 
   return {
-    SpellChecker: SpellChecker
-  }
+    getInstance: ->
+      if mySpellchecker?
+        return mySpellchecker
+      else
+       throw new Error("Spellchecker is not initialized")
 
+    setup: (editor) -> mySpellchecker = new Spellchecker(editor)
+  }
 )

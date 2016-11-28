@@ -1,7 +1,7 @@
 define([
   'ace/autocomplete',
   'ace/ext/papeeria/spellchecker'
-  ], (Autocomplete, SpellChecker) ->
+  ], (Autocomplete, Spellchecker) ->
 
   # Returns Range object that describes the current word position.
   # @param {Editor} editor: editor object.
@@ -16,7 +16,7 @@ define([
   # @param {Array} corrections: array of strings with substitution options.
   # @return {Array}: array of JSONs, actually.
   convertCorrectionList = (corrections) ->
-    return ({caption: item, value: item} for item in corrections)
+    return ({caption: item, value: item, meta: item, meta_score: corrections.length - i} for item, i in corrections)
 
   # Get the word under the cursor.
   # @param {Editor} editor: editor object.
@@ -34,8 +34,7 @@ define([
     command =
       name: "spellCheckPopup"
       exec: ->
-        #if not editor.spellCheckPopup
-        editor.spellCheckPopup ?= new PopupManager(editor)
+        editor.spellCheckPopup ?= new PopupManager()
         editor.spellCheckPopup.showPopup(editor)
       bindKey: "Alt-Enter"
     editor.commands.addCommand(command)
@@ -57,29 +56,24 @@ define([
       session = editor.getSession()
       position = editor.getCursorPosition()
       @base = session.doc.createAnchor(position.row, position.column)
-
       word = extractWord(editor)
-      spellChecker = new SpellChecker.SpellChecker()
-      correctionsList = spellChecker.getCorrections(word)
-      if correctionsList
+      Spellchecker.getInstance().getCorrections(word, (correctionsList) ->
         callback(null, {
           prefix: ""
           matches: convertCorrectionList(correctionsList)
           finished: true
         })
+      )
       return true
 
     # Insert "matching" word instead of the current one.
     # In fact we substitute current word with data,
     # not just insert something.
     insertMatch: (data, options) =>
-      if not data
-        data = @popup.getData(@popup.getRow())
-
+      data ?= @popup.getData(@popup.getRow())
       wordRange = getCurrentWordRange(@editor)
       @editor.getSession().replace(wordRange, data.value || data)
       @detach()
-      return
 
   return {
     setup: setup
