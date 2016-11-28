@@ -257,10 +257,24 @@ require([
   "ace/ext/papeeria/highlighter",
   "ace/ext/papeeria/tex_completer",
   "ace/ext/papeeria/spellchecker_popup"
+  , "ace/tokenizer" // TODO: delete x3
+  , "ace/ext/papeeria/papeeria_latex_highlight_rules"
+  , "ace/token_iterator"
   ],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup) {
-    var editor = ace.edit("editor");
-    var session = editor.getSession();
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup
+      , TokenizerModule, PapeeriaLatexHighlightRulesModule, TokenIteratorModule // TODO: delete
+      ) {
+    // TODO: cleanup
+    // var editor = ace.edit("editor");
+    editor = ace.edit("editor");
+    // var session = editor.getSession();
+    session = editor.getSession();
+    // TODO: delete x5
+    TokenIterator = TokenIteratorModule.TokenIterator;
+    Tokenizer = TokenizerModule.Tokenizer;
+    PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRulesModule.PapeeriaLatexHighlightRules;
+    rules = new PapeeriaLatexHighlightRules;
+    tokenizer = new Tokenizer(rules.getRules());
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
 
