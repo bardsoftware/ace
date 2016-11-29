@@ -2,6 +2,7 @@ define( ->
 
   STATE_COMPLETE = 4
 
+
   getJson = (url, data, onSuccess) ->
     xhr = new XMLHttpRequest()
     xhr.open("GET", url, true)
@@ -31,13 +32,27 @@ define( ->
         @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
       )
 
-    onSettingsUpdated: (language) => @_init(language)
+    # Update spellchecking settings
+    # @param {Object} settings: object with the following keys:
+    #        @param {String}           alphabet: language's alphabet, used for tokenizing
+    #        @param {Boolean}          enabled: whether spellchecking is enabled
+    #        @param {String}           language: language code, e.g. `en_US`
+    #        @param {Function}         onSettingsUpdateSuccess: success callback
+    #        @param {Function(String)} onSettingsUpdateError: error callback, takes error description
+    onSettingsUpdated: (settings) =>
+      @_init(settings.language)
+      @editor.getSession()._emit("changeSpellingCheckSettings", settings)
 
-    onSpellcheckingSessionUpdated: ({typosHash, typosUrl, suggestionsUrl}) =>
-      @typosUrl = typosUrl
-      @suggestionsUrl = suggestionsUrl
-      if @typosHash != typosHash
-        @typosHash = typosHash
+    # Update spellchecking session
+    # @param {Object} session: object with fthe following keys:
+    #        @param {String} typosHash: hash used to check whether the typos list has been changed
+    #        @param {String} typosUrl: url used to fetch typos
+    #        @param {String} suggestionsUrl: url used to fetch corrections for a word
+    onSessionUpdated: (session) =>
+      @typosUrl = session.typosUrl
+      @suggestionsUrl = session.suggestionsUrl
+      if @typosHash != session.typosHash
+        @typosHash = session.typosHash
         @_fetchTypos()
 
     # Check whether token is in JSON incorrect words list.
@@ -45,8 +60,9 @@ define( ->
     # @return {Boolean} False if token is in list, true otherwise.
     check: (token) => token not of @typos
 
-    # TODO: document
-    # TODO: fix popup
+    # Get corrections list for a word (given that the word contains a typo) and apply callback to it
+    # @param {String} token: token, supposed to be an actual typo according to the current typos list
+    # @param {Function(Array<String>)} callback: function to be applied to resulting corrections list
     getCorrections: (token, callback) =>
       if not @check(token)
         getJson(@suggestionsUrl, {typo: token, language: @language}, callback)

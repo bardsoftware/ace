@@ -270,15 +270,19 @@ require([
     Spellchecker.setup(editor);
 
     session.on("changeMode", function() {
-      Spellchecker.getInstance().onSpellcheckingSessionUpdated({
+      Spellchecker.getInstance().onSessionUpdated({
         typosHash: "sedf43f9ufuahf4938hf",
         typosUrl: "http://localhost:8000/typos.json",
         suggestionsUrl: "http://localhost:8000/corrections.json"
       });
-      session._emit("changeSpellingCheckSettings", {
+      Spellchecker.getInstance().onSettingsUpdated({
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
-        language: "en_US"
+        language: "en_US",
+        onSettingsUpdateSuccess: function() {},
+        onSettingsUpdateError: function(data) {
+          console.log("Error: " + data.content);
+        }
       });
     });
 
