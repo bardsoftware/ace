@@ -1,7 +1,8 @@
-define([
-  'ace/autocomplete',
-  'ace/ext/papeeria/spellchecker'
-  ], (Autocomplete, Spellchecker) ->
+foo = null
+define((require, exports, module) ->
+
+  Autocomplete = require('ace/autocomplete')
+  Spellchecker = require('ace/ext/papeeria/spellchecker')
 
   # Returns Range object that describes the current word position.
   # @param {Editor} editor: editor object.
