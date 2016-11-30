@@ -1,17 +1,5 @@
 define( ->
 
-  STATE_COMPLETE = 4
-
-
-  getJson = (url, data, onSuccess) ->
-    xhr = new XMLHttpRequest()
-    xhr.open("GET", url, true)
-    xhr.onreadystatechange = ->
-      if xhr.readyState == STATE_COMPLETE and xhr.status == 200
-        onSuccess(JSON.parse(xhr.responseText))
-    xhr.send(data)
-
-
   class Spellchecker
     constructor: (@editor) ->
       @_init(null)
@@ -24,7 +12,7 @@ define( ->
       @typosHash = null         # hash used to check whether the typos list has been changed
 
     _fetchTypos: =>
-      getJson(@typosUrl, null, (typosArray) =>
+      $.getJSON(@typosUrl, null, (typosArray) =>
         tmp = {}
         for typo in typosArray
           tmp[typo] = true
@@ -44,7 +32,7 @@ define( ->
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
 
     # Update spellchecking session
-    # @param {Object} session: object with fthe following keys:
+    # @param {Object} session: object with the following keys:
     #        @param {String} typosHash: hash used to check whether the typos list has been changed
     #        @param {String} typosUrl: url used to fetch typos
     #        @param {String} suggestionsUrl: url used to fetch corrections for a word
@@ -65,7 +53,7 @@ define( ->
     # @param {Function(Array<String>)} callback: function to be applied to resulting corrections list
     getCorrections: (token, callback) =>
       if not @check(token)
-        getJson(@suggestionsUrl, {typo: token, language: @language}, callback)
+        $.getJSON(@suggestionsUrl, {typo: token, language: @language}, callback)
 
 
   mySpellchecker = null

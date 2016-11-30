@@ -332,6 +332,15 @@ require([
     highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
     langTools.snippetCompleter.getDocTooltip = null;
 
+    window.loadCss = function(cssShortName) {
+      var baseUrl = "../lib/ace/ext/" + cssShortName + "/";
+      var link = $("<link>").attr({
+        rel: "stylesheet",
+        href: baseUrl + cssShortName + ".min.css"
+      });
+      $("head").append(link);
+    }
+
     katexPreviewer.setupPreviewer(editor);
 });
 </script>

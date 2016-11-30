@@ -16,7 +16,8 @@ define([
   # @param {Array} corrections: array of strings with substitution options.
   # @return {Array}: array of JSONs, actually.
   convertCorrectionList = (corrections) ->
-    return ({caption: item, value: item, meta: item, meta_score: corrections.length - i} for item, i in corrections)
+    # TODO: get server to provide corrections' source
+    return ({caption: item, value: item, meta: "spellcheck", score: corrections.length - i} for item, i in corrections)
 
   # Get the word under the cursor.
   # @param {Editor} editor: editor object.
