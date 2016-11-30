@@ -3,13 +3,13 @@ define( ->
   class Spellchecker
     constructor: (@editor) ->
       @_init(null)
+      @typosUrl = null          # url used to fetch typos
+      @suggestionsUrl = null    # url used to fetch corrections for a word
+      @typosHash = null         # hash used to check whether the typos list has been changed
 
     _init: (language) =>
       @language = language      # language code, e.g. `en_US`
       @typos = {}               # set of typos
-      @typosUrl = null          # url used to fetch typos
-      @correctionsUrl = null    # url used to fetch corrections for a word
-      @typosHash = null         # hash used to check whether the typos list has been changed
 
     _fetchTypos: =>
       $.getJSON(@typosUrl, null, (typosArray) =>

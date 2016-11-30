@@ -18,7 +18,7 @@ define((require, exports, module) ->
   # @return {Array}: array of JSONs, actually.
   convertCorrectionList = (corrections) ->
     # TODO: get server to provide corrections' source
-    return ({caption: item, value: item, meta: "spellcheck", score: corrections.length - i} for item, i in corrections)
+    return ({caption: item, value: item, meta: "", score: corrections.length - i} for item, i in corrections)
 
   # Get the word under the cursor.
   # @param {Editor} editor: editor object.
