@@ -1,4 +1,4 @@
-foo = null
+foo = null  # force ace to use ace.define
 define((require, exports, module) ->
 
   Autocomplete = require('ace/autocomplete')
@@ -28,26 +28,29 @@ define((require, exports, module) ->
     wordRange = getCurrentWordRange(editor)
     return session.getTextRange(wordRange)
 
+  mySpellcheckerPopup = null
+
 
   # Sets up spellchecker popup and implements some routines
   # to work on current in the editor.
   setup = (editor) ->
-    # Bind PopupManager.showPopup to Alt-Enter editor shortcut.
+    mySpellcheckerPopup = new SpellcheckerCompleter()
+    # Bind SpellcheckerCompleter.showPopup to Alt-Enter editor shortcut.
     command =
       name: "spellCheckPopup"
       exec: ->
-        editor.spellCheckPopup ?= new PopupManager()
-        editor.spellCheckPopup.showPopup(editor)
+        editor.completer = mySpellcheckerPopup
+        editor.completer.showPopup(editor)
       bindKey: "Alt-Enter"
     editor.commands.addCommand(command)
-    return
 
 
   # Autocomplete class extension since it behaves almost the same way.
   # All we need is to override methods responsible for getting data for
   # popup and inserting chosen correction instead of the current word.
-  class PopupManager extends Autocomplete.Autocomplete
+  class SpellcheckerCompleter extends Autocomplete.Autocomplete
     constructor: ->
+      @isDisposable = true
       super()
 
     # "Gather" completions extracting current word
