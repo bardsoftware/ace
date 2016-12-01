@@ -45,6 +45,8 @@
 $xxx$
 \length
 blablabla
+bla
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Journal Article
 % LaTeX Template
@@ -247,7 +249,6 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
 
 <script>
-// var editor;
 // TODO: delete TODOs
 require.config({ paths : { "ace" : "../lib/ace" } });
 require([
@@ -256,33 +257,41 @@ require([
   "ace/ext/papeeria/katex-previewer",
   "ace/ext/papeeria/highlighter",
   "ace/ext/papeeria/tex_completer",
+  "ace/ext/papeeria/spellchecker",
   "ace/ext/papeeria/spellchecker_popup"
   ],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup) {
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, Spellchecker, SpellcheckerPopup) {
     var editor = ace.edit("editor");
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
 
-    var initSpellCheck = function() {
-      session._emit("changeSpellingCheckSettings", {
+    SpellcheckerPopup.setup(editor);
+    Spellchecker.setup(editor);
+
+    session.on("changeMode", function() {
+      Spellchecker.getInstance().onSessionUpdated({
+        typosHash: "sedf43f9ufuahf4938hf",
+        typosUrl: "http://localhost:8000/typos.json",
+        suggestionsUrl: "http://localhost:8000/corrections.json"
+      });
+      Spellchecker.getInstance().onSettingsUpdated({
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
         language: "en_US",
-        onSettingsUpdateSuccess: function() {
-        },
+        onSettingsUpdateSuccess: function() {},
         onSettingsUpdateError: function(data) {
           console.log("Error: " + data.content);
         }
       });
-      spellCheckerPopup.setup(editor);
-    };
-    session.on("changeMode", initSpellCheck);
+    });
+
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: true
     });
+
     candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
       var content, options, session;
       session = editor.getSession();
@@ -312,8 +321,6 @@ require([
       $("#highlightInfo").popover("destroy");
     };
 
-    var texCompleter = new TexCompleter;
-    texCompleter.init(editor);
     var texCompleter = new TexCompleter();
     texCompleter.init(editor);
     langTools.addCompleter(texCompleter);
@@ -324,6 +331,15 @@ require([
     //Initialization bind for highlight brackets.
     highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
     langTools.snippetCompleter.getDocTooltip = null;
+
+    window.loadCss = function(cssShortName) {
+      var baseUrl = "../lib/ace/ext/" + cssShortName + "/";
+      var link = $("<link>").attr({
+        rel: "stylesheet",
+        href: baseUrl + cssShortName + ".min.css"
+      });
+      $("head").append(link);
+    }
 
     katexPreviewer.setupPreviewer(editor);
 });

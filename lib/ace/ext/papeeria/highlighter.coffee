@@ -1,3 +1,5 @@
+foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
+
 define((require, exports, module) ->
     ourOffscreenTextDisplay = null
     Range = require("ace/range").Range
