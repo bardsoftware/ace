@@ -1,7 +1,7 @@
 define( ->
 
   class Spellchecker
-    constructor: (@editor) ->
+    constructor: (@editor, @onError = ->) ->
       @typosUrl = null          # url used to fetch typos
       @suggestionsUrl = null    # url used to fetch corrections for a word
       @typosHash = null         # hash used to check whether the typos list has been changed
@@ -11,7 +11,7 @@ define( ->
       $.getJSON(@typosUrl, null, (typosArray) =>
         @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
         @typosHash = hash
-      )
+      ).fail(@onError)
 
     # Update spellchecking settings
     # @param {Object} settings: object with the following keys:
@@ -39,7 +39,7 @@ define( ->
     # @param {String} token
     # @param {Function(Array<String>)} callback: function to be applied to resulting corrections list
     getCorrections: (token, callback) =>
-      $.getJSON(@suggestionsUrl, {typo: token, language: @language}, callback)
+      $.getJSON(@suggestionsUrl, {typo: token, language: @language}, callback).fail(@onError)
 
 
   mySpellchecker = null
