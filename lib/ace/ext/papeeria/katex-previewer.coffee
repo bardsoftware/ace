@@ -69,7 +69,6 @@ define((require, exports, module) ->
 
     constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
       @contextPreviewExists = false
-      @rangeExists = false
       @rangeCorrect = false
       @currentRange = null
 
@@ -80,9 +79,13 @@ define((require, exports, module) ->
 
     getCurrentFormula: ->
       try
+        if not @currentRange?
+          # TODO: Google Analytics call?
+          throw "Inconsistent state"
+        if not @rangeCorrect
+          throw @message
         { row: startRow, column: startColumn } = @currentRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, startRow, startColumn)
-        tokenIterator.stepForward()
         { params: labelParameters, equation: equationString } = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
         title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
         return { title: title, content: katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS) }
@@ -105,12 +108,12 @@ define((require, exports, module) ->
 
     updateRange: ->
       { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-      { correct: @rangeCorrect, range: @currentRange } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
-      @rangeExists = true
+      { correct: @rangeCorrect, reasons: reasons, range: @currentRange } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      @message = "Invalid equation, reason: #{reasons}"
 
     destroyRange: ->
       @currentRange = null
-      @rangeExists = @rangeCorrect = false
+      @rangeCorrect = false
 
     updatePopover: ->
       if @contextPreviewExists
@@ -126,8 +129,8 @@ define((require, exports, module) ->
         @lastChangeTime = null
       else
         @currentDelayedUpdateId = null
-        { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-        curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
+        cursorPos = @editor.getCursorPosition()
+        curContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
         if curContext == "equation"
           @updateRange()
@@ -135,7 +138,7 @@ define((require, exports, module) ->
           @destroyRange()
           @disableUpdates()
 
-        if @rangeExists and @rangeCorrect
+        if @currentRange?
           if @contextPreviewExists
             @updatePopover()
           else
@@ -163,6 +166,10 @@ define((require, exports, module) ->
         @initPopover()
 
     enableUpdates: ->
+      # `prevDocLength` trick is exclusively for popover position update
+      # Popover position is only changed if we make the new string or
+      # delete one, and we can detect that by checking if the length
+      # of the document is changed
       @prevDocLength = @editor.getSession().getLength()
       @editor.on("change", @delayedUpdatePopover)
       @editor.getSession().on("changeScrollTop", @updatePosition)
@@ -175,26 +182,27 @@ define((require, exports, module) ->
       @contextPreviewExists = false
       @popoverHandler.destroy()
 
-    handleCurrentContext: =>
+    handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
         return
 
       { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
 
-      if @rangeExists and not @currentRange.contains(cursorRow, cursorColumn)
+      if @currentRange? and not @currentRange.contains(cursorRow, cursorColumn)
         @destroyRange()
         @disableUpdates()
 
-      if not (@rangeExists and @rangeCorrect) and @contextPreviewExists
+      if not @currentRange? and @contextPreviewExists
         @destroyContextPreview()
 
-      if not @rangeExists and currentContext == "equation"
+      if not @currentRange? and currentContext == "equation"
         @updateRange()
         @enableUpdates()
 
-      if @rangeExists and @rangeCorrect and not @contextPreviewExists
+      if @currentRange? and not @contextPreviewExists
         @createContextPreview()
+    ), 0)
 
 
   class ConstrainedTokenIterator
@@ -299,13 +307,15 @@ define((require, exports, module) ->
       )
 
       currentToken = tokenIterator.getCurrentToken()
-      { row: prevRow } = tokenIterator.getCurrentTokenPosition()
+      prevRow = tokenIterator.getCurrentTokenPosition().row
       # TODO: magic string? importing is hard though
       boundaryCorrect = true
+      reason = null
       while LatexParsingContext.isType(currentToken, "equation")
         currentToken = moveToBoundary()
         if not currentToken?
           boundaryCorrect = false
+          reason = "end of a document reached while in math environment"
           break
         { row: currentRow } = tokenIterator.getCurrentTokenPosition()
         # Empty string always means that equation state is popped from state stack.
@@ -313,11 +323,13 @@ define((require, exports, module) ->
         # just skips it altogether, so we have to handle this manually here.
         if Math.abs(currentRow - prevRow) > 1
           boundaryCorrect = false
+          reason = "empty line reached while in math environment"
           break
         prevRow = currentRow
 
       if currentToken? and LatexParsingContext.isType(currentToken, "error")
         boundaryCorrect = false
+        reason = "line of whitespaces reached while in math environment"
 
       moveFromBoundary()
 
@@ -325,8 +337,9 @@ define((require, exports, module) ->
       curTokenLength = tokenIterator.getCurrentToken().value.length
       return {
         correct: boundaryCorrect
+        reason: reason
         row: curTokenRow
-        column: curTokenColumn + if start then 0 else curTokenLength
+        column: curTokenColumn + (if start then 0 else curTokenLength)
       }
 
     getEquationRange: (row, column) ->
@@ -335,12 +348,16 @@ define((require, exports, module) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
       end = @getBoundary(tokenIterator, false)
 
-      { correct: startCorrect, row: startRow, column: startColumn } = start
-      { correct: endCorrect,   row: endRow,   column: endColumn } = end
+      reasons = []
+      if not start.correct
+        reasons.push(start.reason)
+      if not end.correct
+        reasons.push(end.reason)
 
       return {
-        correct: startCorrect and endCorrect
-        range: new Range(startRow, startColumn, endRow, endColumn)
+        correct: start.correct and end.correct
+        reasons: reasons.join(", ")
+        range: new Range(start.row, start.column, end.row, end.column)
       }
 
 
