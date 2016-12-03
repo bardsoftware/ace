@@ -84,8 +84,13 @@ define((require, exports, module) ->
           throw "Inconsistent state"
         if not @rangeCorrect
           throw @message
-        { row: startRow, column: startColumn } = @currentRange.start
-        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, startRow, startColumn)
+        start = @currentRange.start
+        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, start.row, start.column)
+        # if equation content starts on the start of a string, the token on `start` position will be the first token
+        # of the equation
+        # if it doesn't, the token on `start` position will be the last token of the start sequence
+        if start.column != 0
+          tokenIterator.stepForward()
         { params: labelParameters, equation: equationString } = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
         title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
         return { title: title, content: katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS) }
