@@ -112,8 +112,12 @@ define((require, exports, module) ->
       @popoverHandler.setPosition(@getPopoverPosition(@getEquationEndRow()))
 
     updateRange: ->
-      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-      { correct: @rangeCorrect, reasons: reasons, range: @currentRange } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+      cursorPos = @editor.getCursorPosition()
+      {
+        correct: @rangeCorrect
+        reasons: reasons
+        range: @currentRange
+      } = @equationRangeHandler.getEquationRange(cursorPos.row, cursorPos.column)
       @message = "Invalid equation, reason: #{reasons}"
 
     destroyRange: ->
@@ -191,8 +195,8 @@ define((require, exports, module) ->
       if @currentDelayedUpdateId?
         return
 
-      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
+      cursorPos = @editor.getCursorPosition()
+      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
       if @currentRange? and not @currentRange.contains(cursorRow, cursorColumn)
         @destroyRange()
@@ -322,7 +326,7 @@ define((require, exports, module) ->
           boundaryCorrect = false
           reason = "end of a document reached while in math environment"
           break
-        { row: currentRow } = tokenIterator.getCurrentTokenPosition()
+        currentRow = tokenIterator.getCurrentTokenPosition().row
         # Empty string always means that equation state is popped from state stack.
         # Unfortunately, empty string is not tokenized at all, and TokenIterator
         # just skips it altogether, so we have to handle this manually here.
@@ -435,8 +439,8 @@ define((require, exports, module) ->
         return
 
       renderSelectionUnderCursor: ->
-        { row: cursorRow, column: cursorColumn } = editor.getCursorPosition()
-        cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
+        cursorPos = editor.getCursorPosition()
+        cursorPosition = editor.renderer.textToScreenCoordinates(cursorPos.row, cursorPos.column)
         popoverPosition = {
           top: "#{cursorPosition.pageY + 24}px"
           left: "#{cursorPosition.pageX}px"
