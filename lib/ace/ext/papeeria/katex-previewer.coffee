@@ -14,7 +14,6 @@ define((require, exports, module) ->
       katex = katexInner
       onLoaded()
     )
-    return
 
 
   equalTokens = (token1, token2) ->
@@ -67,8 +66,10 @@ define((require, exports, module) ->
 
       return { params: labelParameters, equation: tokenValues.join("") }
 
-    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
+    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @I18N) ->
       @contextPreviewExists = false
+      @rangeCorrect = false
+      @currentRange = null
 
     getPopoverPosition: (row) -> {
         top: "#{@editor.renderer.textToScreenCoordinates(row + 2, 1).pageY}px"
@@ -77,26 +78,28 @@ define((require, exports, module) ->
 
     getCurrentFormula: ->
       try
-        if @curStartId != @curEndId
-          startSequence = EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES[@curStartId].slice(0).reverse()
-          startString = (token.value for token in startSequence).join("")
-          endSequence = EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES[@curEndId]
-          endString = (token.value for token in endSequence).join("")
-          return { title: "Error!", content: "Starting and ending sequences don't match: #{startString} and #{endString}" }
-        { row: startRow, column: startColumn } = @curInnerRange.start
-        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @curInnerRange, startRow, startColumn)
-        tokenIterator.stepForward()
+        if not @currentRange?
+          # TODO: Google Analytics call?
+          throw "Inconsistent state"
+        if not @rangeCorrect
+          throw @messages.join("\n")
+        start = @currentRange.start
+        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, start.row, start.column)
+        # if equation content starts on the start of a string, the token on `start` position will be the first token
+        # of the equation
+        # if it doesn't, the token on `start` position will be the last token of the start sequence
+        if start.column != 0
+          tokenIterator.stepForward()
         { params: labelParameters, equation: equationString } = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
         title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
         return { title: title, content: katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS) }
       catch e
         return { title: "Error!", content: e }
 
-    initPopover: => setTimeout((=>
+    initPopover: =>
       popoverPosition = @getPopoverPosition(@getEquationEndRow())
       { title: title, content: rendered } = @getCurrentFormula()
       @popoverHandler.show(title, rendered, popoverPosition)
-    ), 0)
 
     getEquationEndRow: ->
       i = @editor.getCursorPosition().row
@@ -108,13 +111,17 @@ define((require, exports, module) ->
       @popoverHandler.setPosition(@getPopoverPosition(@getEquationEndRow()))
 
     updateRange: ->
-      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
+      cursorPos = @editor.getCursorPosition()
       {
-        outer: @curOuterRange
-        inner: @curInnerRange
-        start: @curStartId
-        end: @curEndId
-      } = @equationRangeHandler.getEquationRange(cursorRow, cursorColumn)
+        correct: @rangeCorrect
+        reasons: reasons
+        range: @currentRange
+      } = @equationRangeHandler.getEquationRange(cursorPos.row, cursorPos.column)
+      @messages = (@I18N.text(reason) for reason in reasons)
+
+    destroyRange: ->
+      @currentRange = null
+      @rangeCorrect = false
 
     updatePopover: ->
       if @contextPreviewExists
@@ -130,18 +137,26 @@ define((require, exports, module) ->
         @lastChangeTime = null
       else
         @currentDelayedUpdateId = null
-        if @contextPreviewExists
-          { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-          curContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
-          if curContext != "equation"
-            @destroyContextPreview()
-          else
-            @updateRange()
+        cursorPos = @editor.getCursorPosition()
+        curContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
+
+        if curContext == "equation"
+          @updateRange()
+        else
+          @destroyRange()
+          @disableUpdates()
+
+        if @currentRange?
+          if @contextPreviewExists
             @updatePopover()
+          else
+            @createContextPreview()
+        else
+          @destroyContextPreview()
 
     delayedUpdatePopover: =>
       curDocLength = @editor.getSession().getLength()
-      if curDocLength != @prevDocLength
+      if @contextPreviewExists and curDocLength != @prevDocLength
         setTimeout(@updatePosition, 0)
         @prevDocLength = curDocLength
 
@@ -152,37 +167,70 @@ define((require, exports, module) ->
       @currentDelayedUpdateId = setTimeout(@updateCallback, ContextHandler.UPDATE_DELAY)
 
     createContextPreview: ->
-      @updateRange()
       @contextPreviewExists = true
       if not katex?
         initKaTeX(@initPopover)
       else
         @initPopover()
+
+    enableUpdates: ->
+      # `prevDocLength` trick is exclusively for popover position update
+      # Popover position is only changed if we make the new string or
+      # delete one, and we can detect that by checking if the length
+      # of the document is changed
       @prevDocLength = @editor.getSession().getLength()
       @editor.on("change", @delayedUpdatePopover)
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
-    destroyContextPreview: ->
-      @curInnerRange = null
-      @curOuterRange = null
-      @contextPreviewExists = false
+    disableUpdates: ->
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
+
+    destroyContextPreview: ->
+      @contextPreviewExists = false
       @popoverHandler.destroy()
 
-    # TODO: for some reason `{` and `}` inside the equations are not
-    # identified as equation
+    # `setTimeout` is not crucial, but it does help in some narrow cases.
+    # The problem is, changing the file in Ace is not always just one event.
+    # For instance, when the cursor is on the very end of a line, and then we
+    # press `Delete`, this happens:
+    #   1)  the cursor is moved to the beginning of the next line
+    #   2)  the character behind the cursor is deleted (basically, `Backspace`),
+    #       thus removing the empty line
+    # Here's the use case where it matters: the math environment is ending with
+    # an empty line. The cursor is on the end of a last line of math environment,
+    # after which the empty line ends math environment. The popover with an error
+    # message is displayed. Here's what happens, when we press `Delete` in that
+    # case, if there is no `setTimeout` here:
+    #   1)  the cursor is moved to the beginning of an empty line
+    #   2)  `handleCurrentContext` triggers: the context is no longer "equation",
+    #       so the popover is destroyed
+    #   3)  `Backspace` action: we remove the empty line, and the cursor is back
+    #       where it was before, but now it is not followed by an empty line
+    #   4)  `handleCurrentContext` is triggered again: this time we are inside
+    #       "equation" context, so we create the new popover
+    # To the user it appears as though the popover is destroyed and then immediately
+    # created again, which is not ideal. And overall, in my opinion, it is much cleaner,
+    # if `handleCurrentContext` triggers **after** all the `change` events.
     handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
         return
 
-      { row: cursorRow, column: cursorColumn } = @editor.getCursorPosition()
-      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorRow, cursorColumn)
+      cursorPos = @editor.getCursorPosition()
+      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
-      if @contextPreviewExists and not @curOuterRange.contains(cursorRow, cursorColumn)
+      if @currentRange? and not @currentRange.contains(cursorPos.row, cursorPos.column)
+        @destroyRange()
+        @disableUpdates()
+
+      if not @currentRange? and @contextPreviewExists
         @destroyContextPreview()
 
-      if not @contextPreviewExists and currentContext == "equation"
+      if not @currentRange? and currentContext == "equation"
+        @updateRange()
+        @enableUpdates()
+
+      if @currentRange? and not @contextPreviewExists
         @createContextPreview()
     ), 0)
 
@@ -238,29 +286,6 @@ define((require, exports, module) ->
       @outOfRange = not @range.contains(row, column)
 
 
-  class TokenSequenceFinder
-    constructor: (@tokenSequences) ->
-      @numSequences = @tokenSequences.length
-      @currentIndices = Array(@numSequences)
-      for i in [0...@numSequences]
-        @currentIndices[i] = 0
-
-    progressIndices: (token) ->
-      for i in [0...@numSequences]
-        tokenSequence = @tokenSequences[i]
-        currentIndex = @currentIndices[i]
-        if equalTokens(token, tokenSequence[currentIndex])
-          @currentIndices[i] += 1
-        else
-          @currentIndices[i] = 0
-
-    getMaybeFinishedSequenceId: ->
-      for i in [0...@numSequences]
-        if @currentIndices[i] == @tokenSequences[i].length
-          return i
-      return null
-
-
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCES: [
       [
@@ -311,157 +336,73 @@ define((require, exports, module) ->
         else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
       )
 
-      # if tokenIterator is initially on the empty line, its current token is null
-      if not tokenIterator.getCurrentToken()?
-        moveFromBoundary()
-        # if tokenIterator.getCurrentToken() is still null, then we're at the end of a file
-        if not tokenIterator.getCurrentToken()?
-          return null
-      else
-        # following loop pushes tokenIterator to the end of
-        # boundary sequence, if it is inside one
-        # The loop isn't executed, if current token is null, because:
-        #   a) we don't need to -- if `tokenIterator` is initially on
-        #      the empty line, then it is guaranteed not to be inside boundary sequence
-        #   b) it can cause bugs -- if we are looking for start sequence and
-        #      `tokenIterator` is initially before the start of a document,
-        #      current token is null, and after stepping forward `tokenIterator` is on the
-        #      start of a document. If start sequence happens to be there, then equation start is
-        #      then found without any problem, whereas in this case null should be returned
-        for boundarySequence in boundarySequences
-          for token in boundarySequence.slice(0).reverse()
-            curToken = tokenIterator.getCurrentToken()
-            if curToken? and equalTokens(token, curToken)
-              moveFromBoundary()
+      currentToken = tokenIterator.getCurrentToken()
+      prevRow = tokenIterator.getCurrentTokenPosition().row
+      # TODO: magic string? importing is hard though
+      boundaryCorrect = true
+      reasonCode = null
+      while LatexParsingContext.isType(currentToken, "equation")
+        currentToken = moveToBoundary()
+        if not currentToken?
+          boundaryCorrect = false
+          reasonCode = "math_preview.error.document_end"
+          break
+        currentRow = tokenIterator.getCurrentTokenPosition().row
+        # Empty string always means that equation state is popped from state stack.
+        # Unfortunately, empty string is not tokenized at all, and TokenIterator
+        # just skips it altogether, so we have to handle this manually here.
+        if Math.abs(currentRow - prevRow) > 1
+          boundaryCorrect = false
+          reasonCode = "math_preview.error.empty_line"
+          break
+        prevRow = currentRow
 
-      tokenSequenceFinder = new TokenSequenceFinder(boundarySequences)
-      while true
-        moveToBoundary()
-        curToken = tokenIterator.getCurrentToken()
-        if not curToken?
-          return null
+      if currentToken? and LatexParsingContext.isType(currentToken, "error")
+        boundaryCorrect = false
+        reasonCode = "math_preview.error.whitespace_line"
 
-        tokenSequenceFinder.progressIndices(curToken)
+      moveFromBoundary()
 
-        maybeFinishedSequenceId = tokenSequenceFinder.getMaybeFinishedSequenceId()
-        if maybeFinishedSequenceId?
-          { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
-          curTokenLength = curToken.value.length
-          finishedSequence = boundarySequences[maybeFinishedSequenceId]
-
-          equationOuterBoundary = {
-            row: curTokenRow
-            column: curTokenColumn + (if start then 0 else curTokenLength)
-          }
-
-          # after finding boundary, tokenIterator is exactly on the last token
-          # of ending sequence, so we step back until we're on the last token
-          # to determine inner boundary
-          for i in [0...finishedSequence.length-1]
-            moveFromBoundary()
-
-          { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
-          curTokenLength = tokenIterator.getCurrentToken().value.length
-
-          equationInnerBoundary = {
-            row: curTokenRow
-            column: curTokenColumn + (if start then curTokenLength else 0)
-          }
-
-          # to move inside the sequence, we move token iterator one more time
-          moveFromBoundary()
-
-          return {
-            id: maybeFinishedSequenceId
-            outer: equationOuterBoundary
-            inner: equationInnerBoundary
-          }
+      { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
+      curTokenLength = tokenIterator.getCurrentToken().value.length
+      return {
+        correct: boundaryCorrect
+        reason: reasonCode
+        row: curTokenRow
+        column: curTokenColumn + (if start then 0 else curTokenLength)
+      }
 
     getEquationRange: (row, column) ->
       tokenIterator = new TokenIterator(@editor.getSession(), row, column)
-      end = @getBoundary(tokenIterator, false)
       start = @getBoundary(tokenIterator, true)
+      tokenIterator = new TokenIterator(@editor.getSession(), row, column)
+      end = @getBoundary(tokenIterator, false)
 
-      if not (start? and end?)
-        return {
-          outer: null
-          inner: null
-          start: null
-          end: null
-        }
+      reasons = []
+      if not start.correct
+        reasons.push(start.reason)
+      if not end.correct
+        reasons.push(end.reason)
 
-      { id: endId, outer: outerEnd, inner: innerEnd } = end
-      { id: startId, outer: outerStart, inner: innerStart } = start
-
-      outerRange = new Range(outerStart.row, outerStart.column, outerEnd.row, outerEnd.column)
-      innerRange = new Range(innerStart.row, innerStart.column, innerEnd.row, innerEnd.column)
       return {
-        outer: outerRange
-        inner: innerRange
-        start: startId
-        end: endId
+        correct: start.correct and end.correct
+        reasons: reasons
+        range: new Range(start.row, start.column, end.row, end.column)
       }
 
 
   exports.ContextHandler = ContextHandler
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
-  exports.setupPreviewer = (editor, popoverHandler, katexLoader) ->
+  exports.setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
     myKatexLoader = katexLoader
-    if not popoverHandler?
-      # Adding CSS for demo formula
-      cssDemoPath = require.toUrl("./katex-demo.css")
-      linkDemo = $("<link>").attr(
-        rel: "stylesheet"
-        href: cssDemoPath
-      )
-      $("head").append(linkDemo)
-
-      # Adding DOM element to place formula into
-      span = $("<span>").attr(
-        id: "formula"
-      )
-      $("body").append(span)
-
-      jqPopoverContainer = $("#formula")
-
-      popoverHandler = {
-        options: {
-          html: true
-          placement: "bottom"
-          trigger: "manual"
-          container: editor.container
-        }
-
-        show: (title, content, position) ->
-          jqPopoverContainer.css(position)
-          popoverHandler.options.content = content
-          popoverHandler.options.title = title
-          jqPopoverContainer.popover(popoverHandler.options)
-          jqPopoverContainer.popover("show")
-          return
-
-        destroy: ->
-          jqPopoverContainer.popover("destroy")
-
-        popoverExists: ->
-          jqPopoverContainer.data()?.popover?
-
-        setContent: (title, content) ->
-          popoverElement = jqPopoverContainer.data().popover.tip()
-          popoverElement.children(".popover-content").html(content)
-          popoverElement.children(".popover-title").text(title)
-
-        setPosition: (position) ->
-          jqPopoverContainer.data().popover.tip().css(position)
-      }
 
     jqEditorContainer = $(editor.container)
     KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler)
+    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler, I18N)
 
     sh = selectionHandler = {
       hideSelectionPopover: ->
@@ -469,11 +410,10 @@ define((require, exports, module) ->
         editor.off("changeSelection", sh.hideSelectionPopover)
         editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
-        return
 
       renderSelectionUnderCursor: ->
-        { row: cursorRow, column: cursorColumn } = editor.getCursorPosition()
-        cursorPosition = editor.renderer.textToScreenCoordinates(cursorRow, cursorColumn)
+        cursorPos = editor.getCursorPosition()
+        cursorPosition = editor.renderer.textToScreenCoordinates(cursorPos.row, cursorPos.column)
         popoverPosition = {
           top: "#{cursorPosition.pageY + 24}px"
           left: "#{cursorPosition.pageX}px"
@@ -486,7 +426,6 @@ define((require, exports, module) ->
         editor.on("changeSelection", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
-        return
 
       createPopover: (editor) ->
         unless contextHandler.contextPreviewExists
@@ -498,6 +437,5 @@ define((require, exports, module) ->
     exports.SelectionHandler = selectionHandler
 
     editor.on("changeSelection", contextHandler.handleCurrentContext)
-    return
   return
 )

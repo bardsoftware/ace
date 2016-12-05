@@ -1,179 +1,181 @@
-[
-  {
-    "author": [
-      {
-        "family": "Rabiner",
-        "given": "Lawrence R."
-      }
-    ],
-    "container-title": "PROCEEDINGS oF tHE iEEE",
-    "id": "Rabiner89atutorial",
-    "issued": {
-      "date-parts": [
-        [
-          1989
+{
+"demo.bib":  [
+    {
+      "author": [
+        {
+          "family": "Rabiner",
+          "given": "Lawrence R."
+        }
+      ],
+      "container-title": "PROCEEDINGS oF tHE iEEE",
+      "id": "Rabiner89atutorial",
+      "issued": {
+        "date-parts": [
+          [
+            1989
+          ]
         ]
-      ]
-    },
-    "page": "257-286",
-    "title": "A tutorial on hidden markov models and selected applications in speech recognition",
-    "type": "paper-conference"
-  },
-  {
-    "ISBN": "978-0-549-49012-8",
-    "author": [
-      {
-        "family": "Lee",
-        "given": "Kyogu"
-      }
-    ],
-    "genre": "PhD thesis",
-    "id": "Lee:2008:SAC:1415439",
-    "issued": {
-      "date-parts": [
-        [
-          2008
-        ]
-      ]
-    },
-    "note": "AAI3302846",
-    "publisher": "Stanford University",
-    "publisher-place": "Stanford, CA, USA",
-    "title": "A system for acoustic chord transcription and key extraction from audio using hidden markov models trained on synthesized audio",
-    "type": "thesis"
-  },
-  {
-    "author": [
-      {
-        "family": "Allen",
-        "given": "Jont B."
-      }
-    ],
-    "container-title": "IEEE Transactions on Acoustics Speech and Signal Processing",
-    "id": "Allen77short-termspectral",
-    "issued": {
-      "date-parts": [
-        [
-          1977
-        ]
-      ]
-    },
-    "page": "235-238",
-    "title": "Short-term spectral analysis, and modification by discrete fourier transform",
-    "type": "article-journal"
-  },
-  {
-    "DOI": "10.1145/1178723.1178727",
-    "ISBN": "1-59593-501-0",
-    "URL": "http://doi.acm.org/10.1145/1178723.1178727",
-    "author": [
-      {
-        "family": "Harte",
-        "given": "Christopher"
       },
-      {
-        "family": "Sandler",
-        "given": "Mark"
-      },
-      {
-        "family": "Gasser",
-        "given": "Martin"
-      }
-    ],
-    "collection-title": "AMCMM ’06",
-    "container-title": "Proceedings of the 1st aCM workshop on audio and music computing multimedia",
-    "id": "Harte:2006:DHC:1178723.1178727",
-    "issued": {
-      "date-parts": [
-        [
-          2006
-        ]
-      ]
+      "page": "257-286",
+      "title": "A tutorial on hidden markov models and selected applications in speech recognition",
+      "type": "paper-conference"
     },
-    "keyword": "audio, harmonic, music, pitch space, segmentation",
-    "page": "21-26",
-    "publisher": "ACM",
-    "publisher-place": "New York, NY, USA",
-    "title": "Detecting harmonic change in musical audio",
-    "type": "paper-conference"
-  },
-  {
-    "author": [
-      {
-        "family": "Стругацкий",
-        "given": "А.Н."
-      },
-      {
-        "family": "Стругацкий",
-        "given": "Б.Н."
-      }
-    ],
-    "editor": [
-      {
-        "family": "Иванов"
-      }
-    ],
-    "id": "saturday_is_monday",
-    "issued": {
-      "date-parts": [
-        [
-          1965
+    {
+      "ISBN": "978-0-549-49012-8",
+      "author": [
+        {
+          "family": "Lee",
+          "given": "Kyogu"
+        }
+      ],
+      "genre": "PhD thesis",
+      "id": "Lee:2008:SAC:1415439",
+      "issued": {
+        "date-parts": [
+          [
+            2008
+          ]
         ]
-      ]
-    },
-    "publisher": "Детская литература",
-    "publisher-place": "М.",
-    "title": "Понедельник начинается в субботу",
-    "type": "book"
-  },
-  {
-    "URL": "http://books.google.ru/books?id=xvXuAAAAMAAJ",
-    "author": [
-      {
-        "family": "Кожевников",
-        "given": "Н.И."
       },
-      {
-        "family": "Краснощекова",
-        "given": "Т.И."
+      "note": "AAI3302846",
+      "publisher": "Stanford University",
+      "publisher-place": "Stanford, CA, USA",
+      "title": "A system for acoustic chord transcription and key extraction from audio using hidden markov models trained on synthesized audio",
+      "type": "thesis"
+    },
+    {
+      "author": [
+        {
+          "family": "Allen",
+          "given": "Jont B."
+        }
+      ],
+      "container-title": "IEEE Transactions on Acoustics Speech and Signal Processing",
+      "id": "Allen77short-termspectral",
+      "issued": {
+        "date-parts": [
+          [
+            1977
+          ]
+        ]
       },
-      {
-        "family": "Шишкин",
-        "given": "Н.Е."
-      }
-    ],
-    "collection-title": "Избранные главы высшей математики для инженеров и студентов втузов. задачи и упражнения",
-    "id": "book:fourier",
-    "issued": {
-      "date-parts": [
-        [
-          1964
-        ]
-      ]
+      "page": "235-238",
+      "title": "Short-term spectral analysis, and modification by discrete fourier transform",
+      "type": "article-journal"
     },
-    "publisher": "Наука",
-    "title": "Ряды и интеграл фурье: Теория поля. аналитические и специальные функции. преобразование лапласа",
-    "title-short": "Ряды и интеграл фурье",
-    "type": "book"
-  },
-  {
-    "URL": "http://goo.gl/1eEF3",
-    "accessed": {},
-    "author": [
-      {
-        "family": "Wikipedia"
-      }
-    ],
-    "id": "wiki:lcd",
-    "issued": {
-      "date-parts": [
-        [
-          2012
+    {
+      "DOI": "10.1145/1178723.1178727",
+      "ISBN": "1-59593-501-0",
+      "URL": "http://doi.acm.org/10.1145/1178723.1178727",
+      "author": [
+        {
+          "family": "Harte",
+          "given": "Christopher"
+        },
+        {
+          "family": "Sandler",
+          "given": "Mark"
+        },
+        {
+          "family": "Gasser",
+          "given": "Martin"
+        }
+      ],
+      "collection-title": "AMCMM ’06",
+      "container-title": "Proceedings of the 1st aCM workshop on audio and music computing multimedia",
+      "id": "Harte:2006:DHC:1178723.1178727",
+      "issued": {
+        "date-parts": [
+          [
+            2006
+          ]
         ]
-      ]
+      },
+      "keyword": "audio, harmonic, music, pitch space, segmentation",
+      "page": "21-26",
+      "publisher": "ACM",
+      "publisher-place": "New York, NY, USA",
+      "title": "Detecting harmonic change in musical audio",
+      "type": "paper-conference"
     },
-    "publisher": "Википедия, свободная энциклопедия",
-    "title": "Наибольший общий делитель",
-    "type": "webpage"
-  }
-]
+    {
+      "author": [
+        {
+          "family": "Стругацкий",
+          "given": "А.Н."
+        },
+        {
+          "family": "Стругацкий",
+          "given": "Б.Н."
+        }
+      ],
+      "editor": [
+        {
+          "family": "Иванов"
+        }
+      ],
+      "id": "saturday_is_monday",
+      "issued": {
+        "date-parts": [
+          [
+            1965
+          ]
+        ]
+      },
+      "publisher": "Детская литература",
+      "publisher-place": "М.",
+      "title": "Понедельник начинается в субботу",
+      "type": "book"
+    },
+    {
+      "URL": "http://books.google.ru/books?id=xvXuAAAAMAAJ",
+      "author": [
+        {
+          "family": "Кожевников",
+          "given": "Н.И."
+        },
+        {
+          "family": "Краснощекова",
+          "given": "Т.И."
+        },
+        {
+          "family": "Шишкин",
+          "given": "Н.Е."
+        }
+      ],
+      "collection-title": "Избранные главы высшей математики для инженеров и студентов втузов. задачи и упражнения",
+      "id": "book:fourier",
+      "issued": {
+        "date-parts": [
+          [
+            1964
+          ]
+        ]
+      },
+      "publisher": "Наука",
+      "title": "Ряды и интеграл фурье: Теория поля. аналитические и специальные функции. преобразование лапласа",
+      "title-short": "Ряды и интеграл фурье",
+      "type": "book"
+    },
+    {
+      "URL": "http://goo.gl/1eEF3",
+      "accessed": {},
+      "author": [
+        {
+          "family": "Wikipedia"
+        }
+      ],
+      "id": "wiki:lcd",
+      "issued": {
+        "date-parts": [
+          [
+            2012
+          ]
+        ]
+      },
+      "publisher": "Википедия, свободная энциклопедия",
+      "title": "Наибольший общий делитель",
+      "type": "webpage"
+    }
+  ]
+}

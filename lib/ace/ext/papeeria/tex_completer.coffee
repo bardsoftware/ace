@@ -1,5 +1,4 @@
 foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
-
 define((require, exports, module) ->
   HashHandler = require("ace/keyboard/hash_handler")
   PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
@@ -300,23 +299,35 @@ define((require, exports, module) ->
       # @param {array} response -- list of completions for adding to popup
       ###
       getCompletions: (editor, session, pos, prefix, callback) =>
+        if not @enabled
+          callback(null, [])
+          return
+
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
         if LatexParsingContext.isType(token, "ref")
           if @referencesUrl? then @refCache.getReferences(@referencesUrl, callback)
-        else if LatexParsingContext.isType(token, "cite")
-          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
+          return
 
-        else switch context
-          when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
-            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-          when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
-            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
-          when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
-          when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
-          else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
-            EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
+        if LatexParsingContext.isType(token, "cite")
+          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
+          return
+
+        if (prefix.length >= 2 and prefix[0] == "\\") or (prefix.length >= 3)
+          switch context
+            when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+              EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
+            when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+              EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
+            when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
+            when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
+            else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+              EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
+           return
+
+        callback(null, [])
+        return
 
   return TexCompleter
 )

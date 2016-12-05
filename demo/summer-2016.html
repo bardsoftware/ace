@@ -35,8 +35,19 @@
       right: 0.4cm;
       z-index: 1;
     }
+    #formula {
+        width: 0;
+        height: 0;
+        text-align: center;
+        font-size: 1.5em;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        right: 0.4cm;
+        z-index: 1;
+    }
     .popover {
-      max-width: 100%;
+        max-width: 100%;
     }
   </style>
 </head>
@@ -45,6 +56,8 @@
 $xxx$
 \length
 blablabla
+bla
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Journal Article
 % LaTeX Template
@@ -247,8 +260,6 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
 
 <script>
-// var editor;
-// TODO: delete TODOs
 require.config({ paths : { "ace" : "../lib/ace" } });
 require([
   "ace/ace",
@@ -256,45 +267,41 @@ require([
   "ace/ext/papeeria/katex-previewer",
   "ace/ext/papeeria/highlighter",
   "ace/ext/papeeria/tex_completer",
+  "ace/ext/papeeria/spellchecker",
   "ace/ext/papeeria/spellchecker_popup"
-  , "ace/tokenizer" // TODO: delete x2
-  , "ace/ext/papeeria/papeeria_latex_highlight_rules"
   ],
-  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, spellCheckerPopup
-      , TokenizerModule, PapeeriaLatexHighlightRulesModule // TODO: delete
-      ) {
-    // TODO: cleanup
-    // var editor = ace.edit("editor");
-    editor = ace.edit("editor");
-    // var session = editor.getSession();
-    session = editor.getSession();
-    // TODO: delete x4
-    Tokenizer = TokenizerModule.Tokenizer;
-    PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRulesModule.PapeeriaLatexHighlightRules;
-    rules = new PapeeriaLatexHighlightRules;
-    tokenizer = new Tokenizer(rules.getRules());
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, Spellchecker, SpellcheckerPopup) {
+    var editor = ace.edit("editor");
+    var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
 
-    var initSpellCheck = function() {
-      session._emit("changeSpellingCheckSettings", {
+    SpellcheckerPopup.setup(editor);
+    Spellchecker.setup(editor);
+
+    session.on("changeMode", function() {
+      Spellchecker.getInstance().onSessionUpdated({
+        typosHash: "sedf43f9ufuahf4938hf",
+        typosUrl: "http://localhost:8000/typos.json",
+        suggestionsUrl: "http://localhost:8000/corrections.json"
+      });
+      Spellchecker.getInstance().onSettingsUpdated({
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
         language: "en_US",
-        onSettingsUpdateSuccess: function() {
-        },
+        onSettingsUpdateSuccess: function() {},
         onSettingsUpdateError: function(data) {
           console.log("Error: " + data.content);
         }
       });
-      spellCheckerPopup.setup(editor);
-    };
-    session.on("changeMode", initSpellCheck);
+    });
+
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: true
     });
+
     candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
       var content, options, session;
       session = editor.getSession();
@@ -324,8 +331,6 @@ require([
       $("#highlightInfo").popover("destroy");
     };
 
-    var texCompleter = new TexCompleter;
-    texCompleter.init(editor);
     var texCompleter = new TexCompleter();
     texCompleter.init(editor);
     langTools.addCompleter(texCompleter);
@@ -337,10 +342,70 @@ require([
     highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
     langTools.snippetCompleter.getDocTooltip = null;
 
+    var jqPopoverContainer = $("#formula");
+
+    var popoverHandler = {
+        options: {
+            html: true,
+            placement: "bottom",
+            trigger: "manual",
+            container: editor.container
+        },
+        show: function(title, content, position) {
+            jqPopoverContainer.css(position);
+            popoverHandler.options.content = content;
+            popoverHandler.options.title = title;
+            jqPopoverContainer.popover(popoverHandler.options);
+            jqPopoverContainer.popover("show");
+        },
+        destroy: function() {
+            return jqPopoverContainer.popover("destroy");
+        },
+        popoverExists: function() {
+            var ref;
+            return ((ref = jqPopoverContainer.data()) != null ? ref.popover : void 0) != null;
+        },
+        setContent: function(title, content) {
+            var popoverElement;
+            popoverElement = jqPopoverContainer.data().popover.tip();
+            popoverElement.children(".popover-content").html(content);
+            return popoverElement.children(".popover-title").text(title);
+        },
+        setPosition: function(position) {
+            return jqPopoverContainer.data().popover.tip().css(position);
+        }
+    };
+
+    var messageMap = {
+        "math_preview.error.document_end": "Error: end of the document reached",
+        "math_preview.error.empty_line": "Error: empty line reached",
+        "math_preview.error.whitespace_line": "Error: line of whitespaces reached"
+    };
+
+    var I18N = {
+        text: function(code) {
+            var ref;
+            return (ref = messageMap[code]) != null ? ref : code;
+        }
+    };
+
+    console.log(katexPreviewer);
+
+    katexPreviewer.setupPreviewer(editor, popoverHandler, null, I18N);
+    window.loadCss = function(cssShortName) {
+      var baseUrl = "../lib/ace/ext/" + cssShortName + "/";
+      var link = $("<link>").attr({
+        rel: "stylesheet",
+        href: baseUrl + cssShortName + ".min.css"
+      });
+      $("head").append(link);
+    }
+
     katexPreviewer.setupPreviewer(editor);
 });
 </script>
 <span id = "highlightInfo"></span>
+<span id="formula"><span>
 
 </body>
 </html>
