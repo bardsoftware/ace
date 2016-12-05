@@ -14,7 +14,6 @@ define((require, exports, module) ->
       katex = katexInner
       onLoaded()
     )
-    return
 
 
   equalTokens = (token1, token2) ->
@@ -397,64 +396,6 @@ define((require, exports, module) ->
   exports.EquationRangeHandler = EquationRangeHandler
   exports.setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
     myKatexLoader = katexLoader
-    if not popoverHandler?
-      # Adding CSS for demo formula
-      cssDemoPath = require.toUrl("./katex-demo.css")
-      linkDemo = $("<link>").attr(
-        rel: "stylesheet"
-        href: cssDemoPath
-      )
-      $("head").append(linkDemo)
-
-      # Adding DOM element to place formula into
-      span = $("<span>").attr(
-        id: "formula"
-      )
-      $("body").append(span)
-
-      jqPopoverContainer = $("#formula")
-
-      popoverHandler = {
-        options: {
-          html: true
-          placement: "bottom"
-          trigger: "manual"
-          container: editor.container
-        }
-
-        show: (title, content, position) ->
-          jqPopoverContainer.css(position)
-          popoverHandler.options.content = content
-          popoverHandler.options.title = title
-          jqPopoverContainer.popover(popoverHandler.options)
-          jqPopoverContainer.popover("show")
-          return
-
-        destroy: ->
-          jqPopoverContainer.popover("destroy")
-
-        popoverExists: ->
-          jqPopoverContainer.data()?.popover?
-
-        setContent: (title, content) ->
-          popoverElement = jqPopoverContainer.data().popover.tip()
-          popoverElement.children(".popover-content").html(content)
-          popoverElement.children(".popover-title").text(title)
-
-        setPosition: (position) ->
-          jqPopoverContainer.data().popover.tip().css(position)
-      }
-
-    if not I18N?
-      messageMap = {
-        "math_preview.error.document_end": "Error: end of the document reached"
-        "math_preview.error.empty_line": "Error: empty line reached"
-        "math_preview.error.whitespace_line": "Error: line of whitespaces reached"
-      }
-
-      I18N = {
-        text: (code) -> messageMap[code] ? code
-      }
 
     jqEditorContainer = $(editor.container)
     KATEX_OPTIONS = { displayMode: true, throwOnError: false }
@@ -469,7 +410,6 @@ define((require, exports, module) ->
         editor.off("changeSelection", sh.hideSelectionPopover)
         editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
-        return
 
       renderSelectionUnderCursor: ->
         cursorPos = editor.getCursorPosition()
@@ -486,7 +426,6 @@ define((require, exports, module) ->
         editor.on("changeSelection", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
         editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
-        return
 
       createPopover: (editor) ->
         unless contextHandler.contextPreviewExists
@@ -505,6 +444,5 @@ define((require, exports, module) ->
     )
 
     editor.on("changeSelection", contextHandler.handleCurrentContext)
-    return
   return
 )
