@@ -67,7 +67,7 @@ define((require, exports, module) ->
 
       return { params: labelParameters, equation: tokenValues.join("") }
 
-    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @getFormulaElement) ->
+    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @I18N) ->
       @contextPreviewExists = false
       @rangeCorrect = false
       @currentRange = null
@@ -83,7 +83,7 @@ define((require, exports, module) ->
           # TODO: Google Analytics call?
           throw "Inconsistent state"
         if not @rangeCorrect
-          throw @message
+          throw @messages.join("\n")
         start = @currentRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, start.row, start.column)
         # if equation content starts on the start of a string, the token on `start` position will be the first token
@@ -118,7 +118,7 @@ define((require, exports, module) ->
         reasons: reasons
         range: @currentRange
       } = @equationRangeHandler.getEquationRange(cursorPos.row, cursorPos.column)
-      @message = "Invalid equation, reason: #{reasons}"
+      @messages = (@I18N.text(reason) for reason in reasons)
 
     destroyRange: ->
       @currentRange = null
@@ -191,6 +191,28 @@ define((require, exports, module) ->
       @contextPreviewExists = false
       @popoverHandler.destroy()
 
+    # `setTimeout` is not crucial, but it does help in some narrow cases.
+    # The problem is, changing the file in Ace is not always just one event.
+    # For instance, when the cursor is on the very end of a line, and then we
+    # press `Delete`, this happens:
+    #   1)  the cursor is moved to the beginning of the next line
+    #   2)  the character behind the cursor is deleted (basically, `Backspace`),
+    #       thus removing the empty line
+    # Here's the use case where it matters: the math environment is ending with
+    # an empty line. The cursor is on the end of a last line of math environment,
+    # after which the empty line ends math environment. The popover with an error
+    # message is displayed. Here's what happens, when we press `Delete` in that
+    # case, if there is no `setTimeout` here:
+    #   1)  the cursor is moved to the beginning of an empty line
+    #   2)  `handleCurrentContext` triggers: the context is no longer "equation",
+    #       so the popover is destroyed
+    #   3)  `Backspace` action: we remove the empty line, and the cursor is back
+    #       where it was before, but now it is not followed by an empty line
+    #   4)  `handleCurrentContext` is triggered again: this time we are inside
+    #       "equation" context, so we create the new popover
+    # To the user it appears as though the popover is destroyed and then immediately
+    # created again, which is not ideal. And overall, in my opinion, it is much cleaner,
+    # if `handleCurrentContext` triggers **after** all the `change` events.
     handleCurrentContext: => setTimeout((=>
       if @currentDelayedUpdateId?
         return
@@ -198,7 +220,7 @@ define((require, exports, module) ->
       cursorPos = @editor.getCursorPosition()
       currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
-      if @currentRange? and not @currentRange.contains(cursorRow, cursorColumn)
+      if @currentRange? and not @currentRange.contains(cursorPos.row, cursorPos.column)
         @destroyRange()
         @disableUpdates()
 
@@ -319,12 +341,12 @@ define((require, exports, module) ->
       prevRow = tokenIterator.getCurrentTokenPosition().row
       # TODO: magic string? importing is hard though
       boundaryCorrect = true
-      reason = null
+      reasonCode = null
       while LatexParsingContext.isType(currentToken, "equation")
         currentToken = moveToBoundary()
         if not currentToken?
           boundaryCorrect = false
-          reason = "end of a document reached while in math environment"
+          reasonCode = "math_preview.error.document_end"
           break
         currentRow = tokenIterator.getCurrentTokenPosition().row
         # Empty string always means that equation state is popped from state stack.
@@ -332,13 +354,13 @@ define((require, exports, module) ->
         # just skips it altogether, so we have to handle this manually here.
         if Math.abs(currentRow - prevRow) > 1
           boundaryCorrect = false
-          reason = "empty line reached while in math environment"
+          reasonCode = "math_preview.error.empty_line"
           break
         prevRow = currentRow
 
       if currentToken? and LatexParsingContext.isType(currentToken, "error")
         boundaryCorrect = false
-        reason = "line of whitespaces reached while in math environment"
+        reasonCode = "math_preview.error.whitespace_line"
 
       moveFromBoundary()
 
@@ -346,7 +368,7 @@ define((require, exports, module) ->
       curTokenLength = tokenIterator.getCurrentToken().value.length
       return {
         correct: boundaryCorrect
-        reason: reason
+        reason: reasonCode
         row: curTokenRow
         column: curTokenColumn + (if start then 0 else curTokenLength)
       }
@@ -365,7 +387,7 @@ define((require, exports, module) ->
 
       return {
         correct: start.correct and end.correct
-        reasons: reasons.join(", ")
+        reasons: reasons
         range: new Range(start.row, start.column, end.row, end.column)
       }
 
@@ -373,7 +395,7 @@ define((require, exports, module) ->
   exports.ContextHandler = ContextHandler
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
-  exports.setupPreviewer = (editor, popoverHandler, katexLoader) ->
+  exports.setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
     myKatexLoader = katexLoader
     if not popoverHandler?
       # Adding CSS for demo formula
@@ -423,12 +445,23 @@ define((require, exports, module) ->
           jqPopoverContainer.data().popover.tip().css(position)
       }
 
+    if not I18N?
+      messageMap = {
+        "math_preview.error.document_end": "Error: end of the document reached"
+        "math_preview.error.empty_line": "Error: empty line reached"
+        "math_preview.error.whitespace_line": "Error: line of whitespaces reached"
+      }
+
+      I18N = {
+        text: (code) -> messageMap[code] ? code
+      }
+
     jqEditorContainer = $(editor.container)
     KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler)
+    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler, I18N)
 
     sh = selectionHandler = {
       hideSelectionPopover: ->
