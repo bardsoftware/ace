@@ -35,8 +35,19 @@
       right: 0.4cm;
       z-index: 1;
     }
+    #formula {
+        width: 0;
+        height: 0;
+        text-align: center;
+        font-size: 1.5em;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        right: 0.4cm;
+        z-index: 1;
+    }
     .popover {
-      max-width: 100%;
+        max-width: 100%;
     }
   </style>
 </head>
@@ -249,7 +260,6 @@ Figueredo, A.~J. and Wolf, P. S.~A. (2009).
 <script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
 
 <script>
-// TODO: delete TODOs
 require.config({ paths : { "ace" : "../lib/ace" } });
 require([
   "ace/ace",
@@ -332,6 +342,56 @@ require([
     highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
     langTools.snippetCompleter.getDocTooltip = null;
 
+    var jqPopoverContainer = $("#formula");
+
+    var popoverHandler = {
+        options: {
+            html: true,
+            placement: "bottom",
+            trigger: "manual",
+            container: editor.container
+        },
+        show: function(title, content, position) {
+            jqPopoverContainer.css(position);
+            popoverHandler.options.content = content;
+            popoverHandler.options.title = title;
+            jqPopoverContainer.popover(popoverHandler.options);
+            jqPopoverContainer.popover("show");
+        },
+        destroy: function() {
+            return jqPopoverContainer.popover("destroy");
+        },
+        popoverExists: function() {
+            var ref;
+            return ((ref = jqPopoverContainer.data()) != null ? ref.popover : void 0) != null;
+        },
+        setContent: function(title, content) {
+            var popoverElement;
+            popoverElement = jqPopoverContainer.data().popover.tip();
+            popoverElement.children(".popover-content").html(content);
+            return popoverElement.children(".popover-title").text(title);
+        },
+        setPosition: function(position) {
+            return jqPopoverContainer.data().popover.tip().css(position);
+        }
+    };
+
+    var messageMap = {
+        "math_preview.error.document_end": "Error: end of the document reached",
+        "math_preview.error.empty_line": "Error: empty line reached",
+        "math_preview.error.whitespace_line": "Error: line of whitespaces reached"
+    };
+
+    var I18N = {
+        text: function(code) {
+            var ref;
+            return (ref = messageMap[code]) != null ? ref : code;
+        }
+    };
+
+    console.log(katexPreviewer);
+
+    katexPreviewer.setupPreviewer(editor, popoverHandler, null, I18N);
     window.loadCss = function(cssShortName) {
       var baseUrl = "../lib/ace/ext/" + cssShortName + "/";
       var link = $("<link>").attr({
@@ -345,6 +405,7 @@ require([
 });
 </script>
 <span id = "highlightInfo"></span>
+<span id="formula"><span>
 
 </body>
 </html>
