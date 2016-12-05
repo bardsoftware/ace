@@ -1,7 +1,8 @@
-define([
-  'ace/autocomplete',
-  'ace/ext/papeeria/spellchecker'
-  ], (Autocomplete, SpellChecker) ->
+foo = null  # force ace to use ace.define
+define((require, exports, module) ->
+
+  Autocomplete = require('ace/autocomplete')
+  Spellchecker = require('ace/ext/papeeria/spellchecker')
 
   # Returns Range object that describes the current word position.
   # @param {Editor} editor: editor object.
@@ -16,7 +17,8 @@ define([
   # @param {Array} corrections: array of strings with substitution options.
   # @return {Array}: array of JSONs, actually.
   convertCorrectionList = (corrections) ->
-    return ({caption: item, value: item} for item in corrections)
+    # TODO: get server to provide corrections' source
+    return ({caption: item, value: item, meta: "", score: corrections.length - i} for item, i in corrections)
 
   # Get the word under the cursor.
   # @param {Editor} editor: editor object.
@@ -26,27 +28,29 @@ define([
     wordRange = getCurrentWordRange(editor)
     return session.getTextRange(wordRange)
 
+  mySpellcheckerPopup = null
+
 
   # Sets up spellchecker popup and implements some routines
   # to work on current in the editor.
   setup = (editor) ->
-    # Bind PopupManager.showPopup to Alt-Enter editor shortcut.
+    mySpellcheckerPopup = new SpellcheckerCompleter()
+    # Bind SpellcheckerCompleter.showPopup to Alt-Enter editor shortcut.
     command =
       name: "spellCheckPopup"
       exec: ->
-        #if not editor.spellCheckPopup
-        editor.spellCheckPopup ?= new PopupManager(editor)
-        editor.spellCheckPopup.showPopup(editor)
+        editor.completer = mySpellcheckerPopup
+        editor.completer.showPopup(editor)
       bindKey: "Alt-Enter"
     editor.commands.addCommand(command)
-    return
 
 
   # Autocomplete class extension since it behaves almost the same way.
   # All we need is to override methods responsible for getting data for
   # popup and inserting chosen correction instead of the current word.
-  class PopupManager extends Autocomplete.Autocomplete
+  class SpellcheckerCompleter extends Autocomplete.Autocomplete
     constructor: ->
+      @isDisposable = true
       super()
 
     # "Gather" completions extracting current word
@@ -57,29 +61,24 @@ define([
       session = editor.getSession()
       position = editor.getCursorPosition()
       @base = session.doc.createAnchor(position.row, position.column)
-
       word = extractWord(editor)
-      spellChecker = new SpellChecker.SpellChecker()
-      correctionsList = spellChecker.getCorrections(word)
-      if correctionsList
+      Spellchecker.getInstance().getCorrections(word, (correctionsList) ->
         callback(null, {
           prefix: ""
           matches: convertCorrectionList(correctionsList)
           finished: true
         })
+      )
       return true
 
     # Insert "matching" word instead of the current one.
     # In fact we substitute current word with data,
     # not just insert something.
     insertMatch: (data, options) =>
-      if not data
-        data = @popup.getData(@popup.getRow())
-
+      data ?= @popup.getData(@popup.getRow())
       wordRange = getCurrentWordRange(@editor)
       @editor.getSession().replace(wordRange, data.value || data)
       @detach()
-      return
 
   return {
     setup: setup
