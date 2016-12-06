@@ -384,6 +384,14 @@ require([
     console.log(katexPreviewer);
 
     katexPreviewer.setupPreviewer(editor, popoverHandler, null, I18N);
+    window.loadCss = function(cssShortName) {
+      var baseUrl = "../lib/ace/ext/" + cssShortName + "/";
+      var link = $("<link>").attr({
+        rel: "stylesheet",
+        href: baseUrl + cssShortName + ".min.css"
+      });
+      $("head").append(link);
+    }
 });
 </script>
 <span id = "highlightInfo"></span>
