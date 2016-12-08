@@ -108,14 +108,14 @@ define((require, exports, module) ->
     findSurroundingBrackets = (session, pos) ->
         allBrackets =
             left: [
-                session.$findOpeningBracket('}', pos, newFilteringIterator('{', '}', session, pos, false))
-                session.$findOpeningBracket(']', pos, newFilteringIterator('[', ']', session, pos, false))
-                session.$findOpeningBracket(')', pos, newFilteringIterator('(', ')', session, pos, false))
+                session.$findOpeningBracketWithIterator('}', pos, newFilteringIterator('{', '}', session, pos, false))
+                session.$findOpeningBracketWithIterator(']', pos, newFilteringIterator('[', ']', session, pos, false))
+                session.$findOpeningBracketWithIterator(')', pos, newFilteringIterator('(', ')', session, pos, false))
             ]
             right: [
-                session.$findClosingBracket('{', pos, newFilteringIterator('{', '}', session, pos, true))
-                session.$findClosingBracket('[', pos, newFilteringIterator('[', ']', session, pos, true))
-                session.$findClosingBracket('(', pos, newFilteringIterator('(', ')',  session, pos, true))
+                session.$findClosingBracketWithIterator('{', pos, newFilteringIterator('{', '}', session, pos, true))
+                session.$findClosingBracketWithIterator('[', pos, newFilteringIterator('[', ']', session, pos, true))
+                session.$findClosingBracketWithIterator('(', pos, newFilteringIterator('(', ')', session, pos, true))
             ]
         leftNearest = null
         rightNearest = null
