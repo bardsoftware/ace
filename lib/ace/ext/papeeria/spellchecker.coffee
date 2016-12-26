@@ -24,16 +24,19 @@ define( ->
       @language = settings.language
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
 
+    # Update typos hash and refresh list of typos iff hash is different
+    # @param {String} typosHash: hash used to check whether the typos list has been changed
+    onHashUpdated: (typosHash) =>
+      if @typosHash != typosHash
+        @_fetchTypos(typosHash)
+
     # Update spellchecking session
-    # @param {Object} session: object with the following keys:
-    #        @param {String} typosHash: hash used to check whether the typos list has been changed
-    #        @param {String} typosUrl: url used to fetch typos
-    #        @param {String} suggestionsUrl: url used to fetch corrections for a word
-    onSessionUpdated: (session) =>
-      @typosUrl = session.typosUrl
-      @suggestionsUrl = session.suggestionsUrl
-      if @typosHash != session.typosHash
-        @_fetchTypos(session.typosHash)
+    # @param {String} typosUrl: url used to fetch typos
+    # @param {String} suggestionsUrl: url used to fetch corrections for a word
+    onSessionUpdated: (typosUrl, suggestionsUrl) =>
+      @typosUrl = typosUrl
+      @suggestionsUrl = suggestionsUrl
+      @_fetchTypos(@typosHash)
 
     # Get corrections list for a word and apply callback to it
     # @param {String} token
