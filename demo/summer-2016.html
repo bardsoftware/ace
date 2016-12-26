@@ -280,11 +280,11 @@ require([
     Spellchecker.setup(editor);
 
     session.on("changeMode", function() {
-      Spellchecker.getInstance().onSessionUpdated({
-        typosHash: "sedf43f9ufuahf4938hf",
-        typosUrl: "http://localhost:8000/typos.json",
-        suggestionsUrl: "http://localhost:8000/corrections.json"
-      });
+      Spellchecker.getInstance().onSessionUpdated(
+        "http://localhost:8000/typos.json",
+        "http://localhost:8000/corrections.json"
+      );
+      Spellchecker.getInstance().onHashUpdated("sedf43f9ufuahf4938hf");
       Spellchecker.getInstance().onSettingsUpdated({
         alphabet: 'abcdefghijklmnopqrstuvwxyz',
         enabled: true,
