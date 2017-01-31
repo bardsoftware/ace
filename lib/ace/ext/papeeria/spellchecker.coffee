@@ -1,28 +1,34 @@
 define( ->
 
+  # @typedef {Function(String, Function(String[]))}         AsyncFetchTypos
+  # @typedef {Function(String, String, Function(String[]))} AsyncFetchSuggestions
+
   class Spellchecker
-    constructor: (@editor, @onError = ->) ->
-      @typosUrl = null          # url used to fetch typos
-      @suggestionsUrl = null    # url used to fetch corrections for a word
-      @typosHash = null         # hash used to check whether the typos list has been changed
-      @language = null          # language code, e.g. `en_US`
+    constructor: (@editor) ->
+      @typosHash = null            # {String} hash used to check whether the typos list has been changed
+      @language = null             # {String} language code, e.g. `en_US`
+      @asyncFetchTypos = ->        # {AsyncFetchTypos}
+      @asyncFetchSuggestions = ->  # {AsyncFetchSuggestions}
 
     _fetchTypos: (hash) =>
-      $.getJSON(@typosUrl, null, (typosArray) =>
+      @asyncFetchTypos(@language, (typosArray) =>
         @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
         @typosHash = hash
-      ).fail(@onError)
+      )
 
     # Update spellchecking settings
     # @param {Object} settings: object with the following keys:
-    #        @param {String}           alphabet: language's alphabet, used for tokenizing
-    #        @param {Boolean}          enabled: whether spellchecking is enabled
-    #        @param {String}           language: language code, e.g. `en_US`
-    #        @param {Function}         onSettingsUpdateSuccess: success callback
-    #        @param {Function(String)} onSettingsUpdateError: error callback, takes error description
+    #        @param {String}                 alphabet: language's alphabet, used for tokenizing
+    #        @param {Boolean}                enabled: whether spellchecking is enabled
+    #        @param {String}                 language: language code, e.g. `en_US`
+    #        @param {AsyncFetchTypos}        asyncFetchTypos: will be called in order to fetch typos asynchronously
+    #        @param {AsyncFetchSuggestions}  asyncFetchSuggestions: will be called in order to fetch suggestions async
     onSettingsUpdated: (settings) =>
       @language = settings.language
+      @asyncFetchTypos = settings.asyncFetchTypos
+      @asyncFetchSuggestions = settings.asyncFetchSuggestions
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
+      @_fetchTypos(null)
 
     # Update typos hash and refresh list of typos iff hash is different
     # @param {String} typosHash: hash used to check whether the typos list has been changed
@@ -30,19 +36,11 @@ define( ->
       if @typosHash != typosHash
         @_fetchTypos(typosHash)
 
-    # Update spellchecking session
-    # @param {String} typosUrl: url used to fetch typos
-    # @param {String} suggestionsUrl: url used to fetch corrections for a word
-    onSessionUpdated: (typosUrl, suggestionsUrl) =>
-      @typosUrl = typosUrl
-      @suggestionsUrl = suggestionsUrl
-      @_fetchTypos(@typosHash)
-
     # Get corrections list for a word and apply callback to it
     # @param {String} token
     # @param {Function(Array<String>)} callback: function to be applied to resulting corrections list
     getCorrections: (token, callback) =>
-      $.getJSON(@suggestionsUrl, {typo: token, language: @language}, callback).fail(@onError)
+      @asyncFetchSuggestions(token, @language, callback)
 
 
   mySpellchecker = null
