@@ -182,9 +182,11 @@ define((require, exports, module) ->
   )
 
 
+  getJsonFromUrl = (url, onSuccess) =>
+    $.getJSON(url).done((data) => onSuccess(data))
 
   processReferenceJson = (json) =>
-    return json.Labels?.map((elem) => {
+    return json?.map((elem) => {
       name: elem.caption
       value: elem.caption
       score: 1000
@@ -212,14 +214,15 @@ define((require, exports, module) ->
     * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
     * return object with fields name, value and (optional) meta, meta_score, score
     ###
-    constructor: (processJson) ->
+    constructor: (getJson, processJson) ->
       @lastFetchedUrl =  ""
       @cache = []
+      @getJson = getJson
       @processJson = processJson
 
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl
-        $.getJSON(url).done((data) =>
+        @getJson(url, (data) =>
           if data?
             @cache = @processJson(data)
             callback(null, @cache)
@@ -247,8 +250,8 @@ define((require, exports, module) ->
 
   class TexCompleter
       constructor: ->
-        @refCache = new CompletionsCache(processReferenceJson)
-        @citeCache = new CompletionsCache(processCitationJson)
+        @refCache = new CompletionsCache(getJsonFromUrl, processReferenceJson)
+        @citeCache = new CompletionsCache(getJsonFromUrl, processCitationJson)
         @enabled = true
 
       init: (editor) =>
