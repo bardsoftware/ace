@@ -18,15 +18,15 @@ define( ->
 
     # Update spellchecking settings
     # @param {Object} settings: object with the following keys:
-    #        @param {String}                 alphabet: language's alphabet, used for tokenizing
-    #        @param {Boolean}                enabled: whether spellchecking is enabled
-    #        @param {String}                 language: language code, e.g. `en_US`
-    #        @param {AsyncFetchTypos}        asyncFetchTypos: will be called in order to fetch typos asynchronously
-    #        @param {AsyncFetchSuggestions}  asyncFetchSuggestions: will be called in order to fetch suggestions async
-    onSettingsUpdated: (settings) =>
-      @language = settings.language
-      @asyncFetchTypos = settings.asyncFetchTypos
-      @asyncFetchSuggestions = settings.asyncFetchSuggestions
+    #        @param {String}         alphabet: language's alphabet, used for tokenizing
+    #        @param {Boolean}        isEnabled: whether spellchecking is enabled
+    #        @param {String}         tag: language IETF tag with underscore, e.g. `en_US`
+    # @param {AsyncFetchTypos}       asyncFetchTypos: will be called in order to fetch typos asynchronously
+    # @param {AsyncFetchSuggestions} asyncFetchSuggestions: will be called in order to fetch suggestions async
+    onSettingsUpdated: (settings, asyncFetchTypos, asyncFetchSuggestions) =>
+      @language = settings.tag
+      @asyncFetchTypos = asyncFetchTypos
+      @asyncFetchSuggestions = asyncFetchSuggestions
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
       @_fetchTypos(null)
 
