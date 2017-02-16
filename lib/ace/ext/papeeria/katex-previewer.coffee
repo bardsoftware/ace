@@ -82,7 +82,7 @@ define((require, exports, module) ->
           # TODO: Google Analytics call?
           throw "Inconsistent state"
         if not @rangeCorrect
-          throw @messages.join("\n")
+          throw "<div style=\"text-align:center\"><p>#{@messages.join("\n")}</p></div>"
         start = @currentRange.start
         tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, start.row, start.column)
         # if equation content starts on the start of a string, the token on `start` position will be the first token
@@ -345,7 +345,7 @@ define((require, exports, module) ->
         currentToken = moveToBoundary()
         if not currentToken?
           boundaryCorrect = false
-          reasonCode = "math_preview.error.document_end"
+          reasonCode = "js.math_preview.error.document_end"
           break
         currentRow = tokenIterator.getCurrentTokenPosition().row
         # Empty string always means that equation state is popped from state stack.
@@ -353,13 +353,13 @@ define((require, exports, module) ->
         # just skips it altogether, so we have to handle this manually here.
         if Math.abs(currentRow - prevRow) > 1
           boundaryCorrect = false
-          reasonCode = "math_preview.error.empty_line"
+          reasonCode = "js.math_preview.error.empty_line"
           break
         prevRow = currentRow
 
       if currentToken? and LatexParsingContext.isType(currentToken, "error")
         boundaryCorrect = false
-        reasonCode = "math_preview.error.whitespace_line"
+        reasonCode = "js.math_preview.error.whitespace_line"
 
       moveFromBoundary()
 
