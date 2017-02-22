@@ -398,53 +398,52 @@ define((require, exports, module) ->
       }
 
 
+  contextHandler = null
+  reset = -> if contextHandler? and contextHandler.contextPreviewExists then contextHandler.destroyEverything()
+
+  sh = SelectionHandler = {
+    hideSelectionPopover: ->
+      popoverHandler.destroy()
+      editor.off("changeSelection", sh.hideSelectionPopover)
+      editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
+      editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
+
+    renderSelectionUnderCursor: ->
+      cursorPos = editor.getCursorPosition()
+      cursorPosition = editor.renderer.textToScreenCoordinates(cursorPos.row, cursorPos.column)
+      popoverPosition = {
+        top: "#{cursorPosition.pageY + 24}px"
+        left: "#{cursorPosition.pageX}px"
+      }
+      content = katex.renderToString(
+        editor.getSelectedText(),
+        KATEX_OPTIONS
+      )
+      popoverHandler.show("Preview", content, popoverPosition)
+      editor.on("changeSelection", sh.hideSelectionPopover)
+      editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
+      editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
+
+    createPopover: (editor) ->
+      if not contextHandler? or not contextHandler.contextPreviewExists
+        if not katex?
+          initKaTeX(sh.renderSelectionUnderCursor)
+          return
+        sh.renderSelectionUnderCursor()
+  }
+
+  setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
+    myKatexLoader = katexLoader
+    equationRangeHandler = new EquationRangeHandler(editor)
+    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
+    editor.on("changeSelection", contextHandler.handleCurrentContext)
+
   exports.ContextHandler = ContextHandler
   exports.ConstrainedTokenIterator = ConstrainedTokenIterator
   exports.EquationRangeHandler = EquationRangeHandler
-  exports.setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
-    myKatexLoader = katexLoader
-
-    jqEditorContainer = $(editor.container)
-    KATEX_OPTIONS = { displayMode: true, throwOnError: false }
-
-    equationRangeHandler = new EquationRangeHandler(editor)
-
-    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
-    exports.reset = -> if contextHandler.contextPreviewExists then contextHandler.destroyEverything()
-
-    sh = selectionHandler = {
-      hideSelectionPopover: ->
-        popoverHandler.destroy()
-        editor.off("changeSelection", sh.hideSelectionPopover)
-        editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
-        editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
-
-      renderSelectionUnderCursor: ->
-        cursorPos = editor.getCursorPosition()
-        cursorPosition = editor.renderer.textToScreenCoordinates(cursorPos.row, cursorPos.column)
-        popoverPosition = {
-          top: "#{cursorPosition.pageY + 24}px"
-          left: "#{cursorPosition.pageX}px"
-        }
-        content = katex.renderToString(
-          editor.getSelectedText(),
-          KATEX_OPTIONS
-        )
-        popoverHandler.show("Preview", content, popoverPosition)
-        editor.on("changeSelection", sh.hideSelectionPopover)
-        editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
-        editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
-
-      createPopover: (editor) ->
-        unless contextHandler.contextPreviewExists
-          unless katex?
-            initKaTeX(sh.renderSelectionUnderCursor)
-            return
-          sh.renderSelectionUnderCursor()
-    }
-    exports.SelectionHandler = selectionHandler
-
-    editor.on("changeSelection", contextHandler.handleCurrentContext)
+  exports.reset = reset
+  exports.SelectionHandler = SelectionHandler
+  exports.setupPreviewer = setupPreviewer
 
   return
 )
