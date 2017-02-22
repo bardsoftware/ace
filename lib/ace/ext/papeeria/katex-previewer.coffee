@@ -438,9 +438,11 @@ define((require, exports, module) ->
     contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
     editor.on("changeSelection", contextHandler.handleCurrentContext)
 
-  exports.ContextHandler = ContextHandler
-  exports.ConstrainedTokenIterator = ConstrainedTokenIterator
-  exports.EquationRangeHandler = EquationRangeHandler
+  exports.testExport = {
+    ContextHandler: ContextHandler
+    ConstrainedTokenIterator: ConstrainedTokenIterator
+    EquationRangeHandler: EquationRangeHandler
+  }
   exports.reset = reset
   exports.SelectionHandler = SelectionHandler
   exports.setupPreviewer = setupPreviewer
