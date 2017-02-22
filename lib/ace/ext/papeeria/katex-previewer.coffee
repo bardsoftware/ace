@@ -66,7 +66,8 @@ define((require, exports, module) ->
 
       return { params: labelParameters, equation: tokenValues.join("") }
 
-    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @I18N) ->
+    constructor: (@editor, @popoverHandler, @equationRangeHandler, @I18N) ->
+      @jqEditorContainer = $(@editor.container)
       @contextPreviewExists = false
       @rangeCorrect = false
       @currentRange = null
@@ -183,12 +184,18 @@ define((require, exports, module) ->
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
     disableUpdates: ->
+      @currentDelayedUpdateId = null
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
 
     destroyContextPreview: ->
       @contextPreviewExists = false
       @popoverHandler.destroy()
+
+    destroyEverything: ->
+      @destroyRange()
+      @disableUpdates()
+      @destroyContextPreview()
 
     # `setTimeout` is not crucial, but it does help in some narrow cases.
     # The problem is, changing the file in Ace is not always just one event.
@@ -402,7 +409,8 @@ define((require, exports, module) ->
 
     equationRangeHandler = new EquationRangeHandler(editor)
 
-    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler, I18N)
+    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
+    exports.reset = -> if contextHandler.contextPreviewExists then contextHandler.destroyEverything()
 
     sh = selectionHandler = {
       hideSelectionPopover: ->
@@ -437,5 +445,6 @@ define((require, exports, module) ->
     exports.SelectionHandler = selectionHandler
 
     editor.on("changeSelection", contextHandler.handleCurrentContext)
+
   return
 )
