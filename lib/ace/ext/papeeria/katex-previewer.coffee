@@ -398,8 +398,8 @@ define((require, exports, module) ->
       }
 
 
-  contextHandler = null
-  reset = -> if contextHandler? and contextHandler.contextPreviewExists then contextHandler.destroyEverything()
+  myContextHandler = null
+  reset = -> if myContextHandler? and myContextHandler.contextPreviewExists then myContextHandler.destroyEverything()
 
   sh = SelectionHandler = {
     hideSelectionPopover: ->
@@ -425,7 +425,7 @@ define((require, exports, module) ->
       editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
 
     createPopover: (editor) ->
-      if not contextHandler? or not contextHandler.contextPreviewExists
+      if not myContextHandler? or not myContextHandler.contextPreviewExists
         if not katex?
           initKaTeX(sh.renderSelectionUnderCursor)
           return
@@ -435,8 +435,8 @@ define((require, exports, module) ->
   setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
     myKatexLoader = katexLoader
     equationRangeHandler = new EquationRangeHandler(editor)
-    contextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
-    editor.on("changeSelection", contextHandler.handleCurrentContext)
+    myContextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
+    editor.on("changeSelection", myContextHandler.handleCurrentContext)
 
   exports.testExport = {
     ContextHandler: ContextHandler
