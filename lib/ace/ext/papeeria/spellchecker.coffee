@@ -1,39 +1,61 @@
 define( ->
-  # This will be removed and replaced with real data from server.
-  # BTW, this is kinda template for data to send from server.
-  TEST_JSON_TYPOS = {
-    "blablabla": [
-      "blah-blah-blah"
-      "blabber"
-      "blabbed"
-      "salable"
-    ]
-  }
+
+  # @typedef {Function(String, Function(String[]))}         AsyncFetchTypos
+  # @typedef {Function(String, String, Function(String[]))} AsyncFetchSuggestions
+
+  class Spellchecker
+    constructor: (@editor) ->
+      @typosHash = null            # {String} hash used to check whether the typos list has been changed
+      @language = null             # {String} language code, e.g. `en_US`
+      @asyncFetchTypos = ->        # {AsyncFetchTypos}
+      @asyncFetchSuggestions = ->  # {AsyncFetchSuggestions}
+
+    _fetchTypos: (hash) =>
+      @asyncFetchTypos(@language, (typosArray) =>
+        @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
+        @typosHash = hash
+      )
+
+    # Update spellchecking settings
+    # @param {Object} settings: object with the following keys:
+    #        @param {String}         alphabet: language's alphabet, used for tokenizing
+    #        @param {Boolean}        isEnabled: whether spellchecking is enabled
+    #        @param {String}         tag: language IETF tag with underscore, e.g. `en_US`
+    # @param {AsyncFetchTypos}       asyncFetchTypos: will be called in order to fetch typos asynchronously
+    # @param {AsyncFetchSuggestions} asyncFetchSuggestions: will be called in order to fetch suggestions async
+    onSettingsUpdated: (settings, asyncFetchTypos, asyncFetchSuggestions) =>
+      @language = settings.tag
+      @asyncFetchTypos = asyncFetchTypos
+      @asyncFetchSuggestions = asyncFetchSuggestions
+      @editor.getSession()._emit("changeSpellingCheckSettings", settings)
+      @_fetchTypos(null)
+
+    # Update typos hash and refresh list of typos iff hash is different
+    # @param {String} typosHash: hash used to check whether the typos list has been changed
+    onHashUpdated: (typosHash) =>
+      if @typosHash != typosHash
+        @_fetchTypos(typosHash)
+
+    # Get corrections list for a word and apply callback to it
+    # @param {String} token
+    # @param {Function(Array<String>)} callback: function to be applied to resulting corrections list
+    getCorrections: (token, callback) =>
+      @asyncFetchSuggestions(token, @language, callback)
 
 
-  # Class by now provides words checking (used for highlighting)
-  # and also provides corrections list for a given word.
-  class SpellChecker
-    # By now it's just a stub, but I guess this function will take data from
-    # server somehow in future.
-    # @return {Object} JSON-list of incorrect words.
-    getJson: ->
-      return TEST_JSON_TYPOS
-
-    # Check whether token is in JSON incorrect words list.
-    # @param {String} token: Token to check.
-    # @return {Boolean} False if token is in list, true otherwise.
-    check: (token) =>
-      return not @getJson()[token]
-
-    # Return corrections list for token if exists.
-    # @param {String} token: token to search in corrections list from server.
-    # @return {Array}: list of corrections.
-    getCorrections: (token) ->
-      return if not @check(token) then @getJson()[token]
+  mySpellchecker = null
 
   return {
-    SpellChecker: SpellChecker
-  }
+    getInstance: ->
+      if mySpellchecker?
+        return mySpellchecker
+      else
+       throw new Error("Spellchecker has not been initialized")
 
+    setup: (editor) ->
+      if mySpellchecker?
+        throw new Error("Spellchecker has already been initialized")
+      else
+        mySpellchecker = new Spellchecker(editor)
+  }
 )

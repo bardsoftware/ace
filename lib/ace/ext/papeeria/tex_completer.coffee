@@ -305,6 +305,7 @@ define((require, exports, module) ->
         if not @enabled
           callback(null, [])
           return
+
         token = session.getTokenAt(pos.row, pos.column)
         context = LatexParsingContext.getContext(session, pos.row, pos.column)
 
