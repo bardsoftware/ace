@@ -33,8 +33,9 @@ define((require, exports, module) ->
 
   # Sets up spellchecker popup and implements some routines
   # to work on current in the editor.
-  setup = (editor) ->
-    mySpellcheckerPopup = new SpellcheckerCompleter()
+  # @param {Function(String, String)} onReplaced -- callback taking typo and replacement
+  setup = (editor, onReplaced) ->
+    mySpellcheckerPopup = new SpellcheckerCompleter(onReplaced)
     # Bind SpellcheckerCompleter.showPopup to Alt-Enter editor shortcut.
     command =
       name: "spellCheckPopup"
@@ -49,7 +50,7 @@ define((require, exports, module) ->
   # All we need is to override methods responsible for getting data for
   # popup and inserting chosen correction instead of the current word.
   class SpellcheckerCompleter extends Autocomplete.Autocomplete
-    constructor: ->
+    constructor: (@onReplaced = ->) ->
       @isDisposable = true
       super()
 
@@ -77,7 +78,10 @@ define((require, exports, module) ->
     insertMatch: (data, options) =>
       data ?= @popup.getData(@popup.getRow())
       wordRange = getCurrentWordRange(@editor)
-      @editor.getSession().replace(wordRange, data.value || data)
+      typo = @editor.getSession().getTextRange(wordRange)
+      replacement = data.value || data
+      @editor.getSession().replace(wordRange, replacement)
+      @onReplaced(typo, replacement)
       @detach()
 
   return {
