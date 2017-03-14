@@ -399,7 +399,7 @@ define((require, exports, module) ->
 
 
   myContextHandler = null
-  reset = -> if myContextHandler? and myContextHandler.contextPreviewExists then myContextHandler.destroyEverything()
+  reset = -> if myContextHandler?.contextPreviewExists then myContextHandler.destroyEverything()
 
   sh = SelectionHandler = {
     hideSelectionPopover: ->
@@ -425,7 +425,7 @@ define((require, exports, module) ->
       editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
 
     createPopover: (editor) ->
-      if not myContextHandler? or not myContextHandler.contextPreviewExists
+      if not myContextHandler?.contextPreviewExists
         if not katex?
           initKaTeX(sh.renderSelectionUnderCursor)
           return
