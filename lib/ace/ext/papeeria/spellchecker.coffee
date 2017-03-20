@@ -18,7 +18,7 @@ define( ->
 
     # Update spellchecking settings
     # @param {Object} settings: object with the following keys:
-    #        @param {String}         alphabet: language's alphabet, used for tokenizing
+    #        @param {String}         punctuation: symbols not considered to be part of a word in given language
     #        @param {Boolean}        isEnabled: whether spellchecking is enabled
     #        @param {String}         tag: language IETF tag with underscore, e.g. `en_US`
     # @param {AsyncFetchTypos}       asyncFetchTypos: will be called in order to fetch typos asynchronously
