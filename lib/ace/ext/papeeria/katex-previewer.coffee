@@ -66,7 +66,8 @@ define((require, exports, module) ->
 
       return { params: labelParameters, equation: tokenValues.join("") }
 
-    constructor: (@editor, @jqEditorContainer, @popoverHandler, @equationRangeHandler, @I18N) ->
+    constructor: (@editor, @popoverHandler, @equationRangeHandler, @I18N) ->
+      @jqEditorContainer = $(@editor.container)
       @contextPreviewExists = false
       @rangeCorrect = false
       @currentRange = null
@@ -183,12 +184,18 @@ define((require, exports, module) ->
       @editor.getSession().on("changeScrollTop", @updatePosition)
 
     disableUpdates: ->
+      @currentDelayedUpdateId = null
       @editor.off("change", @delayedUpdatePopover)
       @editor.getSession().off("changeScrollTop", @updatePosition)
 
     destroyContextPreview: ->
       @contextPreviewExists = false
       @popoverHandler.destroy()
+
+    destroyEverything: ->
+      @destroyRange()
+      @disableUpdates()
+      @destroyContextPreview()
 
     # `setTimeout` is not crucial, but it does help in some narrow cases.
     # The problem is, changing the file in Ace is not always just one event.
@@ -391,51 +398,54 @@ define((require, exports, module) ->
       }
 
 
-  exports.ContextHandler = ContextHandler
-  exports.ConstrainedTokenIterator = ConstrainedTokenIterator
-  exports.EquationRangeHandler = EquationRangeHandler
-  exports.setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
+  myContextHandler = null
+  reset = -> if myContextHandler?.contextPreviewExists then myContextHandler.destroyEverything()
+
+  sh = SelectionHandler = {
+    hideSelectionPopover: ->
+      popoverHandler.destroy()
+      editor.off("changeSelection", sh.hideSelectionPopover)
+      editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
+      editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
+
+    renderSelectionUnderCursor: ->
+      cursorPos = editor.getCursorPosition()
+      cursorPosition = editor.renderer.textToScreenCoordinates(cursorPos.row, cursorPos.column)
+      popoverPosition = {
+        top: "#{cursorPosition.pageY + 24}px"
+        left: "#{cursorPosition.pageX}px"
+      }
+      content = katex.renderToString(
+        editor.getSelectedText(),
+        KATEX_OPTIONS
+      )
+      popoverHandler.show("Preview", content, popoverPosition)
+      editor.on("changeSelection", sh.hideSelectionPopover)
+      editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
+      editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
+
+    createPopover: (editor) ->
+      if not myContextHandler?.contextPreviewExists
+        if not katex?
+          initKaTeX(sh.renderSelectionUnderCursor)
+          return
+        sh.renderSelectionUnderCursor()
+  }
+
+  setupPreviewer = (editor, popoverHandler, katexLoader, I18N) ->
     myKatexLoader = katexLoader
-
-    jqEditorContainer = $(editor.container)
-    KATEX_OPTIONS = { displayMode: true, throwOnError: false }
-
     equationRangeHandler = new EquationRangeHandler(editor)
+    myContextHandler = new ContextHandler(editor, popoverHandler, equationRangeHandler, I18N)
+    editor.on("changeSelection", myContextHandler.handleCurrentContext)
 
-    contextHandler = new ContextHandler(editor, jqEditorContainer, popoverHandler, equationRangeHandler, I18N)
+  exports.testExport = {
+    ContextHandler: ContextHandler
+    ConstrainedTokenIterator: ConstrainedTokenIterator
+    EquationRangeHandler: EquationRangeHandler
+  }
+  exports.reset = reset
+  exports.SelectionHandler = SelectionHandler
+  exports.setupPreviewer = setupPreviewer
 
-    sh = selectionHandler = {
-      hideSelectionPopover: ->
-        popoverHandler.destroy()
-        editor.off("changeSelection", sh.hideSelectionPopover)
-        editor.getSession().off("changeScrollTop", sh.hideSelectionPopover)
-        editor.getSession().off("changeScrollLeft", sh.hideSelectionPopover)
-
-      renderSelectionUnderCursor: ->
-        cursorPos = editor.getCursorPosition()
-        cursorPosition = editor.renderer.textToScreenCoordinates(cursorPos.row, cursorPos.column)
-        popoverPosition = {
-          top: "#{cursorPosition.pageY + 24}px"
-          left: "#{cursorPosition.pageX}px"
-        }
-        content = katex.renderToString(
-          editor.getSelectedText(),
-          KATEX_OPTIONS
-        )
-        popoverHandler.show("Preview", content, popoverPosition)
-        editor.on("changeSelection", sh.hideSelectionPopover)
-        editor.getSession().on("changeScrollTop", sh.hideSelectionPopover)
-        editor.getSession().on("changeScrollLeft", sh.hideSelectionPopover)
-
-      createPopover: (editor) ->
-        unless contextHandler.contextPreviewExists
-          unless katex?
-            initKaTeX(sh.renderSelectionUnderCursor)
-            return
-          sh.renderSelectionUnderCursor()
-    }
-    exports.SelectionHandler = selectionHandler
-
-    editor.on("changeSelection", contextHandler.handleCurrentContext)
   return
 )
