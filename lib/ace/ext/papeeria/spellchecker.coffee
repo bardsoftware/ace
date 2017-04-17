@@ -42,6 +42,10 @@ define( ->
     getCorrections: (token, callback) =>
       @asyncFetchSuggestions(token, @language, callback)
 
+    # Tell if given word is a typo according to current set of typos
+    # TODO: body
+    isWordTypo: (word) => Math.random() > .5
+
 
   mySpellchecker = null
 
