@@ -9,19 +9,11 @@ define((require, exports, module) ->
     value: string
     meta: string
     score: number
-    actionId?: string
+    action?(word: string)
 
   PopupAction
-    id: string
-    asCorrection(): Correction
+    caption: string
     doAction(word: string)
-
-  PopupActionManager
-    # Decide which action should respond to given word and return it
-    actionForWord(word: string): PopupAction
-
-    # Return action corresponding for given correction if any (or null)
-    actionForCorrection(correction: Correction): PopupAction
   ###
 
   Autocomplete = require('ace/autocomplete')
@@ -46,9 +38,17 @@ define((require, exports, module) ->
   ###
   convertCorrectionList = (action, corrections) ->
     list = ({caption: item, value: item, meta: "", score: corrections.length - i} for item, i in corrections)
-    if action
-      list.unshift(action.asCorrection())
+    list.unshift(actionAsCorrection(action))
     return list
+
+  # PopupAction to Correction converter
+  actionAsCorrection = (action) -> {
+    caption: action.caption,
+    value: "",
+    meta: "",
+    score: Number.MAX_VALUE,
+    action: action.doAction
+  }
 
   ###
   Get the word under the cursor.
@@ -68,10 +68,11 @@ define((require, exports, module) ->
   to work on current in the editor.
   @param {Editor} editor -- ace editor
   @param {(String, String) -> void} onReplaced -- callback taking typo and replacement
-  @param {PopupActionManager} actionManager -- autocomplete actions manager
+  @param {PopupAction} blacklistAction -- action to be applied if popup target is not a typo
+  @param {PopupAction} whitelistAction -- action to be applied if popup target is a typo
   ###
-  setup = (editor, onReplaced, actionManager) ->
-    mySpellcheckerPopup = new SpellcheckerCompleter(onReplaced, actionManager)
+  setup = (editor, onReplaced, blacklistAction, whitelistAction) ->
+    mySpellcheckerPopup = new SpellcheckerCompleter(onReplaced, blacklistAction, whitelistAction)
     # Bind SpellcheckerCompleter.showPopup to Alt-Enter editor shortcut.
     command =
       name: "spellCheckPopup"
@@ -82,16 +83,11 @@ define((require, exports, module) ->
     editor.commands.addCommand(command)
 
 
-  # Autocomplete class extension since it behaves almost the same way.
-  # All we need is to override methods responsible for getting data for
-  # popup and inserting chosen correction instead of the current word.
   class SpellcheckerCompleter extends Autocomplete.Autocomplete
-    constructor: (@onReplaced, @actionManager) ->
+    constructor: (@onReplaced, @blacklistAction, @whitelistAction) ->
       @isDisposable = true
       super()
 
-    # "Gather" completions extracting current word
-    # and take it's corrections list as "completions"
     gatherCompletions: (editor, callback) =>
       # For some reason Autocomplete needs this base object, so
       # I propose just not to touch it.
@@ -99,7 +95,7 @@ define((require, exports, module) ->
       position = editor.getCursorPosition()
       @base = session.doc.createAnchor(position.row, position.column)
       word = extractWord(editor)
-      action = @actionManager.actionForWord(word)
+      action = @_chooseAction(word)
       Spellchecker.getInstance().getCorrections(word, (correctionsList) ->
         callback(null, {
           prefix: ""
@@ -109,16 +105,17 @@ define((require, exports, module) ->
       )
       return true
 
-    # Insert "matching" word instead of the current one.
-    # In fact we substitute current word with data,
-    # not just insert something.
+    _chooseAction: (word) =>
+      if Spellchecker.getInstance().isWordTypo(word)
+        return @whitelistAction
+      return @blacklistAction
+
     insertMatch: (data, options) =>
       data ?= @popup.getData(@popup.getRow())
-      action = @actionManager.actionForCorrection(data)
       wordRange = getCurrentWordRange(@editor)
       typo = @editor.getSession().getTextRange(wordRange)
-      if action
-        action.doAction(typo)
+      if data.action
+        data.action(typo)
       else
         replacement = data.value || data
         @editor.getSession().replace(wordRange, replacement)
