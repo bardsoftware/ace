@@ -1,30 +1,28 @@
 foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
 define((require, exports, module) ->
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-  Autocomplete = require('ace/autocomplete')
+  Autocomplete = require("ace/autocomplete")
   util = require("ace/autocomplete/util")
   lang = require("../../lib/lang")
 
   class BiblioFilesCompleter extends Autocomplete.Autocomplete
-    constructor: ->
+    constructor:(@createCallback, @insertCallback, @createLabel) ->
       super()
+
     setFiles: (files) => @files = files
+
     _setCompletions: =>
-      matches = @files.map((file) -> return {
+      matches = @files.map((file) => {
         name: file.name
-        file: file
         meta: file.path
-        completer: this
+        action: => @_doInsert(file)
       })
       matches.push({
-        name: "Create new file"
+        name: @createLabel
         meta: ""
-        completer: this
+        action: => @_doCreate()
       })
       @completions = new Autocomplete.FilteredList(matches)
-
-    setCreateCallback: (callback) => @createCallback = callback
-    setInsertCallback: (callback) => @insertCallback = callback
 
     _doInsert: (file) =>
       @insertCallback?(file)
@@ -39,16 +37,11 @@ define((require, exports, module) ->
       @openPopup(@editor, prefix, keepPopupPosition)
 
     insertMatch: (editor, data) =>
-      if not data?
-        data = @popup.getData(@popup.getRow())
-      if not data?
+      data ?= @popup.getData(@popup.getRow())
+      if not data? or not data.action?
         @detach()
         return
-
-      if data.name == "Create new file"
-        @_doCreate()
-      else
-        @_doInsert(data.file)
+      data.action()
 
     detach: =>
       @editor.completer = new Autocomplete.Autocomplete()
@@ -56,59 +49,59 @@ define((require, exports, module) ->
 
 
   class BiblioCompleter
-    constructor: () ->
-      @enabledMendeley = false
-
-    setEnabledMendeley: (enabledMendeley) => @enabledMendeley = enabledMendeley
+    constructor: (@enabledMendeley, @searchLabel, @importLabel, @importSource, @searchCallback) ->
+      @isDisposable = true
 
     getCompletions: (editor, session, pos, prefix, callback) =>
       token = session.getTokenAt(pos.row, pos.column)
 
       if LatexParsingContext.isType(token, "cite")
-        default_result = [{
-          name: "Search"
-          snippet: "Search " + prefix
+        defaultResult = [{
+          name: @searchLabel
+          snippet: @searchLabel + prefix
           meta: ""
           score: 1000
           meta_score: 10
           completer: this
+          action: (editor) => @_doSearch(editor)
         }]
         # We don't show Import option to free users
-        if @enabledMendeley
-          default_result.push({
-            name: "Import"
-            snippet: "Import " + prefix
-            meta: "from Mendeley"
+        if @enabledMendeley?
+          defaultResult.push({
+            name: @importLabel
+            snippet: @importLabel + prefix
+            meta: @importSource
             score: 1000
             meta_score: 10
             completer: this
+            action: (editor) => @importCallback?()
           })
 
-        callback(null, default_result)
+        callback(null, defaultResult)
         return
 
       callback(null, [])
       return
 
-    # Will be called when users choose a Search option
-    setSearchCallback: (callback) => @searchCallback = callback
     # Will be called when users choose an Import option
     setImportCallback: (callback) => @importCallback = callback
+
+    _doSearch: (editor) =>
+      prefix = util.getCompletionPrefix(editor)
+      @searchCallback?({
+        query: prefix
+        # this callback will be called when user clicks on the search result to insert a bibtex entry
+        # so it just opens a passed popup if any and closes an existing one otherwise
+        insertCallback: (completer) =>
+          completer?.showPopup(editor)
+      })
+
     insertMatch: (editor, data) =>
       editor.completer.detach()
       editor.completer = null
-      if data.name == "Search"
-        prefix = util.getCompletionPrefix(editor)
-        @searchCallback?({
-          query: prefix
-          # this callback will be called when user clicks on the search result to insert a bibtex entry
-          # so it just opens a passed popup if any and closes an existing one otherwise
-          insertCallback: (completer) =>
-            completer?.showPopup(editor)
-        })
-        return
-      if data.name == "Import"
-        @importCallback?()
+      if data? and data.action?
+        data.action(editor)
+
 
   return {
     BiblioCompleter: BiblioCompleter
