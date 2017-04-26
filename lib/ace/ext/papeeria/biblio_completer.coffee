@@ -6,7 +6,7 @@ define((require, exports, module) ->
   lang = require("../../lib/lang")
 
   class BiblioFilesCompleter extends Autocomplete.Autocomplete
-    constructor:(@createCallback, @insertCallback, @createLabel) ->
+    constructor: (@createCallback, @insertCallback, @createLabel) ->
       super()
 
     setFiles: (files) => @files = files
@@ -43,14 +43,20 @@ define((require, exports, module) ->
         return
       data.action()
 
+    # we should hide the popup, if user starts typing
+    changeListener: () =>
+      @detach()
+
     detach: =>
       @editor.completer = new Autocomplete.Autocomplete()
       super()
 
 
+  DEFAULT_SCORE = 1000
+  DEFAULT_META_SCORE = 10
+
   class BiblioCompleter
-    constructor: (@enabledMendeley, @searchLabel, @importLabel, @importSource, @searchCallback) ->
-      @isDisposable = true
+    constructor: (@isMendeleyEnabled, @searchLabel, @importLabel, @importSource, @searchCallback) -> {}
 
     getCompletions: (editor, session, pos, prefix, callback) =>
       token = session.getTokenAt(pos.row, pos.column)
@@ -60,19 +66,21 @@ define((require, exports, module) ->
           name: @searchLabel
           snippet: @searchLabel + prefix
           meta: ""
-          score: 1000
-          meta_score: 10
+          score: DEFAULT_SCORE
+          meta_score: DEFAULT_META_SCORE
+          # force Autocomplete to use our custom insertMatch for this option
           completer: this
           action: (editor) => @_doSearch(editor)
         }]
         # We don't show Import option to free users
-        if @enabledMendeley?
+        if @isMendeleyEnabled?
           defaultResult.push({
             name: @importLabel
             snippet: @importLabel + prefix
             meta: @importSource
-            score: 1000
-            meta_score: 10
+            score: DEFAULT_SCORE
+            meta_score: DEFAULT_META_SCORE
+            # force Autocomplete to use our custom insertMatch for this option
             completer: this
             action: (editor) => @importCallback?()
           })
