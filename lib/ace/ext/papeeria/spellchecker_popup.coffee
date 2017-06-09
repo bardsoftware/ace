@@ -88,6 +88,9 @@ define((require, exports, module) ->
       @isDisposable = true
       super()
 
+    # we should hide the popup, if user starts typing
+    changeListener: () => @detach()
+
     gatherCompletions: (editor, callback) =>
       # For some reason Autocomplete needs this base object, so
       # I propose just not to touch it.
