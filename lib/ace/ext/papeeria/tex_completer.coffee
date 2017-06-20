@@ -209,6 +209,9 @@ define((require, exports, module) ->
         )
     return result
 
+  processFilesJson = (json) =>
+    return json
+
   class CompletionsCache
     ###
     * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
@@ -252,6 +255,7 @@ define((require, exports, module) ->
       constructor: ->
         @refCache = new CompletionsCache(getJsonFromUrl, processReferenceJson)
         @citeCache = new CompletionsCache(getJsonFromUrl, processCitationJson)
+        @filesCache = new CompletionsCache(getJsonFromUrl, processFilesJson)
         @enabled = true
 
       init: (editor) =>
@@ -279,6 +283,8 @@ define((require, exports, module) ->
       setEnabled: (enabled) => @enabled = enabled
       setReferencesUrl: (url) => @referencesUrl = url
       setCitationsUrl: (url) => @citationsUrl = url
+      setFilesUrl: (url) => @filesUrl = url
+      setIncludeCallback: (callback) => @includeCallback = callback
 
       completeLinebreak: (editor) =>
         cursor = editor.getCursorPosition();
@@ -314,7 +320,16 @@ define((require, exports, module) ->
           return
 
         if LatexParsingContext.isType(token, "cite")
-          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
+          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, (err, cites) =>
+            if @filesUrl? then @filesCache.getReferences(@filesUrl, (err, files) =>
+                cites.map((cite) =>
+                    if !(cite.meta in files)
+                      cite.meta_score = 9
+                      cite.action = (editor) => @includeCallback?(cite.meta)
+                )
+                callback(null, cites)
+            )
+          )
           return
 
         if (prefix.length >= 2 and prefix[0] == "\\") or (prefix.length >= 3)
@@ -327,7 +342,7 @@ define((require, exports, module) ->
             when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
             else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-           return
+          return
 
         callback(null, [])
         return
