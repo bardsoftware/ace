@@ -209,9 +209,6 @@ define((require, exports, module) ->
         )
     return result
 
-  processFilesJson = (json) =>
-    return json
-
   class CompletionsCache
     ###
     * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
@@ -255,7 +252,7 @@ define((require, exports, module) ->
       constructor: ->
         @refCache = new CompletionsCache(getJsonFromUrl, processReferenceJson)
         @citeCache = new CompletionsCache(getJsonFromUrl, processCitationJson)
-        @filesCache = new CompletionsCache(getJsonFromUrl, processFilesJson)
+        @filesCache = new CompletionsCache(getJsonFromUrl, (json) -> json)
         @enabled = true
 
       init: (editor) =>
@@ -321,14 +318,24 @@ define((require, exports, module) ->
 
         if LatexParsingContext.isType(token, "cite")
           if @citationsUrl? then @citeCache.getReferences(@citationsUrl, (err, cites) =>
-            if @filesUrl? then @filesCache.getReferences(@filesUrl, (err, files) =>
+            if @filesUrl?
+              # After we get a list of cite autocompletion we want to extract entries from already included biblio files
+              # Let's retrieve a list of files included to the current target from the filesUrl
+              @filesCache.getReferences(@filesUrl, (err, files) =>
+                # Once we have a list of files included to the compilation we can find citation keys that
+                # are (not) included and treat them differently
                 cites.map((cite) =>
                     if !(cite.meta in files)
+                      # We want to show included cite keys first, so let's decrease the meta_score for other entries
                       cite.meta_score = 9
+                      # Calls the provided custom callback when user inserts a key from a non-included file
+                      # (e.g. offers to add the appropriate bib-file to \bibliography tag)
                       cite.action = (editor) => @includeCallback?(cite.meta)
                 )
                 callback(null, cites)
-            )
+              )
+            else
+              callback(null, cites)
           )
           return
 
