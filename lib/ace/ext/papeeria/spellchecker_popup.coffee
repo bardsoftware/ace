@@ -26,9 +26,8 @@ define((require, exports, module) ->
   ###
   getCurrentWordRange = (editor) ->
     session = editor.getSession()
-    row = editor.getCursorPosition().row
-    col = editor.getCursorPosition().column
-    return session.getWordRange(row, col)
+    {row, column} = editor.getCursorPosition()
+    return session.getWordRange(row, column)
 
   ###
   Convert an array of string to popup-eligible structure.
@@ -44,7 +43,7 @@ define((require, exports, module) ->
   # PopupAction to Correction converter
   actionAsCorrection = (action) -> {
     caption: action.caption,
-    value: "",
+    value: action.caption,
     meta: "",
     score: Number.MAX_VALUE,
     action: action.doAction
