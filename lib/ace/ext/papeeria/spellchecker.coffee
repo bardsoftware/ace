@@ -3,16 +3,25 @@ define( ->
   # @typedef {Function(String, Function(String[]))}         AsyncFetchTypos
   # @typedef {Function(String, String, Function(String[]))} AsyncFetchSuggestions
 
+  makeSet = (array) ->
+    set = {}
+    for v in array
+      set[v] = true
+    return set
+
+
   class Spellchecker
     constructor: (@editor) ->
       @typosHash = null            # {String} hash used to check whether the typos list has been changed
       @language = null             # {String} language code, e.g. `en_US`
       @asyncFetchTypos = ->        # {AsyncFetchTypos}
       @asyncFetchSuggestions = ->  # {AsyncFetchSuggestions}
+      @typos = {}                  # {Map<String, ?>} object whose keys are typos
 
     _fetchTypos: (hash) =>
       @asyncFetchTypos(@language, (typosArray) =>
         @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
+        @typos = makeSet(typosArray)
         @typosHash = hash
       )
 
@@ -43,8 +52,7 @@ define( ->
       @asyncFetchSuggestions(token, @language, callback)
 
     # Tell if given word is a typo according to current set of typos
-    # TODO: body
-    isWordTypo: (word) => Math.random() > .5
+    isWordTypo: (word) => !!@typos[word]
 
 
   mySpellchecker = null
