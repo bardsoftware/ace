@@ -3,17 +3,10 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
-    EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
-    LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-    ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
-    TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
-    FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
-
-    EQUATION_TOKEN_TYPE = PapeeriaLatexHighlightRules.EQUATION_TOKEN_TYPE
-    LIST_TOKEN_TYPE = PapeeriaLatexHighlightRules.LIST_TOKEN_TYPE
-    ENVIRONMENT_TOKEN_TYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKEN_TYPE
-    FIGURE_TOKEN_TYPE = PapeeriaLatexHighlightRules.FIGURE_TOKEN_TYPE
-    TABLE_TOKEN_TYPE = PapeeriaLatexHighlightRules.TABLE_TOKEN_TYPE
+    {
+        EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE,
+        EQUATION_TOKEN_TYPE, LIST_TOKEN_TYPE, FIGURE_TOKEN_TYPE, ENVIRONMENT_TOKEN_TYPE, TABLE_TOKEN_TYPE
+    } = PapeeriaLatexHighlightRules
 
     TOKEN_TYPES = [EQUATION_TOKEN_TYPE, LIST_TOKEN_TYPE, FIGURE_TOKEN_TYPE, ENVIRONMENT_TOKEN_TYPE, TABLE_TOKEN_TYPE]
     STATES =  [EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE]
