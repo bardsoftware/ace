@@ -99,8 +99,8 @@ define((require, exports, module) ->
         addToken = ""
       return [
         { token: "comment" + addToken, regex: "%.*$" }
-        { token: "lparen" + addToken, regex: "[[({]" }
-        { token: "rparen" + addToken, regex: "[\\])}]" }
+        { token: "paren.lparen" + addToken, regex: "[[({]" }
+        { token: "paren.rparen" + addToken, regex: "[\\])}]" }
         { token: "storage.type" + addToken, regex: "\\\\[a-zA-Z]+" }
         { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?" }
         { defaultToken : "text" + addToken }
@@ -110,9 +110,9 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:begin))({)(" + text + ")(})"
         next: pushState(pushedState)
@@ -122,9 +122,9 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:end))({)(" + text + ")(})"
 
@@ -174,14 +174,14 @@ define((require, exports, module) ->
         opening =
           token: [
             "storage.type"
-            "lparen.#{@stateName}"
+            "paren.lparen.#{@stateName}"
           ]
           next: pushState(@stateName)
           regex: "(\\\\(?:#{@commandName}))({)"
         openingRules.push(opening)
 
         closing =
-          token: "rparen"
+          token: "paren.rparen"
           regex: "(})"
           next: popState
         instateRules.push(closing)
@@ -195,9 +195,9 @@ define((require, exports, module) ->
     genericEnvironmentRule = {
       token: [
         "storage.type"
-        "lparen.environment"
+        "paren.lparen.environment"
         "variable.parameter.environment"
-        "rparen"
+        "paren.rparen"
       ]
       regex: "(\\\\(?:begin|end))({)(\\w*)(})"
     }
@@ -214,9 +214,9 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "lparen.ref"
+          "paren.lparen.ref"
           "variable.parameter.ref"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:ref))({)(\\w*)(})"
       }
@@ -224,9 +224,9 @@ define((require, exports, module) ->
       {
         token: [
           "keyword"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
@@ -235,12 +235,12 @@ define((require, exports, module) ->
       {
         token: [
           "keyword"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
-          "lparen"
+          "paren.rparen"
+          "paren.lparen"
           "storage.type"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
       }
