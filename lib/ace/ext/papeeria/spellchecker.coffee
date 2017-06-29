@@ -54,8 +54,10 @@ define( ->
 
     # Cache given dictionary change so that it appears on screen immediately
     # without waiting for the "get new hash, download new typos" cycle
-    addWordToDictionaryCache: (word, blacklistNotWhitelist) =>
-      @dictionaryCache.addWord(word, blacklistNotWhitelist)
+    # @param word {String}         word being added to dictionary
+    # @param toBlacklist {Boolean} whether we should add the word to blacklist (true) or to whitelist (false)
+    addWordToDictionaryCache: (word, toBlacklist) =>
+      @dictionaryCache.addWord(word, toBlacklist)
       @dictionaryCache.apply(@typos)
       @_sendTyposToAce()
 
@@ -75,7 +77,7 @@ define( ->
     constructor: ->
       @storage = {}
 
-    addWord: (word, blacklistNotWhitelist) => @storage[word] = blacklistNotWhitelist
+    addWord: (word, toBlacklist) => @storage[word] = toBlacklist
 
     apply: (typos) =>
       for w, v of @storage
