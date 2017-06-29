@@ -19,10 +19,12 @@ define( ->
       @asyncFetchTypos = ->        # {AsyncFetchTypos}
       @asyncFetchSuggestions = ->  # {AsyncFetchSuggestions}
       @typos = {}                  # {Map<String, ?>} object whose keys are typos
+      @dictionaryCache = new DictionaryCache()
 
     _fetchTypos: (hash) =>
       @asyncFetchTypos(@language, (typosArray) =>
         @typos = makeSet(typosArray)
+        @dictionaryCache.apply(@typos)
         @_sendTyposToAce()
         @typosHash = hash
       )
@@ -35,6 +37,9 @@ define( ->
     # @param {AsyncFetchTypos}       asyncFetchTypos: will be called in order to fetch typos asynchronously
     # @param {AsyncFetchSuggestions} asyncFetchSuggestions: will be called in order to fetch suggestions async
     onSettingsUpdated: (settings, asyncFetchTypos, asyncFetchSuggestions) =>
+      if @language != settings.tag
+        # cache is no longer valid if language has changed
+        @dictionaryCache.clear()
       @language = settings.tag
       @asyncFetchTypos = asyncFetchTypos
       @asyncFetchSuggestions = asyncFetchSuggestions
@@ -47,6 +52,13 @@ define( ->
       if @typosHash != typosHash
         @_fetchTypos(typosHash)
 
+    # Cache given dictionary change so that it appears on screen immediately
+    # without waiting for the "get new hash, download new typos" cycle
+    addWordToDictionaryCache: (word, blacklistNotWhitelist) =>
+      @dictionaryCache.addWord(word, blacklistNotWhitelist)
+      @dictionaryCache.apply(@typos)
+      @_sendTyposToAce()
+
     _sendTyposToAce: => @editor.getSession()._emit("updateSpellcheckingTypos", {typos: @typos})
 
     # Get corrections list for a word and apply callback to it
@@ -57,6 +69,19 @@ define( ->
 
     # Tell if given word is a typo according to current set of typos
     isWordTypo: (word) => !!@typos[word]
+
+
+  class DictionaryCache
+    constructor: ->
+      @storage = {}
+
+    addWord: (word, blacklistNotWhitelist) => @storage[word] = blacklistNotWhitelist
+
+    apply: (typos) =>
+      for w, v of @storage
+        if v then typos[w] = true else delete typos[w]
+
+    clear: => @storage = {}
 
 
   mySpellchecker = null
