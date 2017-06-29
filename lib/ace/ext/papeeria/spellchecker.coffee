@@ -9,19 +9,23 @@ define( ->
       set[v] = true
     return set
 
+  NULL_HASH = ""
+
 
   class Spellchecker
     constructor: (@editor) ->
-      @typosHash = null            # {String} hash used to check whether the typos list has been changed
+      @typosHash = NULL_HASH       # {String} hash used to check whether the typos list has been changed
       @language = null             # {String} language code, e.g. `en_US`
       @asyncFetchTypos = ->        # {AsyncFetchTypos}
       @asyncFetchSuggestions = ->  # {AsyncFetchSuggestions}
       @typos = {}                  # {Map<String, ?>} object whose keys are typos
+      @dictionaryCache = new DictionaryCache()
 
     _fetchTypos: (hash) =>
       @asyncFetchTypos(@language, (typosArray) =>
-        @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
         @typos = makeSet(typosArray)
+        @dictionaryCache.apply(@typos)
+        @_sendTyposToAce()
         @typosHash = hash
       )
 
@@ -33,17 +37,31 @@ define( ->
     # @param {AsyncFetchTypos}       asyncFetchTypos: will be called in order to fetch typos asynchronously
     # @param {AsyncFetchSuggestions} asyncFetchSuggestions: will be called in order to fetch suggestions async
     onSettingsUpdated: (settings, asyncFetchTypos, asyncFetchSuggestions) =>
+      if @language != settings.tag
+        # cache is no longer valid if language has changed
+        @dictionaryCache.clear()
       @language = settings.tag
       @asyncFetchTypos = asyncFetchTypos
       @asyncFetchSuggestions = asyncFetchSuggestions
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
-      @_fetchTypos(null)
+      @_fetchTypos(NULL_HASH)
 
     # Update typos hash and refresh list of typos iff hash is different
     # @param {String} typosHash: hash used to check whether the typos list has been changed
     onHashUpdated: (typosHash) =>
       if @typosHash != typosHash
         @_fetchTypos(typosHash)
+
+    # Cache given dictionary change so that it appears on screen immediately
+    # without waiting for the "get new hash, download new typos" cycle
+    # @param word {String}         word being added to dictionary
+    # @param toBlacklist {Boolean} whether we should add the word to blacklist (true) or to whitelist (false)
+    addWordToDictionaryCache: (word, toBlacklist) =>
+      @dictionaryCache.addWord(word, toBlacklist)
+      @dictionaryCache.apply(@typos)
+      @_sendTyposToAce()
+
+    _sendTyposToAce: => @editor.getSession()._emit("updateSpellcheckingTypos", {typos: @typos})
 
     # Get corrections list for a word and apply callback to it
     # @param {String} token
@@ -53,6 +71,19 @@ define( ->
 
     # Tell if given word is a typo according to current set of typos
     isWordTypo: (word) => !!@typos[word]
+
+
+  class DictionaryCache
+    constructor: ->
+      @storage = {}
+
+    addWord: (word, toBlacklist) => @storage[word] = toBlacklist
+
+    apply: (typos) =>
+      for w, v of @storage
+        if v then typos[w] = true else delete typos[w]
+
+    clear: => @storage = {}
 
 
   mySpellchecker = null
