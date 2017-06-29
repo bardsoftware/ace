@@ -9,10 +9,12 @@ define( ->
       set[v] = true
     return set
 
+  NULL_HASH = ""
+
 
   class Spellchecker
     constructor: (@editor) ->
-      @typosHash = null            # {String} hash used to check whether the typos list has been changed
+      @typosHash = NULL_HASH       # {String} hash used to check whether the typos list has been changed
       @language = null             # {String} language code, e.g. `en_US`
       @asyncFetchTypos = ->        # {AsyncFetchTypos}
       @asyncFetchSuggestions = ->  # {AsyncFetchSuggestions}
@@ -20,8 +22,8 @@ define( ->
 
     _fetchTypos: (hash) =>
       @asyncFetchTypos(@language, (typosArray) =>
-        @editor.getSession()._emit("updateSpellcheckingTypos", {typos: typosArray})
         @typos = makeSet(typosArray)
+        @_sendTyposToAce()
         @typosHash = hash
       )
 
@@ -37,13 +39,15 @@ define( ->
       @asyncFetchTypos = asyncFetchTypos
       @asyncFetchSuggestions = asyncFetchSuggestions
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
-      @_fetchTypos(null)
+      @_fetchTypos(NULL_HASH)
 
     # Update typos hash and refresh list of typos iff hash is different
     # @param {String} typosHash: hash used to check whether the typos list has been changed
     onHashUpdated: (typosHash) =>
       if @typosHash != typosHash
         @_fetchTypos(typosHash)
+
+    _sendTyposToAce: => @editor.getSession()._emit("updateSpellcheckingTypos", {typos: @typos})
 
     # Get corrections list for a word and apply callback to it
     # @param {String} token
