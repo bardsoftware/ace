@@ -19,6 +19,9 @@ define((require, exports, module) ->
       @$behaviours = {}
       # @cStyleBeviours = CStyleBehaviour().getBehaviours()
 
+      @add("dollars", "insertion", @dollarsInsertionBehaviour)
+      @add("dollars", "deletion", @dollarsDeletionBehaviour)
+
       # @add("braces", "insertion", @bracesInsertionBehaviour)
       # @add("braces", "deletion", @bracesDeletionBehaviour)
 
@@ -27,9 +30,6 @@ define((require, exports, module) ->
 
       # @add("brackets", "insertion", @bracketsInsertionBehaviour)
       # @add("brackets", "deletion", @bracketsDeletionBehaviour)
-
-      @add("dollars", "insertion", @dollarsInsertionBehaviour)
-      @add("dollars", "deletion", @dollarsDeletionBehaviour)
 
     dollarsInsertionBehaviour: (state, action, editor, session, text) =>
       if text == '$'
@@ -93,8 +93,10 @@ define((require, exports, module) ->
         return null
 
       line = session.getLine(range.start.row)
+      token = session.getTokenAt(range.end.row, range.end.column)
       nextChar = line.substring(range.start.column + 1, range.start.column + 2)
-      if nextChar == '$'
+      console.log(token)
+      if nextChar == '$' and not /escape/.test(token.type)
         range.end.column++
         return range
 
