@@ -282,6 +282,11 @@ define((require, exports, module) ->
       setCitationsUrl: (url) => @citationsUrl = url
       setFilesUrl: (url) => @filesUrl = url
       setIncludeCallback: (callback) => @includeCallback = callback
+      processFiles : (callback) =>
+        if not @filesUrl?
+          callback(null, [])
+        else
+          @filesCache.getReferences(@filesUrl, callback)
 
       completeLinebreak: (editor) =>
         cursor = editor.getCursorPosition();
@@ -324,15 +329,21 @@ define((require, exports, module) ->
               @filesCache.getReferences(@filesUrl, (err, files) =>
                 # Once we have a list of files included to the compilation we can find citation keys that
                 # are (not) included and treat them differently
-                cites.map((cite) =>
-                    if !(cite.meta in files)
+                callback(null, cites.map((cite) =>
+                    if (cite.meta in files) then cite
+                    else {
+                      name: cite.name
+                      value: cite.value
+                      score: 1000
+                      meta: cite.meta
                       # We want to show included cite keys first, so let's decrease the meta_score for other entries
-                      cite.meta_score = 9
+                      meta_score: 9
                       # Calls the provided custom callback when user inserts a key from a non-included file
                       # (e.g. offers to add the appropriate bib-file to \bibliography tag)
-                      cite.action = (editor) => @includeCallback?(cite.meta)
+                      action: (editor) => @includeCallback?(cite.meta)
+                    }
+                  )
                 )
-                callback(null, cites)
               )
             else
               callback(null, cites)
