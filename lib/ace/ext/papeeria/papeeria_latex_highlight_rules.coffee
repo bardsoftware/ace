@@ -132,14 +132,14 @@ define((require, exports, module) ->
       }
 
     mathStartRule = (openingRegex, state) -> {
-      token: "string"
+      token: "string.paren.lparen"
       regex: openingRegex
       next: pushState(state)
       merge: false
     }
 
     mathEndRules = (closingRegex) -> [
-      { token: "string", regex: closingRegex, next: popState }
+      { token: "string.paren.rparen", regex: closingRegex, next: popState }
       { token: "error", regex : "^\\s*$", next: popState }
     ]
 
