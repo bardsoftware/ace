@@ -119,7 +119,6 @@ define((require, exports, module) ->
             return { text: opening + closing, selection: [1, 1] }
 
         when closing
-          line = session.getLine(row)
           nextChar = line[column]
           if nextChar == closing
             matching = session.$findOpeningBracket(closing, { column: column + 1, row: row })
@@ -128,6 +127,17 @@ define((require, exports, module) ->
                 text: "",
                 selection: [1, 1]
               }
+            else
+              return null
+
+          if opening == '{'
+            return null
+
+          if nextChar == "\\" and line[column + 1] == closing and isInEquation(session, row, column)
+            return {
+              text: "",
+              selection: [2, 2]
+            }
 
   class LatexBehaviour extends Behaviour
     constructor: ->
