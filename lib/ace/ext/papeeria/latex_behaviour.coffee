@@ -93,6 +93,7 @@ define((require, exports, module) ->
 
       switch text
         when opening
+          # Handle non-empty selection case
           selection = editor.getSelectionRange()
           selected = session.getTextRange(selection)
           if selected != ""
@@ -102,6 +103,7 @@ define((require, exports, module) ->
               return null
 
           token = session.getTokenAt(row, column)
+          # Handle escaped bracket case
           if isEscaped(line, column)
             shouldComplete = (
               opening != '{' and
@@ -115,11 +117,13 @@ define((require, exports, module) ->
             else
               return null
 
+          # Handle default case
           if not editor.completer?.activated and not (isCommentToken(token) and column != 0)
             return { text: opening + closing, selection: [1, 1] }
 
         when closing
           nextChar = line[column]
+          # Handle skipping when inserting closing bracket
           if nextChar == closing
             matching = session.$findOpeningBracket(closing, { column: column + 1, row: row })
             if matching?
@@ -133,6 +137,7 @@ define((require, exports, module) ->
           if opening == '{'
             return null
 
+          # Handle skipping math closing boundary when inserting appropriate bracket
           if nextChar == "\\" and line[column + 1] == closing and isInEquation(session, row, column)
             return {
               text: "",
