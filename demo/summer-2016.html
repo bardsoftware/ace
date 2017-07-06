@@ -272,6 +272,7 @@ require([
   ],
   function(ace, langTools, katexPreviewer, highlighter, TexCompleter, Spellchecker, SpellcheckerPopup) {
     var editor = ace.edit("editor");
+    editor.$blockScrolling = Infinity;
     var session = editor.getSession();
     session.setMode("ace/mode/papeeria_latex");
     session.setUseWorker(true);
