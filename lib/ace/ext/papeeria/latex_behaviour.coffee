@@ -1,9 +1,5 @@
 define((require, exports, module) ->
   Behaviour = require("ace/mode/behaviour").Behaviour
-  CStyleBehaviour = require("ace/mode/behaviour/cstyle").CstyleBehaviour
-
-  cStyleBehaviour = new CStyleBehaviour()
-  behaviours = cStyleBehaviour.getBehaviours()
 
   isCommentToken = (token) -> token? and /comment/.test(token.type)
 
@@ -144,34 +140,47 @@ define((require, exports, module) ->
               selection: [2, 2]
             }
 
+  getBracketsDeletionAction = (opening) ->
+    closing = correspondingClosing[opening]
+    return (state, action, editor, session, range) ->
+      if range.isMultiLine()
+        return null
+
+      selected = session.doc.getTextRange(range)
+      if selected != opening
+        return null
+
+      # Handle common bracket deletion case
+      { row, column } = range.start
+      line = session.doc.getLine(row)
+      nextChar = line[column + 1]
+      if nextChar == closing
+        range.end.column += 1
+        return range
+
+      if opening == '{'
+        return null
+
+      # Handle math boundaries deletion case
+      prevChar = line[column - 1]
+      nextNextChar = line[column + 2]
+      if prevChar == '\\' and nextChar == '\\' and nextNextChar == closing
+        range.end.column += 2
+        return range
+
   class LatexBehaviour extends Behaviour
     constructor: ->
       @add("dollars", "insertion", dollarsInsertionAction)
       @add("dollars", "deletion", dollarsDeletionAction)
 
       @add("braces", "insertion", getBracketInsertionAction('{'))
-      @add("braces", "deletion", @bracesDeletionBehaviour)
+      @add("braces", "deletion", getBracketsDeletionAction('{'))
 
       @add("parens", "insertion", getBracketInsertionAction('('))
-      @add("parens", "deletion", @parensDeletionBehaviour)
+      @add("parens", "deletion", getBracketsDeletionAction('('))
 
       @add("brackets", "insertion", getBracketInsertionAction('['))
-      @add("brackets", "deletion", @bracketsDeletionBehaviour)
-
-    bracesDeletionBehaviour: (state, action, editor, session, range) ->
-      return behaviours["braces"]["deletion"].call(this, state, action, editor, session, range)
-
-    parensInsertionBehaviour: (state, action, editor, session, text) ->
-      return behaviours["parens"]["insertion"].call(this, state, action, editor, session, text)
-
-    bracesDeletionBehaviour: (state, action, editor, session, range) ->
-      return behaviours["parens"]["deletion"].call(this, state, action, editor, session, range)
-
-    bracketsInsertionBehaviour: (state, action, editor, session, text) ->
-      return behaviours["brackets"]["insertion"].call(this, state, action, editor, session, text)
-
-    bracketsDeletionBehaviour: (state, action, editor, session, range) ->
-      return behaviours["brackets"]["deletion"].call(this, state, action, editor, session, range)
+      @add("brackets", "deletion", getBracketsDeletionAction('['))
 
   exports.LatexBehaviour = LatexBehaviour
   return
