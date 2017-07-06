@@ -33,19 +33,18 @@ define((require, exports, module) ->
   MATH_LATEX_INLINE_OPENING_REGEX = "\\\\\\("
   MATH_LATEX_INLINE_CLOSING_REGEX = "\\\\\\)"
 
-  exports.LIST_TOKEN_TYPE = LIST_TOKEN_TYPE = "list"
   exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
 
-  exports.LIST_STATE = LIST_STATE = "list"
-  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
+  exports.LIST_STATE = LIST_STATE = "latexlist"
+  exports.LIST_TOKEN_TYPE = LIST_TOKEN_TYPE = "latexlist"
   exports.EQUATION_STATE = EQUATION_STATE = "equation"
-  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
+  exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
   exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE = "environment"
-  exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
+  exports.ENVIRONMENT_TOKEN_TYPE = ENVIRONMENT_TOKEN_TYPE = "environment"
   exports.TABLE_STATE = "table"
-  exports.TABLE_TOKENTYPE = "table"
+  exports.TABLE_TOKEN_TYPE = "table"
   exports.FIGURE_STATE = "figure"
-  exports.FIGURE_TOKENTYPE = "figure"
+  exports.FIGURE_TOKEN_TYPE = "figure"
   PapeeriaLatexHighlightRules = ->
     ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
