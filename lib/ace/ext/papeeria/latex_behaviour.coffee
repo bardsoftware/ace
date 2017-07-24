@@ -14,7 +14,7 @@ define((require, exports, module) ->
 
   # If we're on the start of a line, but the current token is of a type "comment", we're not actually
   # inside a comment, just on a start of it. That's the reason for `column != 0` check
-  isCommentToken = (token, column) -> token? and token.type.indexOf(COMMENT_TYPE) > -1 and column != 0
+  isCommentToken = (token, column) -> column != 0 and token? and token.type.indexOf(COMMENT_TYPE) > -1
 
 
   isEscapedInsertion = (token, column) -> (
