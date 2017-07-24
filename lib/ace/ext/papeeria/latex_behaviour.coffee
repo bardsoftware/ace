@@ -103,6 +103,7 @@ define((require, exports, module) ->
     }
 
 
+  SKIP_TWO = { text: "", selection: [2, 2] }
   getBracketInsertionAction = (opening) ->
     closing = correspondingClosing[opening]
     return (state, action, editor, session, text) ->
@@ -149,22 +150,21 @@ define((require, exports, module) ->
           if nextChar == closing
             matching = session.$findOpeningBracket(closing, { column: column + 1, row: row })
             if matching?
-              return {
-                  text: "",
-                  selection: [1, 1]
-              }
+              return SKIP
             else
               return DO_NOTHING
 
           if opening == '{'
             return DO_NOTHING
 
+          nextToken = session.getTokenAt(row, column + 1)
           # Handle skipping math closing boundary when inserting appropriate bracket
-          if nextChar == "\\" and line[column + 1] == closing and isInEquation(session, row, column)
-            return {
-                text: "",
-                selection: [2, 2]
-            }
+          if (
+              nextChar == "\\" and
+              line[column + 1] == closing and
+              RPAREN_REGEX.test(nextToken.type)
+          )
+            return SKIP_TWO
 
 
   getBracketsDeletionAction = (opening) ->
@@ -185,7 +185,7 @@ define((require, exports, module) ->
         range.end.column += 1
         return range
 
-      # Escaped { is just an escaped {, so we do nothing at this point
+      # Escaped { is just an escaped {, so we do nothing in this case
       if opening == '{'
         return DO_NOTHING
 
