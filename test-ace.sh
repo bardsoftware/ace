@@ -2,20 +2,20 @@
 # Usage: no arguments to run all tests;
 #        test path relative to "lib/" as an argument to run specific test
 #        "-W" to show all warnings (no warnings by default)
-for i in "$@"
+for ARG in "$@"
 do
-    if [ "$i" = "-W" ]; then
-        WARN="-W";
+    if [ "$ARG" = "-W" ]; then
+        WARN="-W"
     else
-        TEST_PATH=$i;
+        TEST_PATH=$ARG
     fi
 done;
 
-ROOT=`dirname $0`;
+ROOT=$(dirname $0)
 export NODE_PATH=$ROOT/lib;
 
-if [ "$TEST_PATH" = "" ]; then
-    if [ "$WARN" = "" ]; then
+if [ -z "$TEST_PATH" ]; then
+    if [ -z "$WARN" ]; then
         node $ROOT/lib/ace/test/all_no_warnings.js
     else
         node $ROOT/lib/ace/test/all.js
