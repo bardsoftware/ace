@@ -77,6 +77,9 @@ define((require, exports, module) ->
 
 
   dollarsDeletionAction = (state, action, editor, session, range) ->
+    if editor.inMultiSelectMode
+      return DO_NOTHING
+
     selected = session.doc.getTextRange(range)
     if range.isMultiLine() or selected != '$'
       return DO_NOTHING
@@ -170,7 +173,7 @@ define((require, exports, module) ->
   getBracketsDeletionAction = (opening) ->
     closing = correspondingClosing[opening]
     return (state, action, editor, session, range) ->
-      if range.isMultiLine()
+      if editor.inMultiSelectMode or range.isMultiLine()
         return DO_NOTHING
 
       selected = session.doc.getTextRange(range)
