@@ -102,7 +102,7 @@ define((require, exports, module) ->
         { token: "paren.lparen" + addToken, regex: "[[({]" }
         { token: "paren.rparen" + addToken, regex: "[\\])}]" }
         { token: "storage.type" + addToken, regex: "\\\\[a-zA-Z]+" }
-        { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?" }
+        { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?", merge: false }
         { defaultToken : "text" + addToken }
       ]
 
