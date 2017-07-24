@@ -1,23 +1,25 @@
 define((require, exports, module) ->
   Behaviour = require("ace/mode/behaviour").Behaviour
-  COMMENT_REGEX = /comment/
-  ESCAPE_REGEX = /escape/
-  MATH_REGEX = /math/
-  EQUATION_REGEX = /equation/
-  RPAREN_REGEX = /rparen/
+  COMMENT_TYPE = "comment"
+  ESCAPE_TYPE = "escape"
+  MATH_TYPE = "math"
+  EQUATION_TYPE = "equation"
+  RPAREN_TYPE = "rparen"
   correspondingClosing = {
-      '(': ')',
+      '(': ')'
       '[': ']'
       '{': '}'
   }
 
 
-  isCommentToken = (token, column) -> token? and COMMENT_REGEX.test(token.type) and column != 0
+  # If we're on the start of a line, but the current token is of a type "comment", we're not actually
+  # inside a comment, just on a start of it. That's the reason for `column != 0` check
+  isCommentToken = (token, column) -> token? and token.type.indexOf(COMMENT_TYPE) > -1 and column != 0
 
 
   isEscapedInsertion = (token, column) -> (
       token? and
-      ESCAPE_REGEX.test(token.type) and
+      token.type.indexOf(ESCAPE_TYPE) > -1 and
       column - token.start == 1
   )
 
@@ -31,11 +33,11 @@ define((require, exports, module) ->
     lastPrevState = if typeof(pState) == "string" then pState else pState[pState.length - 1]
     return (
         # This handles the case, when the cursor is on the empty string
-        (not token? and MATH_REGEX.test(lastPrevState)) or
+        (not token? and lastPrevState.indexOf(MATH_TYPE) > -1) or
         # This handles the common case, when the cursor is inside the equation
-        (token? and EQUATION_REGEX.test(token.type)) or
+        (token? and token.type.indexOf(EQUATION_TYPE) > -1) or
         # This handles the specific case, when the cursor is on the very start of the equation
-        (nextToken? and EQUATION_REGEX.test(nextToken.type))
+        (nextToken? and nextToken.type.indexOf(EQUATION_TYPE) > -1)
     )
 
 
@@ -72,7 +74,7 @@ define((require, exports, module) ->
         return if nextChar == '$' then SKIP else DO_NOTHING
 
       # Otherwise, insert or skip
-      shouldSkip = (nextChar == '$' and (prevChar != '$' or RPAREN_REGEX.test(nextToken.type)))
+      shouldSkip = (nextChar == '$' and (prevChar != '$' or nextToken.type.indexOf(RPAREN_TYPE) > -1))
       return if shouldSkip then SKIP else AUTO_INSERT
 
 
@@ -88,7 +90,7 @@ define((require, exports, module) ->
     token = session.getTokenAt(range.end.row, range.end.column)
     nextChar = line[range.start.column + 1]
     # If we're surrounded by $s, delete them
-    if nextChar == '$' and not ESCAPE_REGEX.test(token.type)
+    if nextChar == '$' and not (token.type.indexOf(ESCAPE_TYPE) > -1)
       range.end.column++
       return range
 
@@ -165,7 +167,7 @@ define((require, exports, module) ->
           if (
               nextChar == "\\" and
               line[column + 1] == closing and
-              RPAREN_REGEX.test(nextToken.type)
+              nextToken.type.indexOf(RPAREN_TYPE) > -1
           )
             return SKIP_TWO
 
