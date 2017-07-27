@@ -5,7 +5,7 @@ define((require, exports, module) ->
   MATH_TYPE = "math"
   EQUATION_TYPE = "equation"
   RPAREN_TYPE = "rparen"
-  correspondingClosing = {
+  CORRESPONDING_CLOSING = {
       '(': ')'
       '[': ']'
       '{': '}'
@@ -110,7 +110,7 @@ define((require, exports, module) ->
 
   SKIP_TWO = { text: "", selection: [2, 2] }
   getBracketInsertionAction = (opening) ->
-    closing = correspondingClosing[opening]
+    closing = CORRESPONDING_CLOSING[opening]
     return (state, action, editor, session, text) ->
       if editor.inMultiSelectMode
         return DO_NOTHING
@@ -164,16 +164,14 @@ define((require, exports, module) ->
 
           nextToken = session.getTokenAt(row, column + 1)
           # Handle skipping math closing boundary when inserting appropriate bracket
-          if (
-              nextChar == "\\" and
+          if nextChar == "\\" and
               line[column + 1] == closing and
               nextToken.type.indexOf(RPAREN_TYPE) > -1
-          )
             return SKIP_TWO
 
 
   getBracketsDeletionAction = (opening) ->
-    closing = correspondingClosing[opening]
+    closing = CORRESPONDING_CLOSING[opening]
     return (state, action, editor, session, range) ->
       if editor.inMultiSelectMode or range.isMultiLine()
         return DO_NOTHING
