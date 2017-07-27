@@ -51,7 +51,9 @@ define((require, exports, module) ->
   AUTO_INSERT = { text: "$$", selection: [1, 1] }
   SKIP = { text: "", selection: [1, 1] }
   dollarsInsertionAction = (state, action, editor, session, text) ->
-    if text == '$' and not editor.inMultiSelectMode
+    if text == '$'
+      if editor.inMultiSelectMode
+        return null
 
       { row, column } = editor.getCursorPosition()
       line = session.getLine(row)
@@ -89,7 +91,7 @@ define((require, exports, module) ->
       return DO_NOTHING
 
     selected = session.doc.getTextRange(range)
-    if range.isMultiLine() or selected != '$'
+    if selected != '$'
       return DO_NOTHING
 
     line = session.getLine(range.start.row)
