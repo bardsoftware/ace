@@ -2,6 +2,8 @@ define((require, exports, module) ->
   Behaviour = require("ace/mode/behaviour").Behaviour
   COMMENT_TYPE = "comment"
   ESCAPE_TYPE = "escape"
+  KEYWORD_TYPE = "keyword"
+  STORAGE_TYPE = "storage"
   MATH_TYPE = "math"
   EQUATION_TYPE = "equation"
   RPAREN_TYPE = "rparen"
@@ -19,7 +21,11 @@ define((require, exports, module) ->
 
   isEscapedInsertion = (token, column) -> (
       token? and
-      token.type.indexOf(ESCAPE_TYPE) > -1 and
+      (
+          token.type.indexOf(ESCAPE_TYPE) > -1 or
+          token.type.indexOf(KEYWORD_TYPE) > -1 or
+          token.type.indexOf(STORAGE_TYPE) > -1
+      ) and
       column - token.start == 1
   )
 
