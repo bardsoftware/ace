@@ -51,39 +51,38 @@ define((require, exports, module) ->
   AUTO_INSERT = { text: "$$", selection: [1, 1] }
   SKIP = { text: "", selection: [1, 1] }
   dollarsInsertionAction = (state, action, editor, session, text) ->
-    if text == '$'
-      if editor.inMultiSelectMode
-        return null
+    if editor.inMultiSelectMode or text != '$'
+      return DO_NOTHING
 
-      { row, column } = editor.getCursorPosition()
-      line = session.getLine(row)
+    { row, column } = editor.getCursorPosition()
+    line = session.getLine(row)
 
-      selection = editor.getSelectionRange()
-      selected = session.getTextRange(selection)
-      # If some text is selected, we surround it with $
-      if selected != ""
-        if editor.getWrapBehavioursEnabled()
-          return getWrapped(selection, selected, text, text)
-        else
-          return DO_NOTHING
-
-      token = session.getTokenAt(row, column)
-      nextToken = session.getTokenAt(row, column + 1)
-
-      # If cursor is inside a comment or escaped, do nothing
-      if isCommentToken(token, column) or isEscapedInsertion(token, column)
+    selection = editor.getSelectionRange()
+    selected = session.getTextRange(selection)
+    # If some text is selected, we surround it with $
+    if selected != ""
+      if editor.getWrapBehavioursEnabled()
+        return getWrapped(selection, selected, text, text)
+      else
         return DO_NOTHING
 
-      prevChar = line[column - 1] or ''
-      nextChar = line[column] or ''
+    token = session.getTokenAt(row, column)
+    nextToken = session.getTokenAt(row, column + 1)
 
-      # If cursor is in equation, either skip closing $ or do nothing
-      if isInEquation(session, row, column)
-        return if nextChar == '$' then SKIP else DO_NOTHING
+    # If cursor is inside a comment or escaped, do nothing
+    if isCommentToken(token, column) or isEscapedInsertion(token, column)
+      return DO_NOTHING
 
-      # Otherwise, insert or skip
-      shouldSkip = (nextChar == '$' and (prevChar != '$' or nextToken.type.indexOf(RPAREN_TYPE) > -1))
-      return if shouldSkip then SKIP else AUTO_INSERT
+    prevChar = line[column - 1] or ''
+    nextChar = line[column] or ''
+
+    # If cursor is in equation, either skip closing $ or do nothing
+    if isInEquation(session, row, column)
+      return if nextChar == '$' then SKIP else DO_NOTHING
+
+    # Otherwise, insert or skip
+    shouldSkip = (nextChar == '$' and (prevChar != '$' or nextToken.type.indexOf(RPAREN_TYPE) > -1))
+    return if shouldSkip then SKIP else AUTO_INSERT
 
 
   dollarsDeletionAction = (state, action, editor, session, range) ->
