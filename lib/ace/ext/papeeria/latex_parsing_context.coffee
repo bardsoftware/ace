@@ -15,7 +15,7 @@ define((require, exports, module) ->
     FIGURE_TOKENTYPE = PapeeriaLatexHighlightRules.FIGURE_TOKENTYPE
     TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
 
-    TOKEN_TYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
+    TOKENTYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
     STATES =  [EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE]
 
     # Specific for token"s system of type in ace
@@ -31,8 +31,8 @@ define((require, exports, module) ->
         state = getContextFromRow(session, row)
         token = session.getTokenAt(row, column)
         if token?
-            for i in [0..TOKEN_TYPES.length-1]
-                if isType(token, TOKEN_TYPES[i])
+            for i in [0..TOKENTYPES.length-1]
+                if isType(token, TOKENTYPES[i])
                     return STATES[i]
         return state
 
