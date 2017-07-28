@@ -3,12 +3,6 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
-    EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
-    LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-    ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
-    TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
-    FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
-
     LPAREN_TOKENTYPE = PapeeriaLatexHighlightRules.LPAREN_TOKENTYPE
     RPAREN_TOKENTYPE = PapeeriaLatexHighlightRules.RPAREN_TOKENTYPE
     EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
@@ -18,7 +12,6 @@ define((require, exports, module) ->
     TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
 
     TOKENTYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
-    STATES =  [EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE]
 
     # Specific for token"s system of type in ace
     isType = (token, type) ->
@@ -35,7 +28,7 @@ define((require, exports, module) ->
         if token?
             for i in [0..TOKENTYPES.length-1]
                 if isType(token, TOKENTYPES[i])
-                    return STATES[i]
+                    return TOKENTYPES[i]
         return state
 
 

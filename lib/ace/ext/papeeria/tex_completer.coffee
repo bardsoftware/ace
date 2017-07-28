@@ -4,11 +4,11 @@ define((require, exports, module) ->
   PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
 
-  EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
-  LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
-  TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
-  FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
+  EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
+  LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
+  ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
+  TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
+  FIGURE_TOKENTYPE = PapeeriaLatexHighlightRules.FIGURE_TOKENTYPE
 
   EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
@@ -270,24 +270,24 @@ define((require, exports, module) ->
           allowCommand = ["Return", "backspace"]
           if  event.command.name in allowCommand
             showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-          );
+          )
 
         editor.getSession().selection.on('changeCursor', (cursorEvent) ->
           showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-        );
+        )
 
       setEnabled: (enabled) => @enabled = enabled
       setReferencesUrl: (url) => @referencesUrl = url
       setCitationsUrl: (url) => @citationsUrl = url
 
       completeLinebreak: (editor) =>
-        cursor = editor.getCursorPosition();
-        line = editor.session.getLine(cursor.row);
-        tabString = editor.session.getTabString();
-        indentString = line.match(/^\s*/)[0];
+        cursor = editor.getCursorPosition()
+        line = editor.session.getLine(cursor.row)
+        tabString = editor.session.getTabString()
+        indentString = line.match(/^\s*/)[0]
         indexOfBegin = line.indexOf("begin")
 
-        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_TOKENTYPE &&  indexOfBegin < cursor.column
           if indexOfBegin > -1
             editor.insert("\n" + tabString + indentString + "\\item ")
           else
@@ -321,10 +321,10 @@ define((require, exports, module) ->
           switch context
             when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-            when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+            when LIST_TOKENTYPE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
-            when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
-            when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
+            when EQUATION_TOKENTYPE then callback(null, EQUATION_SNIPPETS)
+            when ENVIRONMENT_TOKENTYPE then callback(null, ENVIRONMENT_LABELS)
             else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
            return
