@@ -33,6 +33,8 @@ define((require, exports, module) ->
   MATH_LATEX_INLINE_OPENING_REGEX = "\\\\\\("
   MATH_LATEX_INLINE_CLOSING_REGEX = "\\\\\\)"
 
+  exports.LPAREN_TOKENTYPE = "lparen"
+  exports.RPAREN_TOKENTYPE = "rparen"
   exports.LIST_STATE = LIST_STATE = "list"
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
   exports.EQUATION_STATE = EQUATION_STATE = "equation"
