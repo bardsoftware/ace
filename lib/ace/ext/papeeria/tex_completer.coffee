@@ -252,6 +252,7 @@ define((require, exports, module) ->
       constructor: ->
         @refCache = new CompletionsCache(getJsonFromUrl, processReferenceJson)
         @citeCache = new CompletionsCache(getJsonFromUrl, processCitationJson)
+        @filesCache = new CompletionsCache(getJsonFromUrl, (json) -> json)
         @enabled = true
 
       init: (editor) =>
@@ -279,6 +280,13 @@ define((require, exports, module) ->
       setEnabled: (enabled) => @enabled = enabled
       setReferencesUrl: (url) => @referencesUrl = url
       setCitationsUrl: (url) => @citationsUrl = url
+      setFilesUrl: (url) => @filesUrl = url
+      setIncludeCallback: (callback) => @includeCallback = callback
+      processFiles : (callback) =>
+        if not @filesUrl?
+          callback(null, [])
+        else
+          @filesCache.getReferences(@filesUrl, callback)
 
       completeLinebreak: (editor) =>
         cursor = editor.getCursorPosition()
@@ -314,7 +322,32 @@ define((require, exports, module) ->
           return
 
         if LatexParsingContext.isType(token, "cite")
-          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
+          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, (err, cites) =>
+            if @filesUrl?
+              # After we get a list of cite autocompletion we want to extract entries from already included biblio files
+              # Let's retrieve a list of files included to the current target from the filesUrl
+              @filesCache.getReferences(@filesUrl, (err, files) =>
+                # Once we have a list of files included to the compilation we can find citation keys that
+                # are (not) included and treat them differently
+                callback(null, cites.map((cite) =>
+                    if (cite.meta in files) then cite
+                    else {
+                      name: cite.name
+                      value: cite.value
+                      score: 1000
+                      meta: cite.meta
+                      # We want to show included cite keys first, so let's decrease the meta_score for other entries
+                      meta_score: 9
+                      # Calls the provided custom callback when user inserts a key from a non-included file
+                      # (e.g. offers to add the appropriate bib-file to \bibliography tag)
+                      action: (editor) => @includeCallback?(cite.meta)
+                    }
+                  )
+                )
+              )
+            else
+              callback(null, cites)
+          )
           return
 
         if (prefix.length >= 2 and prefix[0] == "\\") or (prefix.length >= 3)
@@ -327,7 +360,7 @@ define((require, exports, module) ->
             when ENVIRONMENT_TOKENTYPE then callback(null, ENVIRONMENT_LABELS)
             else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-           return
+          return
 
         callback(null, [])
         return
