@@ -126,7 +126,7 @@ define((require, exports, module) ->
           "variable.parameter"
           FULL_RPAREN_TOKENTYPES
         ]
-        regex: "(\\\\(?:begin))({)(" + text + ")(})"
+        regex: "(\\\\(?:begin))({)(#{text})(})"
         next: pushState(pushedState)
       }
 
@@ -138,7 +138,7 @@ define((require, exports, module) ->
           "variable.parameter"
           FULL_RPAREN_TOKENTYPES
         ]
-        regex: "(\\\\(?:end))({)(" + text + ")(})"
+        regex: "(\\\\(?:end))({)(#{text})(})"
 
         next: popState
       }

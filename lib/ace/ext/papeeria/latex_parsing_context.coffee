@@ -6,16 +6,23 @@ define((require, exports, module) ->
     {
         LPAREN_TOKENTYPE
         RPAREN_TOKENTYPE
-        EQUATION_TOKENTYPE
         LIST_TOKENTYPE
+        EQUATION_TOKENTYPE
         ENVIRONMENT_TOKENTYPE
-        FIGURE_TOKENTYPE
         TABLE_TOKENTYPE
+        FIGURE_TOKENTYPE
 
         SPECIFIC_TOKEN_FOR_STATE
     } = PapeeriaLatexHighlightRules
-
-    TOKENTYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
+    TOKENTYPES = [
+        LPAREN_TOKENTYPE
+        RPAREN_TOKENTYPE
+        LIST_TOKENTYPE
+        EQUATION_TOKENTYPE
+        ENVIRONMENT_TOKENTYPE
+        TABLE_TOKENTYPE
+        FIGURE_TOKENTYPE
+    ]
 
     # Specific for token"s system of type in ace
     isType = (token, type) ->
