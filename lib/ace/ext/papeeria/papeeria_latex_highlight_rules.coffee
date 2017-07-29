@@ -38,10 +38,6 @@ define((require, exports, module) ->
 
   exports.LPAREN_TOKENTYPE = LPAREN_TOKENTYPE = "lparen"
   exports.RPAREN_TOKENTYPE = RPAREN_TOKENTYPE = "rparen"
-  GENERIC_PAREN_TOKENTYPE = "paren"
-  FULL_LPAREN_TOKENTYPES = "#{GENERIC_PAREN_TOKENTYPE}.#{LPAREN_TOKENTYPE}"
-  FULL_RPAREN_TOKENTYPES = "#{GENERIC_PAREN_TOKENTYPE}.#{RPAREN_TOKENTYPE}"
-
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
   exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
@@ -111,8 +107,8 @@ define((require, exports, module) ->
         addToken = ""
       return [
         { token: "#{COMMENT_TOKENTYPE}#{addToken}", regex: "%.*$" }
-        { token: "#{FULL_LPAREN_TOKENTYPES}#{addToken}", regex: "[[({]" }
-        { token: "#{FULL_RPAREN_TOKENTYPES}#{addToken}", regex: "[\\])}]" }
+        { token: "#{LPAREN_TOKENTYPE}#{addToken}", regex: "[[({]" }
+        { token: "#{RPAREN_TOKENTYPE}#{addToken}", regex: "[\\])}]" }
         { token: "storage.type#{addToken}", regex: "\\\\[a-zA-Z]+" }
         { token: "constant.character.#{ESCAPE_TOKENTYPE}#{addToken}", regex: "\\\\[^a-zA-Z]?", merge: false }
         { defaultToken : "text#{addToken}" }
@@ -122,9 +118,9 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          FULL_LPAREN_TOKENTYPES
+          LPAREN_TOKENTYPE
           "variable.parameter"
-          FULL_RPAREN_TOKENTYPES
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:begin))({)(#{text})(})"
         next: pushState(pushedState)
@@ -134,9 +130,9 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          FULL_LPAREN_TOKENTYPES
+          LPAREN_TOKENTYPE
           "variable.parameter"
-          FULL_RPAREN_TOKENTYPES
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:end))({)(#{text})(})"
 
@@ -144,14 +140,14 @@ define((require, exports, module) ->
       }
 
     mathStartRule = (openingRegex, state) -> {
-      token: "string.#{FULL_LPAREN_TOKENTYPES}"
+      token: "string.#{LPAREN_TOKENTYPE}"
       regex: openingRegex
       next: pushState(state)
       merge: false
     }
 
     mathEndRules = (closingRegex) -> [
-      { token: "string.#{FULL_RPAREN_TOKENTYPES}", regex: closingRegex, next: popState }
+      { token: "string.#{RPAREN_TOKENTYPE}", regex: closingRegex, next: popState }
       { token: "error.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
 
@@ -176,14 +172,14 @@ define((require, exports, module) ->
         opening =
           token: [
             "storage.type"
-            "#{FULL_LPAREN_TOKENTYPES}.#{@stateName}"
+            "#{LPAREN_TOKENTYPE}.#{@stateName}"
           ]
           next: pushState(@stateName)
           regex: "(\\\\(?:#{@commandName}))({)"
         openingRules.push(opening)
 
         closing =
-          token: FULL_RPAREN_TOKENTYPES
+          token: RPAREN_TOKENTYPE
           regex: "(})"
           next: popState
         instateRules.push(closing)
@@ -197,9 +193,9 @@ define((require, exports, module) ->
     genericEnvironmentRule = {
       token: [
         "storage.type"
-        "#{FULL_LPAREN_TOKENTYPES}.#{ENVIRONMENT_TOKENTYPE}"
+        "#{LPAREN_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
         "variable.parameter.#{ENVIRONMENT_TOKENTYPE}"
-        FULL_RPAREN_TOKENTYPES
+        RPAREN_TOKENTYPE
       ]
       regex: "(\\\\(?:begin|end))({)(\\w*)(})"
     }
@@ -216,9 +212,9 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "#{FULL_LPAREN_TOKENTYPES}.ref"
+          "#{LPAREN_TOKENTYPE}.ref"
           "variable.parameter.ref"
-          FULL_RPAREN_TOKENTYPES
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:ref))({)(\\w*)(})"
       }
@@ -226,9 +222,9 @@ define((require, exports, module) ->
       {
         token: [
           "keyword"
-          FULL_LPAREN_TOKENTYPES
+          LPAREN_TOKENTYPE
           "variable.parameter"
-          FULL_RPAREN_TOKENTYPES
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
@@ -237,12 +233,12 @@ define((require, exports, module) ->
       {
         token: [
           "keyword"
-          FULL_LPAREN_TOKENTYPES
+          LPAREN_TOKENTYPE
           "variable.parameter"
-          FULL_RPAREN_TOKENTYPES
-          FULL_LPAREN_TOKENTYPES
+          RPAREN_TOKENTYPE
+          LPAREN_TOKENTYPE
           "storage.type"
-          FULL_RPAREN_TOKENTYPES
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
       }
