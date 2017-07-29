@@ -294,54 +294,12 @@ define((require, exports, module) ->
 
 
   class EquationRangeHandler
-    @BEGIN_EQUATION_TOKEN_SEQUENCES: [
-      [
-        { type: "paren.rparen", value: "}" }
-        { type: "variable.parameter", value: "equation" }
-        { type: "paren.lparen", value: "{" }
-        { type: "storage.type", value: "\\begin" }
-      ]
-      [
-        { type: "paren.rparen", value: "}" }
-        { type: "variable.parameter", value: "equation*" }
-        { type: "paren.lparen", value: "{" }
-        { type: "storage.type", value: "\\begin" }
-      ]
-      [ { type: "string", value: "\\[" } ]
-      [ { type: "string", value: "\\(" } ]
-      [ { type: "string", value: "$" } ]
-      [ { type: "string", value: "$$" } ]
-    ]
-    @END_EQUATION_TOKEN_SEQUENCES: [
-      [
-        { type: "storage.type", value: "\\end" }
-        { type: "paren.lparen", value: "{" }
-        { type: "variable.parameter", value: "equation" }
-        { type: "paren.rparen", value: "}" }
-      ]
-      [
-        { type: "storage.type", value: "\\end" }
-        { type: "paren.lparen", value: "{" }
-        { type: "variable.parameter", value: "equation*" }
-        { type: "paren.rparen", value: "}" }
-      ]
-      [ { type: "string", value: "\\]" } ]
-      [ { type: "string", value: "\\)" } ]
-      [ { type: "string", value: "$" } ]
-      [ { type: "string", value: "$$" } ]
-    ]
-
     # empty constructor
     constructor: (@editor) ->
 
     getBoundary: (tokenIterator, start) ->
       moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
       moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
-      boundarySequences = (
-        if start
-        then EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES
-        else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
-      )
 
       currentToken = tokenIterator.getCurrentToken()
       prevRow = tokenIterator.getCurrentTokenPosition().row
