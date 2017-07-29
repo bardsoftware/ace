@@ -152,7 +152,7 @@ define((require, exports, module) ->
 
     mathEndRules = (closingRegex) -> [
       { token: "string.#{FULL_RPAREN_TOKENTYPES}", regex: closingRegex, next: popState }
-      { token: "error", regex : "^\\s*$", next: popState }
+      { token: "error.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
 
     equationStartRules = [
@@ -197,7 +197,7 @@ define((require, exports, module) ->
     genericEnvironmentRule = {
       token: [
         "storage.type"
-        "#{ENVIRONMENT_TOKENTYPE}.#{FULL_LPAREN_TOKENTYPES}"
+        "#{FULL_LPAREN_TOKENTYPES}.#{ENVIRONMENT_TOKENTYPE}"
         "variable.parameter.#{ENVIRONMENT_TOKENTYPE}"
         FULL_RPAREN_TOKENTYPES
       ]
@@ -216,7 +216,7 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "ref.#{FULL_LPAREN_TOKENTYPES}"
+          "#{FULL_LPAREN_TOKENTYPES}.ref"
           "variable.parameter.ref"
           FULL_RPAREN_TOKENTYPES
         ]

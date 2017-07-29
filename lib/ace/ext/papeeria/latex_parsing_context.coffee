@@ -14,14 +14,16 @@ define((require, exports, module) ->
 
         SPECIFIC_TOKEN_FOR_STATE
     } = PapeeriaLatexHighlightRules
+
+    # Ordering matters here: tokentypes higher up the list take precedence over lower ones
     TOKENTYPES = [
-        LPAREN_TOKENTYPE
-        RPAREN_TOKENTYPE
         LIST_TOKENTYPE
         EQUATION_TOKENTYPE
         ENVIRONMENT_TOKENTYPE
         TABLE_TOKENTYPE
         FIGURE_TOKENTYPE
+        LPAREN_TOKENTYPE
+        RPAREN_TOKENTYPE
     ]
 
     # Specific for token"s system of type in ace
