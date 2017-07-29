@@ -4,6 +4,8 @@ define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
     {
+        COMMENT_TOKENTYPE
+        ESCAPE_TOKENTYPE
         LPAREN_TOKENTYPE
         RPAREN_TOKENTYPE
         LIST_TOKENTYPE
@@ -17,6 +19,8 @@ define((require, exports, module) ->
 
     # Ordering matters here: tokentypes higher up the list take precedence over lower ones
     TOKENTYPES = [
+        COMMENT_TOKENTYPE
+        ESCAPE_TOKENTYPE
         LIST_TOKENTYPE
         EQUATION_TOKENTYPE
         ENVIRONMENT_TOKENTYPE
