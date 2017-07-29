@@ -3,13 +3,17 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
-    LPAREN_TOKENTYPE = PapeeriaLatexHighlightRules.LPAREN_TOKENTYPE
-    RPAREN_TOKENTYPE = PapeeriaLatexHighlightRules.RPAREN_TOKENTYPE
-    EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
-    LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
-    ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
-    FIGURE_TOKENTYPE = PapeeriaLatexHighlightRules.FIGURE_TOKENTYPE
-    TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
+    {
+        LPAREN_TOKENTYPE
+        RPAREN_TOKENTYPE
+        EQUATION_TOKENTYPE
+        LIST_TOKENTYPE
+        ENVIRONMENT_TOKENTYPE
+        FIGURE_TOKENTYPE
+        TABLE_TOKENTYPE
+
+        SPECIFIC_TOKEN_FOR_STATE
+    } = PapeeriaLatexHighlightRules
 
     TOKENTYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
 
@@ -30,7 +34,6 @@ define((require, exports, module) ->
                 if isType(token, TOKENTYPES[i])
                     return TOKENTYPES[i]
         return state
-
 
     getContextFromRow = (session, row) ->
         states = session.getState(row)
