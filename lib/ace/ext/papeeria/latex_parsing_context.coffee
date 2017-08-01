@@ -11,8 +11,6 @@ define((require, exports, module) ->
     LIST_TOKENTYPE
     EQUATION_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
-    TABLE_TOKENTYPE
-    FIGURE_TOKENTYPE
 
     SPECIFIC_TOKEN_FOR_STATE
   } = PapeeriaLatexHighlightRules
@@ -24,8 +22,6 @@ define((require, exports, module) ->
     LIST_TOKENTYPE
     EQUATION_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
-    TABLE_TOKENTYPE
-    FIGURE_TOKENTYPE
     LPAREN_TOKENTYPE
     RPAREN_TOKENTYPE
   ]

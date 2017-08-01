@@ -7,8 +7,6 @@ define((require, exports, module) ->
   EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
   LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
   ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
-  TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
-  FIGURE_TOKENTYPE = PapeeriaLatexHighlightRules.FIGURE_TOKENTYPE
 
   EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
