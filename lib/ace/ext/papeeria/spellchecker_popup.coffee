@@ -58,6 +58,7 @@ define((require, exports, module) ->
     command =
       name: "spellcheckerPopup"
       exec: ->
+        editor.completer?.detach()
         editor.completer = mySpellcheckerPopup
         editor.completer.showPopup(editor)
       bindKey: "Alt-Enter"
