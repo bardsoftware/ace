@@ -123,7 +123,7 @@ define((require, exports, module) ->
         next: pushState(pushedState)
       }
 
-    endRule = (text) ->
+    envEndRule = (text) ->
       return {
         token: [
           "storage.type"
@@ -135,6 +135,21 @@ define((require, exports, module) ->
 
         next: popState
       }
+
+    mathEnvEndRules = (text) -> [
+      {
+        token: [
+          "storage.type"
+          LPAREN_TOKENTYPE
+          "variable.parameter"
+          RPAREN_TOKENTYPE
+        ]
+        regex: "(\\\\(?:end))({)(#{text})(})"
+
+        next: popState
+      }
+      { token: "error.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
+    ]
 
     mathStartRule = (openingRegex, state) -> {
       token: "string.#{LPAREN_TOKENTYPE}"
@@ -243,22 +258,18 @@ define((require, exports, module) ->
     ])
 
     @$rules[LIST_ITEMIZE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
-      endRule(LIST_ITEMIZE_REGEX)
+      envEndRule(LIST_ITEMIZE_REGEX)
       genericEnvironmentRule
     ])
 
     @$rules[LIST_ENUMERATE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
-      endRule(LIST_ENUMERATE_REGEX)
+      envEndRule(LIST_ENUMERATE_REGEX)
       genericEnvironmentRule
     ])
 
-    @$rules[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = [
-      endRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX)
-    ]
+    @$rules[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX)
 
-    @$rules[MATH_ENVIRONMENT_DISPLAYED_STATE] = [
-      endRule(MATH_ENVIRONMENT_DISPLAYED_REGEX)
-    ]
+    @$rules[MATH_ENVIRONMENT_DISPLAYED_STATE] = mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_REGEX)
 
     @$rules[MATH_TEX_INLINE_STATE] = mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX)
 
