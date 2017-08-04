@@ -31,27 +31,32 @@ define((require, exports, module) ->
       endIndex = session.doc.positionToIndex(end, start.row) + 1
       content = joinedLines.substring(startIndex, endIndex - 1)
 
-      labelString = "\\label"
+      labelRe = /\\label\s*\{/g
       bracketString = "{"
       labels = []
       equationStrings = []
       curIndex = 0
 
       while true
-        labelStartIndex = content.indexOf(labelString, curIndex)
-        if labelStartIndex == -1
+        result = labelRe.exec(content)
+        if result == null
           equationStrings.push(content.substring(curIndex))
           break
 
+        labelStartIndex = result.index
         equationStrings.push(content.substring(curIndex, labelStartIndex))
 
-        openingBracketIndex = content.indexOf(bracketString, labelStartIndex + labelString.length - 1)
+        matchedString = result[0]
+        openingBracketIndex = labelStartIndex + matchedString.length - 1
         openingBracketPos = session.doc.indexToPosition(startIndex + openingBracketIndex + 1, start.row)
         closingBracketPos = session.findMatchingBracket(openingBracketPos, bracketString)
-        closingBracketIndex = session.doc.positionToIndex(closingBracketPos, start.row) - startIndex
-
-        labels.push(content.substring(openingBracketIndex + 1, closingBracketIndex))
-        curIndex = closingBracketIndex + 1
+        if closingBracketPos == null
+          equationStrings.push(matchedString)
+          curIndex = openingBracketIndex + 1
+        else
+          closingBracketIndex = session.doc.positionToIndex(closingBracketPos, start.row) - startIndex
+          labels.push(content.substring(openingBracketIndex + 1, closingBracketIndex))
+          curIndex = closingBracketIndex + 1
 
       return { labels: labels, equation: equationStrings.join(" ") }
 
