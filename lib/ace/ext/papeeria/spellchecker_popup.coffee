@@ -20,16 +20,6 @@ define((require, exports, module) ->
   Spellchecker = require('ace/ext/papeeria/spellchecker')
 
   ###
-  Returns Range object that describes the current word position.
-  @param {Editor} editor: editor object.
-  @return {Range}: current word range.
-  ###
-  getCurrentWordRange = (editor) ->
-    session = editor.getSession()
-    {row, column} = editor.getCursorPosition()
-    return session.getWordRange(row, column)
-
-  ###
   Convert an array of string to popup-eligible structure.
   @param {PopupAction} action -- action object to be prepended to the resulting list (or null)
   @param {Array<String>} corrections -- array of corrections
@@ -49,17 +39,8 @@ define((require, exports, module) ->
     action: action.doAction
   }
 
-  ###
-  Get the word under the cursor.
-  @param {Editor} editor: editor object.
-  @return {String}: the current word.
-  ###
-  extractWord = (editor) ->
-    session = editor.getSession()
-    wordRange = getCurrentWordRange(editor)
-    return session.getTextRange(wordRange)
-
   mySpellcheckerPopup = null
+  mySpellchecker = null
 
 
   ###
@@ -72,10 +53,12 @@ define((require, exports, module) ->
   ###
   setup = (editor, onReplaced, blacklistAction, whitelistAction) ->
     mySpellcheckerPopup = new SpellcheckerCompleter(onReplaced, blacklistAction, whitelistAction)
+    mySpellchecker = Spellchecker.getInstance()
     # Bind SpellcheckerCompleter.showPopup to Alt-Enter editor shortcut.
     command =
-      name: "spellCheckPopup"
+      name: "spellcheckerPopup"
       exec: ->
+        editor.completer?.detach()
         editor.completer = mySpellcheckerPopup
         editor.completer.showPopup(editor)
       bindKey: "Alt-Enter"
@@ -84,44 +67,49 @@ define((require, exports, module) ->
 
   class SpellcheckerCompleter extends Autocomplete.Autocomplete
     constructor: (@onReplaced, @blacklistAction, @whitelistAction) ->
-      @isDisposable = true
       super()
+      @isDisposable = true
+      @typoRange = null
+      @typo = null
 
     # we should hide the popup, if user starts typing
     changeListener: () => @detach()
 
     gatherCompletions: (editor, callback) =>
+      if not mySpellchecker.isEnabled()
+        callback(null, {finished: true})
+        return true
       # For some reason Autocomplete needs this base object, so
       # I propose just not to touch it.
       session = editor.getSession()
-      position = editor.getCursorPosition()
-      @base = session.doc.createAnchor(position.row, position.column)
-      word = extractWord(editor)
-      action = @_chooseAction(word)
-      Spellchecker.getInstance().getCorrections(word, (correctionsList) ->
+      {row, column} = editor.getCursorPosition()
+      @base = session.doc.createAnchor(row, column)
+      @typoRange = mySpellchecker.getTypoRange(row, column)
+      @typo = session.getTextRange(@typoRange)
+      if mySpellchecker.isWordTypo(@typo)
+        mySpellchecker.getCorrections(@typo, (correctionsList) =>
+          callback(null, {
+            prefix: ""
+            matches: convertCorrectionList(@whitelistAction, correctionsList)
+            finished: true
+          })
+        )
+      else
         callback(null, {
           prefix: ""
-          matches: convertCorrectionList(action, correctionsList)
+          matches: convertCorrectionList(@blacklistAction, [])
           finished: true
         })
-      )
       return true
-
-    _chooseAction: (word) =>
-      if Spellchecker.getInstance().isWordTypo(word)
-        return @whitelistAction
-      return @blacklistAction
 
     insertMatch: (data, options) =>
       data ?= @popup.getData(@popup.getRow())
-      wordRange = getCurrentWordRange(@editor)
-      typo = @editor.getSession().getTextRange(wordRange)
       if data.action
-        data.action(typo)
+        data.action(@typo)
       else
         replacement = data.value || data
-        @editor.getSession().replace(wordRange, replacement)
-        @onReplaced(typo, replacement)
+        @editor.getSession().replace(@typoRange, replacement)
+        @onReplaced(@typo, replacement)
       @detach()
 
   return {

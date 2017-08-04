@@ -1,4 +1,6 @@
-define( ->
+define((require, exports, module) ->
+
+  Range = require('ace/range').Range
 
   # @typedef {Function(String, Function(String[]))}         AsyncFetchTypos
   # @typedef {Function(String, String, Function(String[]))} AsyncFetchSuggestions
@@ -41,6 +43,9 @@ define( ->
         # cache is no longer valid if language has changed
         @dictionaryCache.clear()
       @language = settings.tag
+      @enabled =  settings.isEnabled
+      @splitRe = new RegExp('([^' + settings.punctuation + ']+)', 'g')
+      @matchRe = new RegExp('^[^' + settings.punctuation + ']+$')
       @asyncFetchTypos = asyncFetchTypos
       @asyncFetchSuggestions = asyncFetchSuggestions
       @editor.getSession()._emit("changeSpellingCheckSettings", settings)
@@ -51,6 +56,9 @@ define( ->
     onHashUpdated: (typosHash) =>
       if @typosHash != typosHash
         @_fetchTypos(typosHash)
+
+    # Is spellchecking enabled
+    isEnabled: => @enabled
 
     # Cache given dictionary change so that it appears on screen immediately
     # without waiting for the "get new hash, download new typos" cycle
@@ -71,6 +79,28 @@ define( ->
 
     # Tell if given word is a typo according to current set of typos
     isWordTypo: (word) => !!@typos[word]
+
+    # Return word range containing given point (according to spellchecker's view of how to tokenize words)
+    getTypoRange: (row, column) =>
+      session = @editor.getSession()
+      matches = session.getLine(row).split(@splitRe)  # includes both tokens and nontokens
+      pos = 0
+      for w in matches
+        pos += w.length
+        if (pos > column) or (pos == column and w.match(@matchRe))
+          return new Range(row, pos - w.length, row, pos)
+      return session.getWordRange(row, column)
+
+    # Check if given range has a typo marker
+    hasTypoMarker: (range) =>
+      session = @editor.getSession()
+      # Optimization: only typos can have typo markers
+      if not @isWordTypo(session.getTextRange(range))
+        return false
+      for k, w of session.getMarkers(true)
+        if w.type == "typo" and w.range.isEqual(range)
+          return true
+      return false
 
 
   class DictionaryCache
