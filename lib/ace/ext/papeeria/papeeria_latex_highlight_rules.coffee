@@ -37,7 +37,7 @@ define((require, exports, module) ->
   exports.ESCAPE_TOKENTYPE = ESCAPE_TOKENTYPE = "escape"
   exports.LPAREN_TOKENTYPE = LPAREN_TOKENTYPE = "lparen"
   exports.RPAREN_TOKENTYPE = RPAREN_TOKENTYPE = "rparen"
-  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
+  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "latexlist"
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
   exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
   exports.STORAGE_TOKENTYPE = STORAGE_TOKENTYPE = "storage"
