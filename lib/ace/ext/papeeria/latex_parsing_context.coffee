@@ -3,13 +3,15 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 define((require, exports, module) ->
     PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
-    {
-        EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE,
-        EQUATION_TOKEN_TYPE, LIST_TOKEN_TYPE, FIGURE_TOKEN_TYPE, ENVIRONMENT_TOKEN_TYPE, TABLE_TOKEN_TYPE
-    } = PapeeriaLatexHighlightRules
+    LPAREN_TOKENTYPE = PapeeriaLatexHighlightRules.LPAREN_TOKENTYPE
+    RPAREN_TOKENTYPE = PapeeriaLatexHighlightRules.RPAREN_TOKENTYPE
+    EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
+    LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
+    ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
+    FIGURE_TOKENTYPE = PapeeriaLatexHighlightRules.FIGURE_TOKENTYPE
+    TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
 
-    TOKEN_TYPES = [EQUATION_TOKEN_TYPE, LIST_TOKEN_TYPE, FIGURE_TOKEN_TYPE, ENVIRONMENT_TOKEN_TYPE, TABLE_TOKEN_TYPE]
-    STATES =  [EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE]
+    TOKENTYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
 
     # Specific for token"s system of type in ace
     isType = (token, type) ->
@@ -24,9 +26,9 @@ define((require, exports, module) ->
         state = getContextFromRow(session, row)
         token = session.getTokenAt(row, column)
         if token?
-            for i in [0..TOKEN_TYPES.length-1]
-                if isType(token, TOKEN_TYPES[i])
-                    return STATES[i]
+            for i in [0..TOKENTYPES.length-1]
+                if isType(token, TOKENTYPES[i])
+                    return TOKENTYPES[i]
         return state
 
 

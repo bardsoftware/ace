@@ -296,15 +296,15 @@ define((require, exports, module) ->
   class EquationRangeHandler
     @BEGIN_EQUATION_TOKEN_SEQUENCES: [
       [
-        { type: "rparen", value: "}" }
+        { type: "paren.rparen", value: "}" }
         { type: "variable.parameter", value: "equation" }
-        { type: "lparen", value: "{" }
+        { type: "paren.lparen", value: "{" }
         { type: "storage.type", value: "\\begin" }
       ]
       [
-        { type: "rparen", value: "}" }
+        { type: "paren.rparen", value: "}" }
         { type: "variable.parameter", value: "equation*" }
-        { type: "lparen", value: "{" }
+        { type: "paren.lparen", value: "{" }
         { type: "storage.type", value: "\\begin" }
       ]
       [ { type: "string", value: "\\[" } ]
@@ -315,15 +315,15 @@ define((require, exports, module) ->
     @END_EQUATION_TOKEN_SEQUENCES: [
       [
         { type: "storage.type", value: "\\end" }
-        { type: "lparen", value: "{" }
+        { type: "paren.lparen", value: "{" }
         { type: "variable.parameter", value: "equation" }
-        { type: "rparen", value: "}" }
+        { type: "paren.rparen", value: "}" }
       ]
       [
         { type: "storage.type", value: "\\end" }
-        { type: "lparen", value: "{" }
+        { type: "paren.lparen", value: "{" }
         { type: "variable.parameter", value: "equation*" }
-        { type: "rparen", value: "}" }
+        { type: "paren.rparen", value: "}" }
       ]
       [ { type: "string", value: "\\]" } ]
       [ { type: "string", value: "\\)" } ]

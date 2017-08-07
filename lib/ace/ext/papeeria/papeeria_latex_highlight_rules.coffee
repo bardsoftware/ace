@@ -33,18 +33,13 @@ define((require, exports, module) ->
   MATH_LATEX_INLINE_OPENING_REGEX = "\\\\\\("
   MATH_LATEX_INLINE_CLOSING_REGEX = "\\\\\\)"
 
-  exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
-
-  exports.LIST_STATE = LIST_STATE = "latexlist"
-  exports.LIST_TOKEN_TYPE = LIST_TOKEN_TYPE = "latexlist"
-  exports.EQUATION_STATE = EQUATION_STATE = "equation"
-  exports.EQUATION_TOKEN_TYPE = EQUATION_TOKEN_TYPE = "equation"
-  exports.ENVIRONMENT_STATE = ENVIRONMENT_STATE = "environment"
-  exports.ENVIRONMENT_TOKEN_TYPE = ENVIRONMENT_TOKEN_TYPE = "environment"
-  exports.TABLE_STATE = "table"
-  exports.TABLE_TOKEN_TYPE = "table"
-  exports.FIGURE_STATE = "figure"
-  exports.FIGURE_TOKEN_TYPE = "figure"
+  exports.LPAREN_TOKENTYPE = "lparen"
+  exports.RPAREN_TOKENTYPE = "rparen"
+  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
+  exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
+  exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
+  exports.TABLE_TOKENTYPE = "table"
+  exports.FIGURE_TOKENTYPE = "figure"
   PapeeriaLatexHighlightRules = ->
     ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
@@ -98,10 +93,10 @@ define((require, exports, module) ->
         addToken = ""
       return [
         { token: "comment" + addToken, regex: "%.*$" }
-        { token: "lparen" + addToken, regex: "[[({]" }
-        { token: "rparen" + addToken, regex: "[\\])}]" }
+        { token: "paren.lparen" + addToken, regex: "[[({]" }
+        { token: "paren.rparen" + addToken, regex: "[\\])}]" }
         { token: "storage.type" + addToken, regex: "\\\\[a-zA-Z]+" }
-        { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?" }
+        { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?", merge: false }
         { defaultToken : "text" + addToken }
       ]
 
@@ -109,9 +104,9 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:begin))({)(" + text + ")(})"
         next: pushState(pushedState)
@@ -121,9 +116,9 @@ define((require, exports, module) ->
       return {
         token: [
           "storage.type"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:end))({)(" + text + ")(})"
 
@@ -131,26 +126,26 @@ define((require, exports, module) ->
       }
 
     mathStartRule = (openingRegex, state) -> {
-      token: "string"
+      token: "string.paren.lparen"
       regex: openingRegex
       next: pushState(state)
       merge: false
     }
 
     mathEndRules = (closingRegex) -> [
-      { token: "string", regex: closingRegex, next: popState }
+      { token: "string.paren.rparen", regex: closingRegex, next: popState }
       { token: "error", regex : "^\\s*$", next: popState }
     ]
 
     specificTokenForState = {}
-    specificTokenForState[LIST_ITEMIZE_STATE] = LIST_TOKEN_TYPE
-    specificTokenForState[LIST_ENUMERATE_STATE] = LIST_TOKEN_TYPE
-    specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = EQUATION_TOKEN_TYPE
-    specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
-    specificTokenForState[MATH_TEX_INLINE_STATE] = EQUATION_TOKEN_TYPE
-    specificTokenForState[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
-    specificTokenForState[MATH_LATEX_INLINE_STATE] = EQUATION_TOKEN_TYPE
-    specificTokenForState[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKEN_TYPE
+    specificTokenForState[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
+    specificTokenForState[LIST_ENUMERATE_STATE] = LIST_TOKENTYPE
+    specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_TEX_INLINE_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_LATEX_INLINE_STATE] = EQUATION_TOKENTYPE
+    specificTokenForState[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
 
     equationStartRules = [
       beginRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX, MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE)
@@ -173,14 +168,14 @@ define((require, exports, module) ->
         opening =
           token: [
             "storage.type"
-            "lparen.#{@stateName}"
+            "paren.lparen.#{@stateName}"
           ]
           next: pushState(@stateName)
           regex: "(\\\\(?:#{@commandName}))({)"
         openingRules.push(opening)
 
         closing =
-          token: "rparen"
+          token: "paren.rparen"
           regex: "(})"
           next: popState
         instateRules.push(closing)
@@ -194,9 +189,9 @@ define((require, exports, module) ->
     genericEnvironmentRule = {
       token: [
         "storage.type"
-        "lparen.environment"
+        "paren.lparen.environment"
         "variable.parameter.environment"
-        "rparen"
+        "paren.rparen"
       ]
       regex: "(\\\\(?:begin|end))({)(\\w*)(})"
     }
@@ -213,9 +208,9 @@ define((require, exports, module) ->
       {
         token: [
           "storage.type"
-          "lparen.ref"
+          "paren.lparen.ref"
           "variable.parameter.ref"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:ref))({)(\\w*)(})"
       }
@@ -223,9 +218,9 @@ define((require, exports, module) ->
       {
         token: [
           "keyword"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
@@ -234,12 +229,12 @@ define((require, exports, module) ->
       {
         token: [
           "keyword"
-          "lparen"
+          "paren.lparen"
           "variable.parameter"
-          "rparen"
-          "lparen"
+          "paren.rparen"
+          "paren.lparen"
           "storage.type"
-          "rparen"
+          "paren.rparen"
         ]
         regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
       }
