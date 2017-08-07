@@ -50,13 +50,6 @@ define((require, exports, module) ->
         return SPECIFIC_TOKEN_FOR_STATE[prevState] ? "start"
     return "start"
 
-  getContextFromRow = (session, row) ->
-    states = session.getState(row)
-    if (Array.isArray(states))
-      return states[states.length - 1]
-    else
-      return states
-
   exports.getContext = getContext
   exports.isType = isType
   return
