@@ -3,7 +3,7 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 define((require, exports, module) ->
   "use strict"
   oop = require("ace/lib/oop")
-  TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules
+  { TextHighlightRules } = require("ace/mode/text_highlight_rules")
 
   exports.START_STATE = START_STATE = "start"
 

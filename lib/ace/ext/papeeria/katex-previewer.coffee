@@ -1,8 +1,10 @@
 define((require, exports, module) ->
-  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-  TokenIterator = require("ace/token_iterator").TokenIterator
-  Range = require("ace/range").Range
-  findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
+  { EQUATION_CONTEXT, getContext } = require("ace/ext/papeeria/latex_parsing_context")
+  { ERROR_TOKENTYPE } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  { TokenIterator } = require("ace/token_iterator")
+  { Range } = require("ace/range")
+  { findSurroundingBrackets } = require("ace/ext/papeeria/highlighter")
+  { isType } = require("ace/ext/papeeria/util")
 
 
   myKatexLoader = null
@@ -91,7 +93,7 @@ define((require, exports, module) ->
 
     getEquationEndRow: ->
       i = @editor.getCursorPosition().row
-      while LatexParsingContext.getContext(@editor.getSession(), i) == "equation"
+      while getContext(@editor.getSession(), i) == EQUATION_CONTEXT
         i += 1
       return i
 
@@ -126,9 +128,9 @@ define((require, exports, module) ->
       else
         @currentDelayedUpdateId = null
         cursorPos = @editor.getCursorPosition()
-        curContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
+        curContext = getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
-        if curContext == "equation"
+        if curContext == EQUATION_CONTEXT
           @updateRange()
         else
           @destroyRange()
@@ -211,7 +213,7 @@ define((require, exports, module) ->
         return
 
       cursorPos = @editor.getCursorPosition()
-      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
+      currentContext = getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
       if @currentRange? and not @currentRange.contains(cursorPos.row, cursorPos.column)
         @destroyRange()
@@ -220,7 +222,7 @@ define((require, exports, module) ->
       if not @currentRange? and @contextPreviewExists
         @destroyContextPreview()
 
-      if not @currentRange? and currentContext == "equation"
+      if not @currentRange? and currentContext == EQUATION_CONTEXT
         @updateRange()
         @enableUpdates()
 
@@ -306,14 +308,14 @@ define((require, exports, module) ->
             column: curColumn
           }
 
-        if LatexParsingContext.getContext(session, nextRow, nextColumn) != "equation"
+        if getContext(session, nextRow, nextColumn) != EQUATION_CONTEXT
           correct = true
           reason = null
           token = session.getTokenAt(curRow, curColumn)
           if not token?
             correct = false
             reason = EquationRangeHandler.EMPTY_LINE_ERROR_CODE
-          else if LatexParsingContext.isType(token, "error")
+          else if isType(token, ERROR_TOKENTYPE)
             correct = false
             reason = EquationRangeHandler.WHITESPACE_LINE_ERROR_CODE
 

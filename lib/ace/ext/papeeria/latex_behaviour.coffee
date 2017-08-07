@@ -1,18 +1,17 @@
 define((require, exports, module) ->
-  Behaviour = require("ace/mode/behaviour").Behaviour
-  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-  PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
-
-
+  { Behaviour } = require("ace/mode/behaviour")
   {
-    COMMENT_TOKENTYPE
+    COMMENT_CONTEXT
+    EQUATION_CONTEXT
+    getContext
+  } = require("ace/ext/papeeria/latex_parsing_context")
+  {
     ESCAPE_TOKENTYPE
     RPAREN_TOKENTYPE
-    EQUATION_TOKENTYPE
     STORAGE_TOKENTYPE
     KEYWORD_TOKENTYPE
-  } = PapeeriaLatexHighlightRules
-  { getContext, isType } = LatexParsingContext
+  } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  { isType } = require("ace/ext/papeeria/util")
   CORRESPONDING_CLOSING = {
       '(': ')'
       '[': ']'
@@ -55,14 +54,14 @@ define((require, exports, module) ->
     nextToken = session.getTokenAt(row, column + 1)
 
     # If cursor is inside a comment or escaped, do nothing
-    if getContext(session, row, column) == COMMENT_TOKENTYPE or isEscapedInsertion(token, column)
+    if getContext(session, row, column) == COMMENT_CONTEXT or isEscapedInsertion(token, column)
       return DO_NOTHING
 
     prevChar = line[column - 1] or ''
     nextChar = line[column] or ''
 
     # If cursor is in equation, either skip closing $ or do nothing
-    if getContext(session, row, column) == EQUATION_TOKENTYPE
+    if getContext(session, row, column) == EQUATION_CONTEXT
       return if nextChar == '$' then SKIP else DO_NOTHING
 
     # Otherwise, insert or skip
@@ -127,7 +126,7 @@ define((require, exports, module) ->
           if isEscapedInsertion(token, column)
             shouldComplete = (
                 opening != '{' and
-                getContext(session, row, column) != EQUATION_TOKENTYPE
+                getContext(session, row, column) != EQUATION_CONTEXT
             )
             if shouldComplete
               return {
@@ -140,7 +139,7 @@ define((require, exports, module) ->
           # Handle default case
           if (
               not editor.completer?.activated and
-              getContext(session, row, column) != COMMENT_TOKENTYPE
+              getContext(session, row, column) != COMMENT_CONTEXT
           )
             return { text: opening + closing, selection: [1, 1] }
 

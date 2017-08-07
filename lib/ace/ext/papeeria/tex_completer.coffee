@@ -1,12 +1,14 @@
 foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
 define((require, exports, module) ->
   HashHandler = require("ace/keyboard/hash_handler")
-  PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
-  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-
-  EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
-  LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
-  ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
+  {
+    EQUATION_CONTEXT
+    LIST_CONTEXT
+    ENVIRONMENT_CONTEXT
+    START_CONTEXT
+    getContext
+  } = require("ace/ext/papeeria/latex_parsing_context")
+  { isType } = require("ace/ext/papeeria/util")
 
   EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
@@ -242,7 +244,7 @@ define((require, exports, module) ->
 
       if token?
         for type in allowedTypes
-          if LatexParsingContext.isType(token, type)
+          if isType(token, type)
             editor.completer.showPopup(editor)
             break
 
@@ -293,7 +295,7 @@ define((require, exports, module) ->
         indentString = line.match(/^\s*/)[0]
         indexOfBegin = line.indexOf("begin")
 
-        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_TOKENTYPE &&  indexOfBegin < cursor.column
+        if getContext(editor.session, cursor.row, cursor.column) == LIST_CONTEXT && indexOfBegin < cursor.column
           if indexOfBegin > -1
             editor.insert("\n" + tabString + indentString + "\\item ")
           else
@@ -313,13 +315,13 @@ define((require, exports, module) ->
           return
 
         token = session.getTokenAt(pos.row, pos.column)
-        context = LatexParsingContext.getContext(session, pos.row, pos.column)
+        context = getContext(session, pos.row, pos.column)
 
-        if LatexParsingContext.isType(token, "ref")
+        if isType(token, "ref")
           if @referencesUrl? then @refCache.getReferences(@referencesUrl, callback)
           return
 
-        if LatexParsingContext.isType(token, "cite")
+        if isType(token, "cite")
           if @citationsUrl? then @citeCache.getReferences(@citationsUrl, (err, cites) =>
             if @filesUrl?
               # After we get a list of cite autocompletion we want to extract entries from already included biblio files
@@ -350,12 +352,12 @@ define((require, exports, module) ->
 
         if (prefix.length >= 2 and prefix[0] == "\\") or (prefix.length >= 3)
           switch context
-            when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+            when START_CONTEXT then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-            when LIST_TOKENTYPE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+            when LIST_CONTEXT then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
-            when EQUATION_TOKENTYPE then callback(null, EQUATION_SNIPPETS)
-            when ENVIRONMENT_TOKENTYPE then callback(null, ENVIRONMENT_LABELS)
+            when EQUATION_CONTEXT then callback(null, EQUATION_SNIPPETS)
+            when ENVIRONMENT_CONTEXT then callback(null, ENVIRONMENT_LABELS)
             else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
           return

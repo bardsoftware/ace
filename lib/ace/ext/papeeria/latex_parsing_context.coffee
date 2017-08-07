@@ -1,18 +1,13 @@
 define((require, exports, module) ->
-  PapeeriaLatexHighlightRules = require(
-    "ace/ext/papeeria/papeeria_latex_highlight_rules")
-
+  { isType } = require("ace/ext/papeeria/util")
   {
     COMMENT_TOKENTYPE
-    ESCAPE_TOKENTYPE
-    LPAREN_TOKENTYPE
-    RPAREN_TOKENTYPE
     LIST_TOKENTYPE
     EQUATION_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
 
     SPECIFIC_TOKEN_FOR_STATE
-  } = PapeeriaLatexHighlightRules
+  } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
   exports.COMMENT_CONTEXT = COMMENT_CONTEXT = COMMENT_TOKENTYPE
   exports.EQUATION_CONTEXT = EQUATION_CONTEXT = EQUATION_TOKENTYPE
@@ -35,9 +30,6 @@ define((require, exports, module) ->
   CONTEXTS_FOR_TOKENTYPES[EQUATION_TOKENTYPE] = EQUATION_CONTEXT
   CONTEXTS_FOR_TOKENTYPES[ENVIRONMENT_TOKENTYPE] = ENVIRONMENT_CONTEXT
   CONTEXTS_FOR_TOKENTYPES[LIST_TOKENTYPE] = LIST_CONTEXT
-
-  isType = (token, type) ->
-    return token.type.indexOf(type) > -1
 
   getContext = (session, row, column) ->
     # column > 0 means that token exists at { row, column } and also that we
@@ -76,6 +68,5 @@ define((require, exports, module) ->
     return START_CONTEXT
 
   exports.getContext = getContext
-  exports.isType = isType
   return
 )
