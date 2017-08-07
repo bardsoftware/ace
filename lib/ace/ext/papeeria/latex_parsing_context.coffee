@@ -22,15 +22,9 @@ define((require, exports, module) ->
     LIST_TOKENTYPE
   ]
 
-  # Specific for token's system of type in ace
   isType = (token, type) ->
     return token.type.indexOf(type) > -1
 
-  ###
-   * @param {(number, number) pos}
-   *
-   * Returns context at cursor position.
-  ###
   getContext = (session, row, column) ->
     { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
       session.doc.positionToIndex({ row, column }, row) + 1,
