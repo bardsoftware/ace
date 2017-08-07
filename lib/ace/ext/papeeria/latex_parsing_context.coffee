@@ -38,7 +38,7 @@ define((require, exports, module) ->
     )
     token = session.getTokenAt(row, column)
     nextToken = session.getTokenAt(nextRow, nextColumn)
-    if token?
+    if token? and column > 0
       for i in [0..CONTEXT_TOKENTYPES.length-1]
         if (
           isType(token, CONTEXT_TOKENTYPES[i]) or
@@ -48,7 +48,11 @@ define((require, exports, module) ->
     else
       if row > 0
         prevState = session.getState(row - 1)
-        prevState = if typeof prevState == "string" then prevState else prevState[prevState.length - 1]
+        prevState = (
+          if typeof prevState == "string"
+          then prevState
+          else prevState[prevState.length - 1]
+        )
         return SPECIFIC_TOKEN_FOR_STATE[prevState] ? "start"
     return "start"
 
