@@ -42,6 +42,7 @@ define((require, exports, module) ->
   exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
   exports.STORAGE_TOKENTYPE = STORAGE_TOKENTYPE = "storage"
   exports.KEYWORD_TOKENTYPE = KEYWORD_TOKENTYPE = "keyword"
+  exports.ERROR_TOKENTYPE = ERROR_TOKENTYPE = "error"
 
   exports.SPECIFIC_TOKEN_FOR_STATE = SPECIFIC_TOKEN_FOR_STATE = {}
   SPECIFIC_TOKEN_FOR_STATE[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
@@ -150,7 +151,7 @@ define((require, exports, module) ->
 
         next: popState
       }
-      { token: "error.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
+      { token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
 
     mathStartRule = (openingRegex, state) -> {
@@ -162,7 +163,7 @@ define((require, exports, module) ->
 
     mathEndRules = (closingRegex) -> [
       { token: "string.#{RPAREN_TOKENTYPE}", regex: closingRegex, next: popState }
-      { token: "error.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
+      { token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
 
     equationStartRules = [
