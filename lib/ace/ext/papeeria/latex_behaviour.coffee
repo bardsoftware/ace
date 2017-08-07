@@ -1,12 +1,18 @@
 define((require, exports, module) ->
   Behaviour = require("ace/mode/behaviour").Behaviour
-  COMMENT_TYPE = "comment"
-  ESCAPE_TYPE = "escape"
-  KEYWORD_TYPE = "keyword"
-  STORAGE_TYPE = "storage"
-  MATH_TYPE = "math"
-  EQUATION_TYPE = "equation"
-  RPAREN_TYPE = "rparen"
+  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
+  PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+
+
+  {
+    COMMENT_TOKENTYPE
+    ESCAPE_TOKENTYPE
+    RPAREN_TOKENTYPE
+    EQUATION_TOKENTYPE
+    STORAGE_TOKENTYPE
+    KEYWORD_TOKENTYPE
+  } = PapeeriaLatexHighlightRules
+  { getContext, isType } = LatexParsingContext
   CORRESPONDING_CLOSING = {
       '(': ')'
       '[': ']'
@@ -14,42 +20,21 @@ define((require, exports, module) ->
   }
 
 
-  # If we're on the start of a line, but the current token is of a type "comment", we're not actually
-  # inside a comment, just on a start of it. That's the reason for `column != 0` check
-  isCommentToken = (token, column) -> column != 0 and token? and token.type.indexOf(COMMENT_TYPE) > -1
-
-
   isEscapedInsertion = (token, column) -> (
       token? and
       (
-          token.type.indexOf(ESCAPE_TYPE) > -1 or
-          token.type.indexOf(KEYWORD_TYPE) > -1 or
-          token.type.indexOf(STORAGE_TYPE) > -1
+          isType(token, ESCAPE_TOKENTYPE) or
+          isType(token, KEYWORD_TOKENTYPE) or
+          isType(token, STORAGE_TOKENTYPE)
       ) and
       column - token.start == 1
   )
 
 
-  isInEquation = (session, row, column) ->
-    token = session.getTokenAt(row, column)
-    nextToken = session.getTokenAt(row, column + 1)
-    state = session.getState(row)
-    pState = session.getState(row - 1)
-    lastState = if typeof(state) == "string" then state else state[state.length - 1]
-    lastPrevState = if typeof(pState) == "string" then pState else pState[pState.length - 1]
-    return (
-        # This handles the case, when the cursor is on the empty string
-        (not token? and lastPrevState.indexOf(MATH_TYPE) > -1) or
-        # This handles the common case, when the cursor is inside the equation
-        (token? and token.type.indexOf(EQUATION_TYPE) > -1) or
-        # This handles the specific case, when the cursor is on the very start of the equation
-        (nextToken? and nextToken.type.indexOf(EQUATION_TYPE) > -1)
-    )
-
-
   DO_NOTHING = null
   AUTO_INSERT = { text: "$$", selection: [1, 1] }
   SKIP = { text: "", selection: [1, 1] }
+
   dollarsInsertionAction = (state, action, editor, session, text) ->
     if editor.inMultiSelectMode or text != '$'
       return DO_NOTHING
@@ -70,18 +55,18 @@ define((require, exports, module) ->
     nextToken = session.getTokenAt(row, column + 1)
 
     # If cursor is inside a comment or escaped, do nothing
-    if isCommentToken(token, column) or isEscapedInsertion(token, column)
+    if getContext(session, row, column) == COMMENT_TOKENTYPE or isEscapedInsertion(token, column)
       return DO_NOTHING
 
     prevChar = line[column - 1] or ''
     nextChar = line[column] or ''
 
     # If cursor is in equation, either skip closing $ or do nothing
-    if isInEquation(session, row, column)
+    if getContext(session, row, column) == EQUATION_TOKENTYPE
       return if nextChar == '$' then SKIP else DO_NOTHING
 
     # Otherwise, insert or skip
-    shouldSkip = (nextChar == '$' and (prevChar != '$' or nextToken.type.indexOf(RPAREN_TYPE) > -1))
+    shouldSkip = (nextChar == '$' and (prevChar != '$' or isType(nextToken, RPAREN_TOKENTYPE)))
     return if shouldSkip then SKIP else AUTO_INSERT
 
 
@@ -97,7 +82,7 @@ define((require, exports, module) ->
     token = session.getTokenAt(range.end.row, range.end.column)
     nextChar = line[range.start.column + 1]
     # If we're surrounded by $s, delete them
-    if nextChar == '$' and not (token.type.indexOf(ESCAPE_TYPE) > -1)
+    if nextChar == '$' and not (isType(token, ESCAPE_TOKENTYPE))
       range.end.column++
       return range
 
@@ -142,7 +127,7 @@ define((require, exports, module) ->
           if isEscapedInsertion(token, column)
             shouldComplete = (
                 opening != '{' and
-                not isInEquation(session, row, column)
+                getContext(session, row, column) != EQUATION_TOKENTYPE
             )
             if shouldComplete
               return {
@@ -153,7 +138,10 @@ define((require, exports, module) ->
               return DO_NOTHING
 
           # Handle default case
-          if not editor.completer?.activated and not isCommentToken(token, column)
+          if (
+              not editor.completer?.activated and
+              getContext(session, row, column) != COMMENT_TOKENTYPE
+          )
             return { text: opening + closing, selection: [1, 1] }
 
         when closing
@@ -173,7 +161,7 @@ define((require, exports, module) ->
           # Handle skipping math closing boundary when inserting appropriate bracket
           if nextChar == "\\" and
               line[column + 1] == closing and
-              nextToken.type.indexOf(RPAREN_TYPE) > -1
+              isType(nextToken, RPAREN_TOKENTYPE)
             return SKIP_TWO
 
 
