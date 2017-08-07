@@ -40,6 +40,8 @@ define((require, exports, module) ->
   exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
   exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
+  exports.STORAGE_TOKENTYPE = STORAGE_TOKENTYPE = "storage"
+  exports.KEYWORD_TOKENTYPE = KEYWORD_TOKENTYPE = "keyword"
 
   exports.SPECIFIC_TOKEN_FOR_STATE = SPECIFIC_TOKEN_FOR_STATE = {}
   SPECIFIC_TOKEN_FOR_STATE[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
@@ -106,7 +108,7 @@ define((require, exports, module) ->
         { token: "#{COMMENT_TOKENTYPE}#{addToken}", regex: "%.*$" }
         { token: "#{LPAREN_TOKENTYPE}#{addToken}", regex: "[[({]" }
         { token: "#{RPAREN_TOKENTYPE}#{addToken}", regex: "[\\])}]" }
-        { token: "storage.type#{addToken}", regex: "\\\\[a-zA-Z]+" }
+        { token: "#{STORAGE_TOKENTYPE}.type#{addToken}", regex: "\\\\[a-zA-Z]+" }
         { token: "constant.character.#{ESCAPE_TOKENTYPE}#{addToken}", regex: "\\\\[^a-zA-Z]?", merge: false }
         { defaultToken : "text#{addToken}" }
       ]
@@ -114,7 +116,7 @@ define((require, exports, module) ->
     beginRule = (text, pushedState) ->
       return {
         token: [
-          "storage.type"
+          "#{STORAGE_TOKENTYPE}.type"
           LPAREN_TOKENTYPE
           "variable.parameter"
           RPAREN_TOKENTYPE
@@ -126,7 +128,7 @@ define((require, exports, module) ->
     envEndRule = (text) ->
       return {
         token: [
-          "storage.type"
+          "#{STORAGE_TOKENTYPE}.type"
           LPAREN_TOKENTYPE
           "variable.parameter"
           RPAREN_TOKENTYPE
@@ -139,7 +141,7 @@ define((require, exports, module) ->
     mathEnvEndRules = (text) -> [
       {
         token: [
-          "storage.type"
+          "#{STORAGE_TOKENTYPE}.type"
           LPAREN_TOKENTYPE
           "variable.parameter"
           RPAREN_TOKENTYPE
@@ -183,7 +185,7 @@ define((require, exports, module) ->
       generateRules: (openingRules, instateRules) =>
         opening =
           token: [
-            "storage.type"
+            "#{STORAGE_TOKENTYPE}.type"
             "#{LPAREN_TOKENTYPE}.#{@stateName}"
           ]
           next: pushState(@stateName)
@@ -204,7 +206,7 @@ define((require, exports, module) ->
 
     genericEnvironmentRule = {
       token: [
-        "storage.type"
+        "#{STORAGE_TOKENTYPE}.type"
         "#{LPAREN_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
         "variable.parameter.#{ENVIRONMENT_TOKENTYPE}"
         RPAREN_TOKENTYPE
@@ -223,7 +225,7 @@ define((require, exports, module) ->
     citationsRules = citationsRules.concat([
       {
         token: [
-          "storage.type"
+          "#{STORAGE_TOKENTYPE}.type"
           "#{LPAREN_TOKENTYPE}.ref"
           "variable.parameter.ref"
           RPAREN_TOKENTYPE
@@ -233,7 +235,7 @@ define((require, exports, module) ->
       # this rule is for `vref` and `vcite` citations
       {
         token: [
-          "keyword"
+          "#{KEYWORD_TOKENTYPE}"
           LPAREN_TOKENTYPE
           "variable.parameter"
           RPAREN_TOKENTYPE
@@ -244,12 +246,12 @@ define((require, exports, module) ->
     @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       {
         token: [
-          "keyword"
+          "#{KEYWORD_TOKENTYPE}"
           LPAREN_TOKENTYPE
           "variable.parameter"
           RPAREN_TOKENTYPE
           LPAREN_TOKENTYPE
-          "storage.type"
+          "#{STORAGE_TOKENTYPE}.type"
           RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
