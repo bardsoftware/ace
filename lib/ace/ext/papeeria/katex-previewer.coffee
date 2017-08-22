@@ -24,9 +24,20 @@ define((require, exports, module) ->
     @UPDATE_DELAY: 1000
     @KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
+    ###*
+     * Extracts equation from a given range. Ignores labels and comments.
+     *
+     * @param {EditSession} session a session to work with
+     * @param {Range} range a range of equation
+     * @returns {Object} an object with two fields: `labels` -- array of labels
+     * collected in the range; `equation` -- equation string with labels and
+     * comments filtered out
+    ###
     @extractEquation: (session, range) ->
       { start, end } = range
-      joinedLines = (session.getLine(row) for row in [start.row..end.row]).join("\n")
+      joinedLines = (
+        session.getLine(row) for row in [start.row..end.row]
+      ).join("\n")
       startIndex = session.doc.positionToIndex(start, start.row)
       endIndex = session.doc.positionToIndex(end, start.row) + 1
       content = joinedLines.substring(startIndex, endIndex - 1)
@@ -38,15 +49,15 @@ define((require, exports, module) ->
       curIndex = 0
 
       while true
-        result = labelRe.exec(content)
-        if result == null
+        match = labelRe.exec(content)
+        if match == null
           equationStrings.push(content.substring(curIndex))
           break
 
-        labelStartIndex = result.index
+        labelStartIndex = match.index
         equationStrings.push(content.substring(curIndex, labelStartIndex))
 
-        matchedString = result[0]
+        matchedString = match[0]
         openingBracketIndex = labelStartIndex + matchedString.length - 1
         openingBracketPos = session.doc.indexToPosition(startIndex + openingBracketIndex + 1, start.row)
         closingBracketPos = session.findMatchingBracket(openingBracketPos, bracketString)
@@ -240,11 +251,14 @@ define((require, exports, module) ->
     getBoundary: (session, row, column, start) ->
       summand = if start then -1 else 1
       curIndex = session.doc.positionToIndex({ row, column })
-      { row: curRow, column: curColumn } = session.doc.indexToPosition(curIndex)
+      curRow = row
+      curColumn = column
 
       while true
         nextIndex = curIndex + summand
-        { row: nextRow, column: nextColumn } = session.doc.indexToPosition(nextIndex)
+        { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
+          nextIndex
+        )
 
         # That means we're on the last row and last column
         if nextColumn == curColumn and nextRow == curRow
@@ -256,8 +270,6 @@ define((require, exports, module) ->
           }
 
         if getContext(session, nextRow, nextColumn) != EQUATION_CONTEXT
-          correct = true
-          reason = null
           token = session.getTokenAt(curRow, curColumn)
           if not token?
             correct = false
@@ -265,6 +277,9 @@ define((require, exports, module) ->
           else if isType(token, ERROR_TOKENTYPE)
             correct = false
             reason = EquationRangeHandler.WHITESPACE_LINE_ERROR_CODE
+          else
+            correct = true
+            reason = null
 
           return {
             correct: correct

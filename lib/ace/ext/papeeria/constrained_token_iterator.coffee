@@ -1,8 +1,15 @@
+# Copyright (C) 2017 BarD Software
 define((require, exports, module) ->
   { TokenIterator } = require("ace/token_iterator")
   { Range } = require("ace/range")
 
 
+  ###*
+   * This class is a wrapper around "ace/token_iterator", limiting token
+   * navigation to a given range. It behaves as if it is a regular token
+   * iterator within a document, consisting of a text in a given range
+   * @class TokenIterator
+  ###
   class ConstrainedTokenIterator
     constructor: (@session, @range, row, column) ->
       @tokenIterator = new TokenIterator(@session, row, column)

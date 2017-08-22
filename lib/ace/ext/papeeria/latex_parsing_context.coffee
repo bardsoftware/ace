@@ -1,3 +1,4 @@
+# Copyright (C) 2017 BarD Software
 define((require, exports, module) ->
   { isType } = require("ace/ext/papeeria/util")
   {
