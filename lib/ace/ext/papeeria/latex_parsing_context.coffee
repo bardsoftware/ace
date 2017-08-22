@@ -1,13 +1,12 @@
 # Copyright (C) 2017 BarD Software
 define((require, exports, module) ->
-  { isType } = require("ace/ext/papeeria/util")
   {
     COMMENT_TOKENTYPE
     LIST_TOKENTYPE
     EQUATION_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
-
     SPECIFIC_TOKEN_FOR_STATE
+    isType
   } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
   exports.COMMENT_CONTEXT = COMMENT_CONTEXT = COMMENT_TOKENTYPE

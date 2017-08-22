@@ -1,6 +1,7 @@
 foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
 define((require, exports, module) ->
   HashHandler = require("ace/keyboard/hash_handler")
+  { isType } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   {
     EQUATION_CONTEXT
     LIST_CONTEXT
@@ -8,7 +9,6 @@ define((require, exports, module) ->
     START_CONTEXT
     getContext
   } = require("ace/ext/papeeria/latex_parsing_context")
-  { isType } = require("ace/ext/papeeria/util")
 
   EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [

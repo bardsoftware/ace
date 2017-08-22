@@ -1,8 +1,13 @@
 define((require, exports, module) ->
-  { EQUATION_CONTEXT, getContext } = require("ace/ext/papeeria/latex_parsing_context")
-  { ERROR_TOKENTYPE } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  {
+    EQUATION_CONTEXT
+    getContext
+  } = require("ace/ext/papeeria/latex_parsing_context")
+  {
+    ERROR_TOKENTYPE
+    isType
+  } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   { Range } = require("ace/range")
-  { isType } = require("ace/ext/papeeria/util")
 
 
   myKatexLoader = null

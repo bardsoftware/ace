@@ -10,8 +10,8 @@ define((require, exports, module) ->
     RPAREN_TOKENTYPE
     STORAGE_TOKENTYPE
     KEYWORD_TOKENTYPE
+    isType
   } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
-  { isType } = require("ace/ext/papeeria/util")
   CORRESPONDING_CLOSING = {
       '(': ')'
       '[': ']'

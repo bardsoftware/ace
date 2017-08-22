@@ -292,5 +292,8 @@ define((require, exports, module) ->
 
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
   exports.PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRules
+
+  exports.isType = (token, type) -> token.type.indexOf(type) > -1
+
   return
 )
