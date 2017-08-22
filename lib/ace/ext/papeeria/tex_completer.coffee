@@ -197,14 +197,16 @@ define((require, exports, module) ->
   processCitationJson = (json) =>
     result = []
     for bibfile, bibentries of json
+      bibfileName = bibfile.split("/").pop();
       if bibfile != "" && bibentries != ""
         bibentries.map((entry) =>
           result.push(
             name: entry.id
             value: entry.id
             score: 1000
-            meta: bibfile
+            meta: bibfileName
             meta_score: 10
+            path: bibfile
           )
         )
     return result
@@ -330,7 +332,7 @@ define((require, exports, module) ->
                 # Once we have a list of files included to the compilation we can find citation keys that
                 # are (not) included and treat them differently
                 callback(null, cites.map((cite) =>
-                    if (cite.meta in files) then cite
+                    if (cite.path in files) then cite
                     else {
                       name: cite.name
                       value: cite.value
@@ -340,7 +342,7 @@ define((require, exports, module) ->
                       meta_score: 9
                       # Calls the provided custom callback when user inserts a key from a non-included file
                       # (e.g. offers to add the appropriate bib-file to \bibliography tag)
-                      action: (editor) => @includeCallback?(cite.meta)
+                      action: (editor) => @includeCallback?(cite.path)
                     }
                   )
                 )
