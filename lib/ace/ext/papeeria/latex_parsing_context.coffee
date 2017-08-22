@@ -19,8 +19,8 @@ define((require, exports, module) ->
   # Ordering matters here: tokentypes higher up the list take precedence over
   # lower ones, if token is of multiple types
   CONTEXT_TOKENTYPES = [
-    COMMENT_TOKENTYPE
     EQUATION_TOKENTYPE
+    COMMENT_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
     LIST_TOKENTYPE
   ]
