@@ -43,6 +43,8 @@ define((require, exports, module) ->
   exports.STORAGE_TOKENTYPE = STORAGE_TOKENTYPE = "storage"
   exports.KEYWORD_TOKENTYPE = KEYWORD_TOKENTYPE = "keyword"
   exports.ERROR_TOKENTYPE = ERROR_TOKENTYPE = "error"
+  exports.LABEL_TOKENTYPE = LABEL_TOKENTYPE = "label"
+  exports.PARAMETER_TOKENTYPE = PARAMETER_TOKENTYPE = "variable.parameter"
 
   exports.SPECIFIC_TOKEN_FOR_STATE = SPECIFIC_TOKEN_FOR_STATE = {}
   SPECIFIC_TOKEN_FOR_STATE[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
@@ -119,7 +121,7 @@ define((require, exports, module) ->
         token: [
           "#{STORAGE_TOKENTYPE}.type"
           LPAREN_TOKENTYPE
-          "variable.parameter"
+          PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:begin))({)(#{text})(})"
@@ -131,7 +133,7 @@ define((require, exports, module) ->
         token: [
           "#{STORAGE_TOKENTYPE}.type"
           LPAREN_TOKENTYPE
-          "variable.parameter"
+          PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:end))({)(#{text})(})"
@@ -144,7 +146,7 @@ define((require, exports, module) ->
         token: [
           "#{STORAGE_TOKENTYPE}.type"
           LPAREN_TOKENTYPE
-          "variable.parameter"
+          PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:end))({)(#{text})(})"
@@ -209,7 +211,7 @@ define((require, exports, module) ->
       token: [
         "#{STORAGE_TOKENTYPE}.type"
         "#{LPAREN_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
-        "variable.parameter.#{ENVIRONMENT_TOKENTYPE}"
+        "#{PARAMETER_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
         RPAREN_TOKENTYPE
       ]
       regex: "(\\\\(?:begin|end))({)(\\w*)(})"
@@ -219,7 +221,7 @@ define((require, exports, module) ->
     citationsRules = []
     @$rules = {}
 
-    citeCommandState = new SimpleCommandState("cite", "cite", "variable.parameter.cite")
+    citeCommandState = new SimpleCommandState("cite", "cite", "#{PARAMETER_TOKENTYPE}.cite")
     citationsInstateRules = []
     citeCommandState.generateRules(citationsRules, citationsInstateRules)
 
@@ -228,7 +230,7 @@ define((require, exports, module) ->
         token: [
           "#{STORAGE_TOKENTYPE}.type"
           "#{LPAREN_TOKENTYPE}.ref"
-          "variable.parameter.ref"
+          "#{PARAMETER_TOKENTYPE}.ref"
           RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:ref))({)(\\w*)(})"
@@ -238,7 +240,7 @@ define((require, exports, module) ->
         token: [
           "#{KEYWORD_TOKENTYPE}"
           LPAREN_TOKENTYPE
-          "variable.parameter"
+          PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
@@ -249,7 +251,7 @@ define((require, exports, module) ->
         token: [
           "#{KEYWORD_TOKENTYPE}"
           LPAREN_TOKENTYPE
-          "variable.parameter"
+          PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
           LPAREN_TOKENTYPE
           "#{STORAGE_TOKENTYPE}.type"
