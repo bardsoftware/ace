@@ -4,10 +4,16 @@ define((require, exports, module) ->
     getContext
   } = require("ace/ext/papeeria/latex_parsing_context")
   {
+    COMMENT_TOKENTYPE
     ERROR_TOKENTYPE
+    LABEL_TOKENTYPE
+    PARAMETER_TOKENTYPE
     isType
   } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
   { Range } = require("ace/range")
+  {
+    ConstrainedTokenIterator
+  } = require("ace/ext/papeeria/constrained_token_iterator")
 
 
   myKatexLoader = null
@@ -40,42 +46,25 @@ define((require, exports, module) ->
     ###
     @extractEquation: (session, range) ->
       { start, end } = range
-      joinedLines = (
-        session.getLine(row) for row in [start.row..end.row]
-      ).join("\n")
-      startIndex = session.doc.positionToIndex(start, start.row)
-      endIndex = session.doc.positionToIndex(end, start.row) + 1
-      content = joinedLines.substring(startIndex, endIndex - 1).replace(/%[^\n]*/g, "")
-      console.log(JSON.stringify(content))
-
-      labelRe = /\\label\s*\{/g
-      bracketString = "{"
+      # Note that 'constrainedTokenIterator' would be one token
+      # behind the equation start, so 'constrainedTokenIterator.stepForward()'
+      # yields the first token of the equation
+      constrainedTokenIterator = new ConstrainedTokenIterator(
+        session, range, start.row, start.column
+      )
+      tokenValues = []
       labels = []
-      equationStrings = []
-      curIndex = 0
-
       while true
-        match = labelRe.exec(content)
-        if match == null
-          equationStrings.push(content.substring(curIndex))
-          break
+        token = constrainedTokenIterator.stepForward()
+        break if constrainedTokenIterator.outOfRange
+        continue if isType(token, COMMENT_TOKENTYPE)
+        if isType(token, LABEL_TOKENTYPE)
+          if isType(token, PARAMETER_TOKENTYPE)
+            labels.push(token.value)
+          continue
+        tokenValues.push(token.value)
 
-        labelStartIndex = match.index
-        equationStrings.push(content.substring(curIndex, labelStartIndex))
-
-        matchedString = match[0]
-        openingBracketIndex = labelStartIndex + matchedString.length - 1
-        openingBracketPos = session.doc.indexToPosition(startIndex + openingBracketIndex + 1, start.row)
-        closingBracketPos = session.findMatchingBracket(openingBracketPos, bracketString)
-        if closingBracketPos == null
-          equationStrings.push(matchedString)
-          curIndex = openingBracketIndex + 1
-        else
-          closingBracketIndex = session.doc.positionToIndex(closingBracketPos, start.row) - startIndex
-          labels.push(content.substring(openingBracketIndex + 1, closingBracketIndex))
-          curIndex = closingBracketIndex + 1
-
-      return { labels: labels, equation: equationStrings.join(" ") }
+      return { labels: labels, equation: tokenValues.join("") }
 
     constructor: (@editor, @popoverHandler, @equationRangeHandler, @I18N) ->
       @jqEditorContainer = $(@editor.container)
