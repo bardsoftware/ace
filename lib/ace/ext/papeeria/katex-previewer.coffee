@@ -245,14 +245,22 @@ define((require, exports, module) ->
 
     getBoundary: (session, row, column, start) ->
       summand = if start then -1 else 1
-      curIndex = session.doc.positionToIndex({ row, column })
+      startRow = row
+      curIndex = session.doc.positionToIndex({ row, column }, startRow)
       curRow = row
       curColumn = column
 
       while true
         nextIndex = curIndex + summand
+        # In case we're going backwards and have gone beyond the start of
+        # 'startRow'
+        if nextIndex < 0
+          startRow -= 1
+          curIndex = session.doc.positionToIndex({ row, column }, startRow)
+          nextIndex = curIndex + summand
+
         { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
-          nextIndex
+          nextIndex, startRow
         )
 
         # That means we're on the last row and last column
