@@ -168,6 +168,16 @@ define((require, exports, module) ->
       { token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
 
+    mathLabelRule = {
+      token: [
+        "#{STORAGE_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+        "#{LPAREN_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+        "#{PARAMETER_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+        "#{RPAREN_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+      ]
+      regex: "(\\\\label\\s*)({)([^}]*)(})"
+    }
+
     equationStartRules = [
       beginRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX, MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE)
       beginRule(MATH_ENVIRONMENT_DISPLAYED_REGEX, MATH_ENVIRONMENT_DISPLAYED_STATE)
@@ -272,9 +282,13 @@ define((require, exports, module) ->
       genericEnvironmentRule
     ])
 
-    @$rules[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX)
+    @$rules[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = [
+      mathLabelRule
+    ].concat(mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX))
 
-    @$rules[MATH_ENVIRONMENT_DISPLAYED_STATE] = mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_REGEX)
+    @$rules[MATH_ENVIRONMENT_DISPLAYED_STATE] = [
+      mathLabelRule
+    ].concat(mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_REGEX))
 
     @$rules[MATH_TEX_INLINE_STATE] = mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX)
 
