@@ -124,7 +124,7 @@ define((require, exports, module) ->
           PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:begin))({)(#{text})(})"
+        regex: "(\\\\begin\\s*)({)(#{text})(})"
         next: pushState(pushedState)
       }
 
@@ -149,7 +149,7 @@ define((require, exports, module) ->
           PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:end))({)(#{text})(})"
+        regex: "(\\\\end\\s*)({)(#{text})(})"
 
         next: popState
       }
@@ -226,7 +226,7 @@ define((require, exports, module) ->
         "#{PARAMETER_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
         RPAREN_TOKENTYPE
       ]
-      regex: "(\\\\(?:begin|end))({)(\\w*)(})"
+      regex: "(\\\\(?:begin|end)(?:\\s*))({)(\\w*)(})"
     }
 
 
@@ -245,7 +245,7 @@ define((require, exports, module) ->
           "#{PARAMETER_TOKENTYPE}.ref"
           RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:ref))({)(\\w*)(})"
+        regex: "(\\\\ref\\s*)({)(\\w*)(})"
       }
       # this rule is for `vref` and `vcite` citations
       {
@@ -255,7 +255,7 @@ define((require, exports, module) ->
           PARAMETER_TOKENTYPE
           RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
+        regex: "(\\\\(?:v?ref|cite(?:[^{]*))(?:\\s*))(?:({)([^}]*)(}))?"
       }
     ])
     @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
@@ -269,7 +269,7 @@ define((require, exports, module) ->
           "#{STORAGE_TOKENTYPE}.type"
           RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
+        regex: "(\\\\(?:documentclass|usepackage|input)(?:\\s*))(?:(\\[)([^\\]]*)(\\]\\s*))?({)([^}]*)(})"
       }
       genericEnvironmentRule
     ])
