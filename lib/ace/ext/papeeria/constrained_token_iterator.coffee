@@ -24,8 +24,7 @@ define((require, exports, module) ->
 
     getCurrentTokenPosition: -> if not @outOfRange then @tokenIterator.getCurrentTokenPosition() else null
 
-    stepBackward: ->
-      @tokenIterator.stepBackward()
+    checkCurTokenInRange: ->
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
         @outOfRange = true
@@ -39,22 +38,14 @@ define((require, exports, module) ->
       else
         @outOfRange = true
         return null
+
+    stepBackward: ->
+      @tokenIterator.stepBackward()
+      return @checkCurTokenInRange()
 
     stepForward: ->
       @tokenIterator.stepForward()
-      curToken = @tokenIterator.getCurrentToken()
-      if not curToken?
-        @outOfRange = true
-        return null
-
-      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
-      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      if @range.containsRange(tokenRange)
-        @outOfRange = false
-        return curToken
-      else
-        @outOfRange = true
-        return null
+      return @checkCurTokenInRange()
 
     stepTo: (row, column) ->
       @tokenIterator = new TokenIterator(@session, row, column)
