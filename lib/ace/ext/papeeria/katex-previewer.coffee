@@ -1,3 +1,6 @@
+# Copyright (C) 2017 BarD Software
+foo = null
+
 define((require, exports, module) ->
   {
     EQUATION_CONTEXT

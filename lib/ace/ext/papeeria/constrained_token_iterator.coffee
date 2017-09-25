@@ -1,4 +1,6 @@
 # Copyright (C) 2017 BarD Software
+foo = null
+
 define((require, exports, module) ->
   { TokenIterator } = require("ace/token_iterator")
   { Range } = require("ace/range")
