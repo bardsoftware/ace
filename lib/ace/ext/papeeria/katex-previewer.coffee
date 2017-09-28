@@ -305,7 +305,7 @@ define((require, exports, module) ->
       reasons = []
       if not start.correct
         reasons.push(start.reason)
-      if not end.correct
+      if not end.correct and not (reasons[0]? and reasons[0] == end.reason)
         reasons.push(end.reason)
 
       return {
