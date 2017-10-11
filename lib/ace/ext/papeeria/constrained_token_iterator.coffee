@@ -18,9 +18,10 @@ define((require, exports, module) ->
       curToken = @tokenIterator.getCurrentToken()
       if not curToken?
         @outOfRange = false
-      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
-      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      @outOfRange = not @range.containsRange(tokenRange)
+      else
+        { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
+        tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
+        @outOfRange = not @range.containsRange(tokenRange)
 
     getCurrentToken: -> if not @outOfRange then @tokenIterator.getCurrentToken() else null
 
