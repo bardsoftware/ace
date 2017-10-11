@@ -7,6 +7,7 @@ define((require, exports, module) ->
     LIST_TOKENTYPE
     EQUATION_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
+    ERROR_TOKENTYPE
     SPECIFIC_TOKEN_FOR_STATE
     isType
   } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
@@ -14,6 +15,7 @@ define((require, exports, module) ->
   exports.COMMENT_CONTEXT = COMMENT_CONTEXT = COMMENT_TOKENTYPE
   exports.EQUATION_CONTEXT = EQUATION_CONTEXT = EQUATION_TOKENTYPE
   exports.ENVIRONMENT_CONTEXT = ENVIRONMENT_CONTEXT = ENVIRONMENT_TOKENTYPE
+  exports.ERROR_CONTEXT = ERROR_CONTEXT = ERROR_TOKENTYPE
   exports.LIST_CONTEXT = LIST_CONTEXT = LIST_TOKENTYPE
   # "start" is a (badly named) default context
   exports.START_CONTEXT = START_CONTEXT = "start"
@@ -22,20 +24,23 @@ define((require, exports, module) ->
   # lower ones, if token is of multiple types
   CONTEXT_TOKENTYPES = [
     EQUATION_TOKENTYPE
+    ERROR_TOKENTYPE
     COMMENT_TOKENTYPE
     ENVIRONMENT_TOKENTYPE
     LIST_TOKENTYPE
   ]
 
   CONTEXTS_FOR_TOKENTYPES = {}
-  CONTEXTS_FOR_TOKENTYPES[COMMENT_TOKENTYPE] = COMMENT_CONTEXT
   CONTEXTS_FOR_TOKENTYPES[EQUATION_TOKENTYPE] = EQUATION_CONTEXT
+  CONTEXTS_FOR_TOKENTYPES[ERROR_TOKENTYPE] = ERROR_CONTEXT
+  CONTEXTS_FOR_TOKENTYPES[COMMENT_TOKENTYPE] = COMMENT_CONTEXT
   CONTEXTS_FOR_TOKENTYPES[ENVIRONMENT_TOKENTYPE] = ENVIRONMENT_CONTEXT
   CONTEXTS_FOR_TOKENTYPES[LIST_TOKENTYPE] = LIST_CONTEXT
 
-  getContext = (session, row, column) ->
+  getContexts = (session, row, column) ->
     # column > 0 means that token exists at { row, column } and also that we
     # should use this token's type to infer context
+    contexts = []
     if column > 0
       { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
         session.doc.positionToIndex({ row, column }, row) + 1,
@@ -50,7 +55,7 @@ define((require, exports, module) ->
           isType(token, contextTokentype) or
           nextToken? and isType(nextToken, contextTokentype)
         )
-          return CONTEXTS_FOR_TOKENTYPES[contextTokentype]
+          contexts.push(CONTEXTS_FOR_TOKENTYPES[contextTokentype])
     # if column is 0, it makes more sense to use context from the end of a
     # previous line
     else
@@ -62,13 +67,20 @@ define((require, exports, module) ->
           else prevState[prevState.length - 1]
         )
         tokentype = SPECIFIC_TOKEN_FOR_STATE[prevState]
-        return (
+        contexts.push(
           if tokentype?
           then CONTEXTS_FOR_TOKENTYPES[tokentype]
           else START_CONTEXT
         )
-    return START_CONTEXT
+    if contexts.length == 0
+      contexts.push(START_CONTEXT)
 
+    return contexts
+
+  getContext = (session, row, column) ->
+    return getContexts(session, row, column)[0]
+
+  exports.getContexts = getContexts
   exports.getContext = getContext
   return
 )
