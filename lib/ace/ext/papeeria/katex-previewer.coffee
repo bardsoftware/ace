@@ -4,7 +4,9 @@ foo = null
 define((require, exports, module) ->
   {
     EQUATION_CONTEXT
+    ERROR_CONTEXT
     getContext
+    getContexts
   } = require("ace/ext/papeeria/latex_parsing_context")
   {
     COMMENT_TOKENTYPE
@@ -252,8 +254,19 @@ define((require, exports, module) ->
       curIndex = session.doc.positionToIndex({ row, column }, startRow)
       curRow = row
       curColumn = column
+      curContexts = getContexts(session, curRow, curColumn)
+      correct = true
+      reason = null
 
       while true
+        if correct and curContexts.includes(ERROR_CONTEXT)
+          correct = false
+          reason = EquationRangeHandler.WHITESPACE_LINE_ERROR_CODE
+
+        if correct and session.getLine(curRow).length == 0
+          correct = false
+          reason = EquationRangeHandler.EMPTY_LINE_ERROR_CODE
+
         nextIndex = curIndex + summand
         # In case we're going backwards and have gone beyond the start of
         # 'startRow'
@@ -278,18 +291,8 @@ define((require, exports, module) ->
             column: curColumn
           }
 
-        if getContext(session, nextRow, nextColumn) != EQUATION_CONTEXT
-          token = session.getTokenAt(curRow, curColumn)
-          if not token?
-            correct = false
-            reason = EquationRangeHandler.EMPTY_LINE_ERROR_CODE
-          else if isType(token, ERROR_TOKENTYPE)
-            correct = false
-            reason = EquationRangeHandler.WHITESPACE_LINE_ERROR_CODE
-          else
-            correct = true
-            reason = null
-
+        nextContexts = getContexts(session, nextRow, nextColumn)
+        if not nextContexts.includes(EQUATION_CONTEXT)
           return {
             correct: correct
             reason: reason
@@ -300,6 +303,7 @@ define((require, exports, module) ->
         curIndex = nextIndex
         curRow = nextRow
         curColumn = nextColumn
+        curContexts = nextContexts
 
     getEquationRange: (row, column) ->
       start = @getBoundary(@editor.getSession(), row, column, true)

@@ -153,7 +153,6 @@ define((require, exports, module) ->
 
         next: popState
       }
-      { token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
 
     mathStartRule = (openingRegex, state) -> {
@@ -165,8 +164,11 @@ define((require, exports, module) ->
 
     mathEndRules = (closingRegex) -> [
       { token: "string.#{RPAREN_TOKENTYPE}", regex: closingRegex, next: popState }
-      { token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$", next: popState }
     ]
+
+    mathEmptyLineRule = {
+      token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$"
+    }
 
     mathLabelRule = {
       token: [
@@ -283,20 +285,30 @@ define((require, exports, module) ->
     ])
 
     @$rules[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = [
+      mathEmptyLineRule
       mathLabelRule
     ].concat(mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX))
 
     @$rules[MATH_ENVIRONMENT_DISPLAYED_STATE] = [
+      mathEmptyLineRule
       mathLabelRule
     ].concat(mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_REGEX))
 
-    @$rules[MATH_TEX_INLINE_STATE] = mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX)
+    @$rules[MATH_TEX_INLINE_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX))
 
-    @$rules[MATH_TEX_DISPLAYED_STATE] = mathEndRules(MATH_TEX_DISPLAYED_CLOSING_REGEX)
+    @$rules[MATH_TEX_DISPLAYED_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_TEX_DISPLAYED_CLOSING_REGEX))
 
-    @$rules[MATH_LATEX_INLINE_STATE] = mathEndRules(MATH_LATEX_INLINE_CLOSING_REGEX)
+    @$rules[MATH_LATEX_INLINE_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_LATEX_INLINE_CLOSING_REGEX))
 
-    @$rules[MATH_LATEX_DISPLAYED_STATE] = mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX)
+    @$rules[MATH_LATEX_DISPLAYED_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX))
 
     # if there is no specific token for `state` (like for "start"), then
     # `SPECIFIC_TOKEN_FOR_STATE[state]` is just undefined, and this is handled
