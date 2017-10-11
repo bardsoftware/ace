@@ -259,7 +259,10 @@ define((require, exports, module) ->
         # 'startRow'
         if nextIndex < 0
           startRow -= 1
-          curIndex = session.doc.positionToIndex({ row, column }, startRow)
+          curIndex = session.doc.positionToIndex(
+            { row: curRow, column: curColumn },
+            startRow
+          )
           nextIndex = curIndex + summand
 
         { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
