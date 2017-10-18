@@ -3,7 +3,7 @@ foo = null # ACE builder wants some meaningful JS code here to use ace.define in
 define((require, exports, module) ->
   "use strict"
   oop = require("ace/lib/oop")
-  TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules
+  { TextHighlightRules } = require("ace/mode/text_highlight_rules")
 
   exports.START_STATE = START_STATE = "start"
 
@@ -33,13 +33,29 @@ define((require, exports, module) ->
   MATH_LATEX_INLINE_OPENING_REGEX = "\\\\\\("
   MATH_LATEX_INLINE_CLOSING_REGEX = "\\\\\\)"
 
-  exports.LPAREN_TOKENTYPE = "lparen"
-  exports.RPAREN_TOKENTYPE = "rparen"
-  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "list"
+  exports.COMMENT_TOKENTYPE = COMMENT_TOKENTYPE = "comment"
+  exports.ESCAPE_TOKENTYPE = ESCAPE_TOKENTYPE = "escape"
+  exports.LPAREN_TOKENTYPE = LPAREN_TOKENTYPE = "lparen"
+  exports.RPAREN_TOKENTYPE = RPAREN_TOKENTYPE = "rparen"
+  exports.LIST_TOKENTYPE = LIST_TOKENTYPE = "latexlist"
   exports.EQUATION_TOKENTYPE = EQUATION_TOKENTYPE = "equation"
   exports.ENVIRONMENT_TOKENTYPE = ENVIRONMENT_TOKENTYPE = "environment"
-  exports.TABLE_TOKENTYPE = "table"
-  exports.FIGURE_TOKENTYPE = "figure"
+  exports.STORAGE_TOKENTYPE = STORAGE_TOKENTYPE = "storage"
+  exports.KEYWORD_TOKENTYPE = KEYWORD_TOKENTYPE = "keyword"
+  exports.ERROR_TOKENTYPE = ERROR_TOKENTYPE = "error"
+  exports.LABEL_TOKENTYPE = LABEL_TOKENTYPE = "label"
+  exports.PARAMETER_TOKENTYPE = PARAMETER_TOKENTYPE = "variable.parameter"
+
+  exports.SPECIFIC_TOKEN_FOR_STATE = SPECIFIC_TOKEN_FOR_STATE = {}
+  SPECIFIC_TOKEN_FOR_STATE[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[LIST_ENUMERATE_STATE] = LIST_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = EQUATION_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[MATH_ENVIRONMENT_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[MATH_TEX_INLINE_STATE] = EQUATION_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[MATH_LATEX_INLINE_STATE] = EQUATION_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+
   PapeeriaLatexHighlightRules = ->
     ###
       * We maintain a stack of nested LaTeX semantic types (e.g. "document", "section", "list")
@@ -92,60 +108,77 @@ define((require, exports, module) ->
       else
         addToken = ""
       return [
-        { token: "comment" + addToken, regex: "%.*$" }
-        { token: "paren.lparen" + addToken, regex: "[[({]" }
-        { token: "paren.rparen" + addToken, regex: "[\\])}]" }
-        { token: "storage.type" + addToken, regex: "\\\\[a-zA-Z]+" }
-        { token: "constant.character.escape" + addToken, regex: "\\\\[^a-zA-Z]?", merge: false }
-        { defaultToken : "text" + addToken }
+        { token: "#{COMMENT_TOKENTYPE}#{addToken}", regex: "%.*$" }
+        { token: "#{LPAREN_TOKENTYPE}#{addToken}", regex: "[[({]" }
+        { token: "#{RPAREN_TOKENTYPE}#{addToken}", regex: "[\\])}]" }
+        { token: "#{STORAGE_TOKENTYPE}.type#{addToken}", regex: "\\\\[a-zA-Z]+" }
+        { token: "constant.character.#{ESCAPE_TOKENTYPE}#{addToken}", regex: "\\\\[^a-zA-Z]?", merge: false }
+        { defaultToken : "text#{addToken}" }
       ]
 
     beginRule = (text, pushedState) ->
       return {
         token: [
-          "storage.type"
-          "paren.lparen"
-          "variable.parameter"
-          "paren.rparen"
+          "#{STORAGE_TOKENTYPE}.type"
+          LPAREN_TOKENTYPE
+          PARAMETER_TOKENTYPE
+          RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:begin))({)(" + text + ")(})"
+        regex: "(\\\\(?:begin))({)(#{text})(})"
         next: pushState(pushedState)
       }
 
-    endRule = (text) ->
+    envEndRule = (text) ->
       return {
         token: [
-          "storage.type"
-          "paren.lparen"
-          "variable.parameter"
-          "paren.rparen"
+          "#{STORAGE_TOKENTYPE}.type"
+          LPAREN_TOKENTYPE
+          PARAMETER_TOKENTYPE
+          RPAREN_TOKENTYPE
         ]
-        regex: "(\\\\(?:end))({)(" + text + ")(})"
+        regex: "(\\\\(?:end))({)(#{text})(})"
 
         next: popState
       }
 
+    mathEnvEndRules = (text) -> [
+      {
+        token: [
+          "#{STORAGE_TOKENTYPE}.type"
+          LPAREN_TOKENTYPE
+          PARAMETER_TOKENTYPE
+          RPAREN_TOKENTYPE
+        ]
+        regex: "(\\\\(?:end))({)(#{text})(})"
+
+        next: popState
+      }
+    ]
+
     mathStartRule = (openingRegex, state) -> {
-      token: "string.paren.lparen"
+      token: "string.#{LPAREN_TOKENTYPE}"
       regex: openingRegex
       next: pushState(state)
       merge: false
     }
 
     mathEndRules = (closingRegex) -> [
-      { token: "string.paren.rparen", regex: closingRegex, next: popState }
-      { token: "error", regex : "^\\s*$", next: popState }
+      { token: "string.#{RPAREN_TOKENTYPE}", regex: closingRegex, next: popState }
     ]
 
-    specificTokenForState = {}
-    specificTokenForState[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
-    specificTokenForState[LIST_ENUMERATE_STATE] = LIST_TOKENTYPE
-    specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_ENVIRONMENT_DISPLAYED_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_TEX_INLINE_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_LATEX_INLINE_STATE] = EQUATION_TOKENTYPE
-    specificTokenForState[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+    mathEmptyLineRule = {
+      token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$"
+    }
+
+    mathLabelRule = {
+      token: [
+        "#{STORAGE_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+        "#{LPAREN_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+        "#{PARAMETER_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+        "#{RPAREN_TOKENTYPE}.#{LABEL_TOKENTYPE}.#{EQUATION_TOKENTYPE}"
+      ]
+      regex: "(\\\\label\\s*)({)([^}]*)(})"
+    }
 
     equationStartRules = [
       beginRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX, MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE)
@@ -167,15 +200,15 @@ define((require, exports, module) ->
       generateRules: (openingRules, instateRules) =>
         opening =
           token: [
-            "storage.type"
-            "paren.lparen.#{@stateName}"
+            "#{STORAGE_TOKENTYPE}.type"
+            "#{LPAREN_TOKENTYPE}.#{@stateName}"
           ]
           next: pushState(@stateName)
           regex: "(\\\\(?:#{@commandName}))({)"
         openingRules.push(opening)
 
         closing =
-          token: "paren.rparen"
+          token: RPAREN_TOKENTYPE
           regex: "(})"
           next: popState
         instateRules.push(closing)
@@ -188,10 +221,10 @@ define((require, exports, module) ->
 
     genericEnvironmentRule = {
       token: [
-        "storage.type"
-        "paren.lparen.environment"
-        "variable.parameter.environment"
-        "paren.rparen"
+        "#{STORAGE_TOKENTYPE}.type"
+        "#{LPAREN_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
+        "#{PARAMETER_TOKENTYPE}.#{ENVIRONMENT_TOKENTYPE}"
+        RPAREN_TOKENTYPE
       ]
       regex: "(\\\\(?:begin|end))({)(\\w*)(})"
     }
@@ -200,27 +233,27 @@ define((require, exports, module) ->
     citationsRules = []
     @$rules = {}
 
-    citeCommandState = new SimpleCommandState("cite", "cite", "variable.parameter.cite")
+    citeCommandState = new SimpleCommandState("cite", "cite", "#{PARAMETER_TOKENTYPE}.cite")
     citationsInstateRules = []
     citeCommandState.generateRules(citationsRules, citationsInstateRules)
 
     citationsRules = citationsRules.concat([
       {
         token: [
-          "storage.type"
-          "paren.lparen.ref"
-          "variable.parameter.ref"
-          "paren.rparen"
+          "#{STORAGE_TOKENTYPE}.type"
+          "#{LPAREN_TOKENTYPE}.ref"
+          "#{PARAMETER_TOKENTYPE}.ref"
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:ref))({)(\\w*)(})"
       }
       # this rule is for `vref` and `vcite` citations
       {
         token: [
-          "keyword"
-          "paren.lparen"
-          "variable.parameter"
-          "paren.rparen"
+          "#{KEYWORD_TOKENTYPE}"
+          LPAREN_TOKENTYPE
+          PARAMETER_TOKENTYPE
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:v?ref|cite(?:[^{]*)))(?:({)([^}]*)(}))?"
       }
@@ -228,13 +261,13 @@ define((require, exports, module) ->
     @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       {
         token: [
-          "keyword"
-          "paren.lparen"
-          "variable.parameter"
-          "paren.rparen"
-          "paren.lparen"
-          "storage.type"
-          "paren.rparen"
+          "#{KEYWORD_TOKENTYPE}"
+          LPAREN_TOKENTYPE
+          PARAMETER_TOKENTYPE
+          RPAREN_TOKENTYPE
+          LPAREN_TOKENTYPE
+          "#{STORAGE_TOKENTYPE}.type"
+          RPAREN_TOKENTYPE
         ]
         regex: "(\\\\(?:documentclass|usepackage|input))(?:(\\[)([^\\]]*)(\\]))?({)([^}]*)(})"
       }
@@ -242,40 +275,53 @@ define((require, exports, module) ->
     ])
 
     @$rules[LIST_ITEMIZE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
-      endRule(LIST_ITEMIZE_REGEX)
+      envEndRule(LIST_ITEMIZE_REGEX)
       genericEnvironmentRule
     ])
 
     @$rules[LIST_ENUMERATE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
-      endRule(LIST_ENUMERATE_REGEX)
+      envEndRule(LIST_ENUMERATE_REGEX)
       genericEnvironmentRule
     ])
 
     @$rules[MATH_ENVIRONMENT_DISPLAYED_NUMBERED_STATE] = [
-      endRule(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX)
-    ]
+      mathEmptyLineRule
+      mathLabelRule
+    ].concat(mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_NUMBERED_REGEX))
 
     @$rules[MATH_ENVIRONMENT_DISPLAYED_STATE] = [
-      endRule(MATH_ENVIRONMENT_DISPLAYED_REGEX)
-    ]
+      mathEmptyLineRule
+      mathLabelRule
+    ].concat(mathEnvEndRules(MATH_ENVIRONMENT_DISPLAYED_REGEX))
 
-    @$rules[MATH_TEX_INLINE_STATE] = mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX)
+    @$rules[MATH_TEX_INLINE_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_TEX_INLINE_CLOSING_REGEX))
 
-    @$rules[MATH_TEX_DISPLAYED_STATE] = mathEndRules(MATH_TEX_DISPLAYED_CLOSING_REGEX)
+    @$rules[MATH_TEX_DISPLAYED_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_TEX_DISPLAYED_CLOSING_REGEX))
 
-    @$rules[MATH_LATEX_INLINE_STATE] = mathEndRules(MATH_LATEX_INLINE_CLOSING_REGEX)
+    @$rules[MATH_LATEX_INLINE_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_LATEX_INLINE_CLOSING_REGEX))
 
-    @$rules[MATH_LATEX_DISPLAYED_STATE] = mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX)
+    @$rules[MATH_LATEX_DISPLAYED_STATE] = [
+      mathEmptyLineRule
+    ].concat(mathEndRules(MATH_LATEX_DISPLAYED_CLOSING_REGEX))
 
     # if there is no specific token for `state` (like for "start"), then
-    # `specificTokenForState[state]` is just undefined, and this is handled
+    # `SPECIFIC_TOKEN_FOR_STATE[state]` is just undefined, and this is handled
     # inside `basicRules` function
     for state of @$rules
-      @$rules[state] = @$rules[state].concat(basicRules(specificTokenForState[state]))
+      @$rules[state] = @$rules[state].concat(basicRules(SPECIFIC_TOKEN_FOR_STATE[state]))
     @$rules[citeCommandState.stateName] = citationsInstateRules
     return
 
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
   exports.PapeeriaLatexHighlightRules = PapeeriaLatexHighlightRules
+
+  exports.isType = (token, type) -> token.type.indexOf(type) > -1
+
   return
 )

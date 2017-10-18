@@ -1,8 +1,24 @@
+# Copyright (C) 2017 BarD Software
+foo = null
+
 define((require, exports, module) ->
-  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-  TokenIterator = require("ace/token_iterator").TokenIterator
-  Range = require("ace/range").Range
-  findSurroundingBrackets = require("ace/ext/papeeria/highlighter").findSurroundingBrackets
+  {
+    EQUATION_CONTEXT
+    ERROR_CONTEXT
+    getContext
+    getContexts
+  } = require("ace/ext/papeeria/latex_parsing_context")
+  {
+    COMMENT_TOKENTYPE
+    ERROR_TOKENTYPE
+    LABEL_TOKENTYPE
+    PARAMETER_TOKENTYPE
+    isType
+  } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  { Range } = require("ace/range")
+  {
+    ConstrainedTokenIterator
+  } = require("ace/ext/papeeria/constrained_token_iterator")
 
 
   myKatexLoader = null
@@ -24,47 +40,36 @@ define((require, exports, module) ->
     @UPDATE_DELAY: 1000
     @KATEX_OPTIONS = { displayMode: true, throwOnError: false }
 
-    @getMacrosArgumentRange: (session, argumentStartPos) ->
-      argumentRange = findSurroundingBrackets(session, argumentStartPos)
-      if argumentRange.mismatch
-        return null
-      else
-        # increment starting column to not include bracket
-        # do not decrement ending column because Range is left-open
-        return new Range(argumentRange.start.row, argumentRange.start.column + 1,
-                         argumentRange.end.row, argumentRange.end.column)
-
-    @getWholeEquation: (session, tokenIterator) ->
+    ###*
+     * Extracts equation from a given range. Ignores labels and comments.
+     *
+     * @param {EditSession} session a session to work with
+     * @param {Range} range a range of equation
+     * @returns {Object} an object with two fields: `labels` -- array of labels
+     * collected in the range; `equation` -- equation string with labels and
+     * comments filtered out
+    ###
+    @extractEquation: (session, range) ->
+      { start, end } = range
+      # Note that 'constrainedTokenIterator' would be one token
+      # behind the equation start, so 'constrainedTokenIterator.stepForward()'
+      # yields the first token of the equation
+      constrainedTokenIterator = new ConstrainedTokenIterator(
+        session, range, start.row, start.column
+      )
       tokenValues = []
-      labelSequenceIndex = 0
-      labelParameters = []
-      curLabelParameter = null
-      curLabelTokens = []
+      labels = []
+      while true
+        token = constrainedTokenIterator.stepForward()
+        break if constrainedTokenIterator.outOfRange
+        continue if isType(token, COMMENT_TOKENTYPE)
+        if isType(token, LABEL_TOKENTYPE)
+          if isType(token, PARAMETER_TOKENTYPE)
+            labels.push(token.value)
+          continue
+        tokenValues.push(token.value)
 
-      range = tokenIterator.range
-      token = tokenIterator.getCurrentToken()
-      tokenPosition = tokenIterator.getCurrentTokenPosition()
-
-      while token?
-        acceptToken = true
-        if token.type == "storage.type.equation" and token.value == "\\label"
-          curLine = session.getLine(tokenPosition.row)
-          bracketPosition = tokenPosition.column + "\\label".length
-          if curLine[bracketPosition] == "{"
-            argumentRange = ContextHandler.getMacrosArgumentRange(session, { row: tokenPosition.row, column: bracketPosition + 1 })
-            if argumentRange?
-              acceptToken = false
-              labelParameters.push(session.getTextRange(argumentRange))
-              tokenIterator.stepTo(argumentRange.end.row, argumentRange.end.column + 1)
-
-        if acceptToken
-          tokenValues.push(token.value)
-
-        tokenIterator.stepForward()
-        token = tokenIterator.getCurrentToken()
-        tokenPosition = tokenIterator.getCurrentTokenPosition()
-
-      return { params: labelParameters, equation: tokenValues.join("") }
+      return { labels: labels, equation: tokenValues.join("") }
 
     constructor: (@editor, @popoverHandler, @equationRangeHandler, @I18N) ->
       @jqEditorContainer = $(@editor.container)
@@ -84,16 +89,9 @@ define((require, exports, module) ->
           throw "Inconsistent state"
         if not @rangeCorrect
           throw "<div style=\"text-align:center\"><p>#{@messages.join("\n")}</p></div>"
-        start = @currentRange.start
-        tokenIterator = new ConstrainedTokenIterator(@editor.getSession(), @currentRange, start.row, start.column)
-        # if equation content starts on the start of a string, the token on `start` position will be the first token
-        # of the equation
-        # if it doesn't, the token on `start` position will be the last token of the start sequence
-        if start.column != 0
-          tokenIterator.stepForward()
-        { params: labelParameters, equation: equationString } = ContextHandler.getWholeEquation(@editor.getSession(), tokenIterator)
-        title = if labelParameters.length == 0 then "Formula" else labelParameters.join(", ")
-        return { title: title, content: katex.renderToString(equationString, ContextHandler.KATEX_OPTIONS) }
+        { labels, equation } = ContextHandler.extractEquation(@editor.getSession(), @currentRange)
+        title = if labels.length == 0 then "Formula" else labels.join(", ")
+        return { title: title, content: katex.renderToString(equation, ContextHandler.KATEX_OPTIONS) }
       catch e
         return { title: "Error!", content: e }
 
@@ -104,7 +102,7 @@ define((require, exports, module) ->
 
     getEquationEndRow: ->
       i = @editor.getCursorPosition().row
-      while LatexParsingContext.getContext(@editor.getSession(), i) == "equation"
+      while getContext(@editor.getSession(), i) == EQUATION_CONTEXT
         i += 1
       return i
 
@@ -139,9 +137,9 @@ define((require, exports, module) ->
       else
         @currentDelayedUpdateId = null
         cursorPos = @editor.getCursorPosition()
-        curContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
+        curContext = getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
-        if curContext == "equation"
+        if curContext == EQUATION_CONTEXT
           @updateRange()
         else
           @destroyRange()
@@ -224,7 +222,7 @@ define((require, exports, module) ->
         return
 
       cursorPos = @editor.getCursorPosition()
-      currentContext = LatexParsingContext.getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
+      currentContext = getContext(@editor.getSession(), cursorPos.row, cursorPos.column)
 
       if @currentRange? and not @currentRange.contains(cursorPos.row, cursorPos.column)
         @destroyRange()
@@ -233,7 +231,7 @@ define((require, exports, module) ->
       if not @currentRange? and @contextPreviewExists
         @destroyContextPreview()
 
-      if not @currentRange? and currentContext == "equation"
+      if not @currentRange? and currentContext == EQUATION_CONTEXT
         @updateRange()
         @enableUpdates()
 
@@ -242,153 +240,79 @@ define((require, exports, module) ->
     ), 0)
 
 
-  class ConstrainedTokenIterator
-    constructor: (@session, @range, row, column) ->
-      @tokenIterator = new TokenIterator(@session, row, column)
-      curToken = @tokenIterator.getCurrentToken()
-      if not curToken?
-        @outOfRange = false
-      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
-      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      @outOfRange = not @range.containsRange(tokenRange)
-
-    getCurrentToken: -> if not @outOfRange then @tokenIterator.getCurrentToken() else null
-
-    getCurrentTokenPosition: -> if not @outOfRange then @tokenIterator.getCurrentTokenPosition() else null
-
-    stepBackward: ->
-      @tokenIterator.stepBackward()
-      curToken = @tokenIterator.getCurrentToken()
-      if not curToken?
-        @outOfRange = true
-        return null
-
-      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
-      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      if @range.containsRange(tokenRange)
-        @outOfRange = false
-        return curToken
-      else
-        @outOfRange = true
-        return null
-
-    stepForward: ->
-      @tokenIterator.stepForward()
-      curToken = @tokenIterator.getCurrentToken()
-      if not curToken?
-        @outOfRange = true
-        return null
-
-      { row: tokenRow, column: tokenColumn } = @tokenIterator.getCurrentTokenPosition()
-      tokenRange = new Range(tokenRow, tokenColumn, tokenRow, tokenColumn + curToken.value.length)
-      if @range.containsRange(tokenRange)
-        @outOfRange = false
-        return curToken
-      else
-        @outOfRange = true
-        return null
-
-    stepTo: (row, column) ->
-      @tokenIterator = new TokenIterator(@session, row, column)
-      @outOfRange = not @range.contains(row, column)
-
-
   class EquationRangeHandler
-    @BEGIN_EQUATION_TOKEN_SEQUENCES: [
-      [
-        { type: "paren.rparen", value: "}" }
-        { type: "variable.parameter", value: "equation" }
-        { type: "paren.lparen", value: "{" }
-        { type: "storage.type", value: "\\begin" }
-      ]
-      [
-        { type: "paren.rparen", value: "}" }
-        { type: "variable.parameter", value: "equation*" }
-        { type: "paren.lparen", value: "{" }
-        { type: "storage.type", value: "\\begin" }
-      ]
-      [ { type: "string", value: "\\[" } ]
-      [ { type: "string", value: "\\(" } ]
-      [ { type: "string", value: "$" } ]
-      [ { type: "string", value: "$$" } ]
-    ]
-    @END_EQUATION_TOKEN_SEQUENCES: [
-      [
-        { type: "storage.type", value: "\\end" }
-        { type: "paren.lparen", value: "{" }
-        { type: "variable.parameter", value: "equation" }
-        { type: "paren.rparen", value: "}" }
-      ]
-      [
-        { type: "storage.type", value: "\\end" }
-        { type: "paren.lparen", value: "{" }
-        { type: "variable.parameter", value: "equation*" }
-        { type: "paren.rparen", value: "}" }
-      ]
-      [ { type: "string", value: "\\]" } ]
-      [ { type: "string", value: "\\)" } ]
-      [ { type: "string", value: "$" } ]
-      [ { type: "string", value: "$$" } ]
-    ]
+    @DOCUMENT_END_ERROR_CODE: "js.math_preview.error.document_end"
+    @EMPTY_LINE_ERROR_CODE: "js.math_preview.error.empty_line"
+    @WHITESPACE_LINE_ERROR_CODE: "js.math_preview.error.whitespace_line"
 
     # empty constructor
     constructor: (@editor) ->
 
-    getBoundary: (tokenIterator, start) ->
-      moveToBoundary = if start then (=> tokenIterator.stepBackward()) else (=> tokenIterator.stepForward())
-      moveFromBoundary = if start then (=> tokenIterator.stepForward()) else (=> tokenIterator.stepBackward())
-      boundarySequences = (
-        if start
-        then EquationRangeHandler.BEGIN_EQUATION_TOKEN_SEQUENCES
-        else EquationRangeHandler.END_EQUATION_TOKEN_SEQUENCES
-      )
+    getBoundary: (session, row, column, start) ->
+      summand = if start then -1 else 1
+      startRow = row
+      curIndex = session.doc.positionToIndex({ row, column }, startRow)
+      curRow = row
+      curColumn = column
+      curContexts = getContexts(session, curRow, curColumn)
+      correct = true
+      reason = null
 
-      currentToken = tokenIterator.getCurrentToken()
-      prevRow = tokenIterator.getCurrentTokenPosition().row
-      # TODO: magic string? importing is hard though
-      boundaryCorrect = true
-      reasonCode = null
-      while LatexParsingContext.isType(currentToken, "equation")
-        currentToken = moveToBoundary()
-        if not currentToken?
-          boundaryCorrect = false
-          reasonCode = "js.math_preview.error.document_end"
-          break
-        currentRow = tokenIterator.getCurrentTokenPosition().row
-        # Empty string always means that equation state is popped from state stack.
-        # Unfortunately, empty string is not tokenized at all, and TokenIterator
-        # just skips it altogether, so we have to handle this manually here.
-        if Math.abs(currentRow - prevRow) > 1
-          boundaryCorrect = false
-          reasonCode = "js.math_preview.error.empty_line"
-          break
-        prevRow = currentRow
+      while true
+        if correct and curContexts.includes(ERROR_CONTEXT)
+          correct = false
+          reason = EquationRangeHandler.WHITESPACE_LINE_ERROR_CODE
 
-      if currentToken? and LatexParsingContext.isType(currentToken, "error")
-        boundaryCorrect = false
-        reasonCode = "js.math_preview.error.whitespace_line"
+        if correct and session.getLine(curRow).length == 0
+          correct = false
+          reason = EquationRangeHandler.EMPTY_LINE_ERROR_CODE
 
-      moveFromBoundary()
+        nextIndex = curIndex + summand
+        # In case we're going backwards and have gone beyond the start of
+        # 'startRow'
+        if nextIndex < 0
+          startRow -= 1
+          curIndex = session.doc.positionToIndex(
+            { row: curRow, column: curColumn },
+            startRow
+          )
+          nextIndex = curIndex + summand
 
-      { row: curTokenRow, column: curTokenColumn } = tokenIterator.getCurrentTokenPosition()
-      curTokenLength = tokenIterator.getCurrentToken().value.length
-      return {
-        correct: boundaryCorrect
-        reason: reasonCode
-        row: curTokenRow
-        column: curTokenColumn + (if start then 0 else curTokenLength)
-      }
+        { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
+          nextIndex, startRow
+        )
+
+        # That means we're on the last row and last column
+        if nextColumn == curColumn and nextRow == curRow
+          return {
+            correct: false
+            reason: EquationRangeHandler.DOCUMENT_END_ERROR_CODE
+            row: curRow
+            column: curColumn
+          }
+
+        nextContexts = getContexts(session, nextRow, nextColumn)
+        if not nextContexts.includes(EQUATION_CONTEXT)
+          return {
+            correct: correct
+            reason: reason
+            row: curRow
+            column: curColumn
+          }
+
+        curIndex = nextIndex
+        curRow = nextRow
+        curColumn = nextColumn
+        curContexts = nextContexts
 
     getEquationRange: (row, column) ->
-      tokenIterator = new TokenIterator(@editor.getSession(), row, column)
-      start = @getBoundary(tokenIterator, true)
-      tokenIterator = new TokenIterator(@editor.getSession(), row, column)
-      end = @getBoundary(tokenIterator, false)
+      start = @getBoundary(@editor.getSession(), row, column, true)
+      end = @getBoundary(@editor.getSession(), row, column, false)
 
       reasons = []
       if not start.correct
         reasons.push(start.reason)
-      if not end.correct
+      if not end.correct and not (reasons[0]? and reasons[0] == end.reason)
         reasons.push(end.reason)
 
       return {
@@ -440,7 +364,6 @@ define((require, exports, module) ->
 
   exports.testExport = {
     ContextHandler: ContextHandler
-    ConstrainedTokenIterator: ConstrainedTokenIterator
     EquationRangeHandler: EquationRangeHandler
   }
   exports.reset = reset
