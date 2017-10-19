@@ -33,6 +33,18 @@ define((require, exports, module) ->
   MATH_LATEX_INLINE_OPENING_REGEX = "\\\\\\("
   MATH_LATEX_INLINE_CLOSING_REGEX = "\\\\\\)"
 
+  exports.CITE_STATE = CITE_STATE = "cite"
+  exports.CITE_COMMAND = CITE_COMMAND = "cite"
+
+  exports.REF_STATE = REF_STATE = "ref"
+  exports.REF_COMMAND = REF_COMMAND = "ref"
+
+  exports.VCITE_STATE = VCITE_STATE = "vcite"
+  exports.VCITE_COMMAND = VCITE_COMMAND = "vcite"
+
+  exports.VREF_STATE = VREF_STATE = "vref"
+  exports.VREF_COMMAND = VREF_COMMAND = "vref"
+
   exports.COMMENT_TOKENTYPE = COMMENT_TOKENTYPE = "comment"
   exports.ESCAPE_TOKENTYPE = ESCAPE_TOKENTYPE = "escape"
   exports.LPAREN_TOKENTYPE = LPAREN_TOKENTYPE = "lparen"
@@ -45,6 +57,10 @@ define((require, exports, module) ->
   exports.ERROR_TOKENTYPE = ERROR_TOKENTYPE = "error"
   exports.LABEL_TOKENTYPE = LABEL_TOKENTYPE = "label"
   exports.PARAMETER_TOKENTYPE = PARAMETER_TOKENTYPE = "variable.parameter"
+  exports.CITE_TOKENTYPE = CITE_TOKENTYPE = "cite.parameter"
+  exports.REF_TOKENTYPE = REF_TOKENTYPE = "ref.parameter"
+  exports.VCITE_TOKENTYPE = VCITE_TOKENTYPE = "vcite.parameter"
+  exports.VREF_TOKENTYPE = VREF_TOKENTYPE = "vref.parameter"
 
   exports.SPECIFIC_TOKEN_FOR_STATE = SPECIFIC_TOKEN_FOR_STATE = {}
   SPECIFIC_TOKEN_FOR_STATE[LIST_ITEMIZE_STATE] = LIST_TOKENTYPE
@@ -55,6 +71,10 @@ define((require, exports, module) ->
   SPECIFIC_TOKEN_FOR_STATE[MATH_TEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
   SPECIFIC_TOKEN_FOR_STATE[MATH_LATEX_INLINE_STATE] = EQUATION_TOKENTYPE
   SPECIFIC_TOKEN_FOR_STATE[MATH_LATEX_DISPLAYED_STATE] = EQUATION_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[CITE_STATE] = CITE_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[REF_STATE] = REF_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[VCITE_STATE] = VCITE_TOKENTYPE
+  SPECIFIC_TOKEN_FOR_STATE[VREF_STATE] = VREF_TOKENTYPE
 
   PapeeriaLatexHighlightRules = ->
     ###
@@ -166,6 +186,25 @@ define((require, exports, module) ->
       { token: "string.#{RPAREN_TOKENTYPE}", regex: closingRegex, next: popState }
     ]
 
+    simpleCommandOpeningRules = (commandName, stateName, stateTokentype) -> [
+      {
+        token: [
+          "#{STORAGE_TOKENTYPE}.type"
+          "#{LPAREN_TOKENTYPE}.#{stateTokentype}"
+        ]
+        next: pushState(stateName)
+        regex: "(\\\\(?:#{commandName})\\s*)({)"
+      }
+    ]
+
+    simpleCommandInStateRules = [
+      {
+        token: RPAREN_TOKENTYPE
+        regex: "(})"
+        next: popState
+      }
+    ]
+
     mathEmptyLineRule = {
       token: "#{ERROR_TOKENTYPE}.#{EQUATION_TOKENTYPE}", regex : "^\\s*$"
     }
@@ -189,31 +228,6 @@ define((require, exports, module) ->
       mathStartRule(MATH_LATEX_INLINE_OPENING_REGEX, MATH_LATEX_INLINE_STATE)
     ]
 
-    ## This class generates rules for a simple command \commandName{commandBody}
-    ## Generated rules:
-    ##  -- append given stateName to the list of token types of \commandName and left {
-    ##  -- append given instateTokenType to the tokens in the command body
-    ## Rules are appended to the arrays which need to be passed afterwards  to other rules
-    ## or to the state map @$rules
-    class SimpleCommandState
-      constructor: (@commandName, @stateName, @instateTokenType) -> {}
-      generateRules: (openingRules, instateRules) =>
-        opening =
-          token: [
-            "#{STORAGE_TOKENTYPE}.type"
-            "#{LPAREN_TOKENTYPE}.#{@stateName}"
-          ]
-          next: pushState(@stateName)
-          regex: "(\\\\(?:#{@commandName}))({)"
-        openingRules.push(opening)
-
-        closing =
-          token: RPAREN_TOKENTYPE
-          regex: "(})"
-          next: popState
-        instateRules.push(closing)
-        basicRules(@instateTokenType).forEach((rule) -> instateRules.push(rule))
-
     listStartRules = [
       beginRule(LIST_ITEMIZE_REGEX, LIST_ITEMIZE_STATE)
       beginRule(LIST_ENUMERATE_REGEX, LIST_ENUMERATE_STATE)
@@ -229,35 +243,16 @@ define((require, exports, module) ->
       regex: "(\\\\(?:begin|end)(?:\\s*))({)(\\w*)(})"
     }
 
+    citationsRules = [].concat(
+      simpleCommandOpeningRules(CITE_COMMAND, CITE_STATE, CITE_TOKENTYPE),
+      simpleCommandOpeningRules(VCITE_COMMAND, VCITE_STATE, VCITE_TOKENTYPE),
+      simpleCommandOpeningRules(REF_COMMAND, REF_STATE, REF_TOKENTYPE),
+      simpleCommandOpeningRules(VREF_COMMAND, VREF_STATE, VREF_TOKENTYPE)
+    )
 
-    citationsRules = []
+
     @$rules = {}
 
-    citeCommandState = new SimpleCommandState("cite", "cite", "#{PARAMETER_TOKENTYPE}.cite")
-    citationsInstateRules = []
-    citeCommandState.generateRules(citationsRules, citationsInstateRules)
-
-    citationsRules = citationsRules.concat([
-      {
-        token: [
-          "#{STORAGE_TOKENTYPE}.type"
-          "#{LPAREN_TOKENTYPE}.ref"
-          "#{PARAMETER_TOKENTYPE}.ref"
-          RPAREN_TOKENTYPE
-        ]
-        regex: "(\\\\ref\\s*)({)(\\w*)(})"
-      }
-      # this rule is for `vref` and `vcite` citations
-      {
-        token: [
-          "#{KEYWORD_TOKENTYPE}"
-          LPAREN_TOKENTYPE
-          PARAMETER_TOKENTYPE
-          RPAREN_TOKENTYPE
-        ]
-        regex: "(\\\\(?:v?ref|cite(?:[^{]*))(?:\\s*))(?:({)([^}]*)(}))?"
-      }
-    ])
     @$rules[START_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       {
         token: [
@@ -273,6 +268,14 @@ define((require, exports, module) ->
       }
       genericEnvironmentRule
     ])
+
+    @$rules[CITE_STATE] = simpleCommandInStateRules
+
+    @$rules[REF_STATE] = simpleCommandInStateRules
+
+    @$rules[VCITE_STATE] = simpleCommandInStateRules
+
+    @$rules[VREF_STATE] = simpleCommandInStateRules
 
     @$rules[LIST_ITEMIZE_STATE] = [].concat(equationStartRules, listStartRules, citationsRules, [
       envEndRule(LIST_ITEMIZE_REGEX)
@@ -315,7 +318,6 @@ define((require, exports, module) ->
     # inside `basicRules` function
     for state of @$rules
       @$rules[state] = @$rules[state].concat(basicRules(SPECIFIC_TOKEN_FOR_STATE[state]))
-    @$rules[citeCommandState.stateName] = citationsInstateRules
     return
 
   oop.inherits(PapeeriaLatexHighlightRules, TextHighlightRules)
