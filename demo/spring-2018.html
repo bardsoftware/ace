@@ -56,6 +56,8 @@
 
 # Header1
 
+Some text in our markdown file
+
 ```{r}
 library(feather)
 library(ggplot2)
@@ -89,6 +91,7 @@ body {
 ```
 
 ```{js}
+var a = "hello"
 $('.title').remove()
 ```
 
@@ -113,8 +116,10 @@ require([
   function(ace, langTools, katexPreviewer, highlighter, TexCompleter, Spellchecker, SpellcheckerPopup) {
     var editor = ace.edit("editor");
     editor.$blockScrolling = Infinity;
+    // editor.setTheme("ace/theme/monokai");
     var session = editor.getSession();
     session.setMode("ace/mode/markdown");
+    //alert("Mode Set");
     session.setUseWorker(true);
 
     // SpellcheckerPopup.setup(editor);
@@ -244,7 +249,7 @@ require([
 });
 </script>
 <span id = "highlightInfo"></span>
-<span id="formula"><span>
+<span id="formula"></span>
 
 </body>
 </html>
