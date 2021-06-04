@@ -1,50 +1,86 @@
-foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
+# Copyright (C) 2017 BarD Software
+foo = null
 
 define((require, exports, module) ->
-    PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  {
+    COMMENT_TOKENTYPE
+    LIST_TOKENTYPE
+    EQUATION_TOKENTYPE
+    ENVIRONMENT_TOKENTYPE
+    ERROR_TOKENTYPE
+    SPECIFIC_TOKEN_FOR_STATE
+    isType
+  } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
 
-    EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
-    LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-    ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
-    TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
-    FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
+  exports.COMMENT_CONTEXT = COMMENT_CONTEXT = COMMENT_TOKENTYPE
+  exports.EQUATION_CONTEXT = EQUATION_CONTEXT = EQUATION_TOKENTYPE
+  exports.ENVIRONMENT_CONTEXT = ENVIRONMENT_CONTEXT = ENVIRONMENT_TOKENTYPE
+  exports.ERROR_CONTEXT = ERROR_CONTEXT = ERROR_TOKENTYPE
+  exports.LIST_CONTEXT = LIST_CONTEXT = LIST_TOKENTYPE
+  # "start" is a (badly named) default context
+  exports.START_CONTEXT = START_CONTEXT = "start"
 
-    EQUATION_TOKENTYPE = PapeeriaLatexHighlightRules.EQUATION_TOKENTYPE
-    LIST_TOKENTYPE = PapeeriaLatexHighlightRules.LIST_TOKENTYPE
-    ENVIRONMENT_TOKENTYPE = PapeeriaLatexHighlightRules.ENVIRONMENT_TOKENTYPE
-    FIGURE_TOKENTYPE = PapeeriaLatexHighlightRules.FIGURE_TOKENTYPE
-    TABLE_TOKENTYPE = PapeeriaLatexHighlightRules.TABLE_TOKENTYPE
+  # Ordering matters here: tokentypes higher up the list take precedence over
+  # lower ones, if token is of multiple types
+  CONTEXT_TOKENTYPES = [
+    EQUATION_TOKENTYPE
+    ERROR_TOKENTYPE
+    COMMENT_TOKENTYPE
+    ENVIRONMENT_TOKENTYPE
+    LIST_TOKENTYPE
+  ]
 
-    TOKEN_TYPES = [EQUATION_TOKENTYPE, LIST_TOKENTYPE, FIGURE_TOKENTYPE, ENVIRONMENT_TOKENTYPE, TABLE_TOKENTYPE]
-    STATES =  [EQUATION_STATE, LIST_STATE, FIGURE_STATE, ENVIRONMENT_STATE, TABLE_STATE]
+  CONTEXTS_FOR_TOKENTYPES = {}
+  CONTEXTS_FOR_TOKENTYPES[EQUATION_TOKENTYPE] = EQUATION_CONTEXT
+  CONTEXTS_FOR_TOKENTYPES[ERROR_TOKENTYPE] = ERROR_CONTEXT
+  CONTEXTS_FOR_TOKENTYPES[COMMENT_TOKENTYPE] = COMMENT_CONTEXT
+  CONTEXTS_FOR_TOKENTYPES[ENVIRONMENT_TOKENTYPE] = ENVIRONMENT_CONTEXT
+  CONTEXTS_FOR_TOKENTYPES[LIST_TOKENTYPE] = LIST_CONTEXT
 
-    # Specific for token"s system of type in ace
-    isType = (token, type) ->
-        return token.type.split(".").indexOf(type) > -1
+  getContexts = (session, row, column) ->
+    # column > 0 means that token exists at { row, column } and also that we
+    # should use this token's type to infer context
+    contexts = []
+    if column > 0
+      { row: nextRow, column: nextColumn } = session.doc.indexToPosition(
+        session.doc.positionToIndex({ row, column }, row) + 1,
+        row
+      )
+      # we use both this token and next token to correctly determine context
+      # on the very start of it
+      token = session.getTokenAt(row, column)
+      nextToken = session.getTokenAt(nextRow, nextColumn)
+      for contextTokentype in CONTEXT_TOKENTYPES
+        if (
+          isType(token, contextTokentype) or
+          nextToken? and isType(nextToken, contextTokentype)
+        )
+          contexts.push(CONTEXTS_FOR_TOKENTYPES[contextTokentype])
+    # if column is 0, it makes more sense to use context from the end of a
+    # previous line
+    else
+      if row > 0
+        prevState = session.getState(row - 1)
+        prevState = (
+          if typeof prevState == "string"
+          then prevState
+          else prevState[prevState.length - 1]
+        )
+        tokentype = SPECIFIC_TOKEN_FOR_STATE[prevState]
+        contexts.push(
+          if tokentype?
+          then CONTEXTS_FOR_TOKENTYPES[tokentype]
+          else START_CONTEXT
+        )
+    if contexts.length == 0
+      contexts.push(START_CONTEXT)
 
-    ###
-     * @param {(number, number) pos}
-     *
-     * Returns context at cursor position.
-    ###
-    getContext = (session, row, column) ->
-        state = getContextFromRow(session, row)
-        token = session.getTokenAt(row, column)
-        if token?
-            for i in [0..TOKEN_TYPES.length-1]
-                if isType(token, TOKEN_TYPES[i])
-                    return STATES[i]
-        return state
+    return contexts
 
+  getContext = (session, row, column) ->
+    return getContexts(session, row, column)[0]
 
-    getContextFromRow = (session, row) ->
-        states = session.getState(row)
-        if (Array.isArray(states))
-            return states[states.length - 1]
-        else
-            return states
-
-    exports.getContext = getContext
-    exports.isType = isType
-    return
+  exports.getContexts = getContexts
+  exports.getContext = getContext
+  return
 )

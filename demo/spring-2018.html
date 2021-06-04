@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Editor</title>
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css">
+  <style type="text/css" media="screen">
+    body {
+        overflow: hidden;
+    }
+    #editor {
+        margin: 0;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    .typo {
+      border-bottom: 1px dotted red;
+    }
+    .ace_marker-layer .typo {
+      position: absolute;
+      z-index: 1;
+    }
+    #highlightInfo {
+      width: 0;
+      height: 0;
+      text-align: center;
+      font-size: 1.5em;
+      margin: 0;
+      position: absolute;
+      top: 0;
+      right: 0.4cm;
+      z-index: 1;
+    }
+    #formula {
+        width: 0;
+        height: 0;
+        text-align: center;
+        font-size: 1.5em;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        right: 0.4cm;
+        z-index: 1;
+    }
+    .popover {
+        max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+<pre id="editor">
+
+# Header1
+
+```{r}
+library(feather)
+library(ggplot2)
+
+# Read from feather and plot
+flights <- read_feather("flights.feather")
+ggplot(flights, aes(carrier, arr_delay)) + geom_point() + geom_jitter()
+```
+
+```{python}
+import pandas
+import feather
+
+# Read flights data and select flights to O'Hare
+flights = pandas.read_csv("flights.csv")
+flights = flights[flights['dest'] == "ORD"]
+
+# Select carrier and delay columns and drop rows with missing values
+flights = flights[['carrier', 'dep_delay', 'arr_delay']]
+flights = flights.dropna()
+print flights.head(10)
+
+# Write to feather file for reading from R
+feather.write_dataframe(flights, "flights.feather")
+```
+
+```{css}
+body {
+  color: red;
+}
+```
+
+```{js}
+$('.title').remove()
+```
+
+</pre>
+
+<script src="kitchen-sink/require.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
+
+<script>
+require.config({ paths : { "ace" : "../lib/ace" } });
+require([
+  "ace/ace",
+  "ace/ext/language_tools",
+  "ace/ext/papeeria/katex-previewer",
+  "ace/ext/papeeria/highlighter",
+  "ace/ext/papeeria/tex_completer",
+  "ace/ext/papeeria/spellchecker",
+  "ace/ext/papeeria/spellchecker_popup"
+  ],
+  function(ace, langTools, katexPreviewer, highlighter, TexCompleter, Spellchecker, SpellcheckerPopup) {
+    var editor = ace.edit("editor");
+    editor.$blockScrolling = Infinity;
+    var session = editor.getSession();
+    session.setMode("ace/mode/markdown");
+    session.setUseWorker(true);
+
+    // SpellcheckerPopup.setup(editor);
+    // Spellchecker.setup(editor);
+
+    // session.on("changeMode", function() {
+    //   Spellchecker.getInstance().onSessionUpdated(
+    //     "http://localhost:8000/typos.json",
+    //     "http://localhost:8000/corrections.json"
+    //   );
+    //   Spellchecker.getInstance().onHashUpdated("sedf43f9ufuahf4938hf");
+    //   Spellchecker.getInstance().onSettingsUpdated({
+    //     alphabet: 'abcdefghijklmnopqrstuvwxyz',
+    //     enabled: true,
+    //     language: "en_US",
+    //     onSettingsUpdateSuccess: function() {},
+    //     onSettingsUpdateError: function(data) {
+    //       console.log("Error: " + data.content);
+    //     }
+    //   });
+    // });
+
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+    });
+
+    candidateToggleSurroundingBracketsPopup = function(editor, posLeft, posRight) {
+      var content, options, session;
+      session = editor.getSession();
+      if (posLeft && posRight) {
+        if (posRight.row > editor.getLastVisibleRow() || posLeft.row < editor.getFirstVisibleRow()) {
+          content = "line " + (posLeft.row + 1) + ": " + session.getLine(posLeft.row) + "    line " + (posRight.row + 1) + ": " + session.getLine(posRight.row);
+          options = {
+            html: true,
+            placement: "bottom",
+            trigger: "manual",
+            container: "#editor",
+            content: content
+          };
+          setTimeout(function() {
+            var cursorPosition;
+            cursorPosition = $("textarea.ace_text-input").position();
+            $("#highlightInfo").css({
+              top: cursorPosition.top + 24 + "px",
+              left: cursorPosition.left + "px"
+            });
+            $("#highlightInfo").popover(options);
+            $("#highlightInfo").popover("show");
+          }, 100);
+        }
+        return;
+      }
+      $("#highlightInfo").popover("destroy");
+    };
+
+    var texCompleter = new TexCompleter();
+    texCompleter.init(editor);
+    langTools.addCompleter(texCompleter);
+    texCompleter.setReferencesUrl("/demo/example.json")
+    texCompleter.setCitationsUrl("/demo/biblio.json")
+
+    console.log("Simple Latex Completer successfully added");
+    //Initialization bind for highlight brackets.
+    highlighter.init(ace, editor, {win: 'Ctrl-Shift-9', mac: 'Command-Shift-9'}, candidateToggleSurroundingBracketsPopup);
+    langTools.snippetCompleter.getDocTooltip = null;
+
+    var jqPopoverContainer = $("#formula");
+
+    var popoverHandler = {
+        options: {
+            html: true,
+            placement: "bottom",
+            trigger: "manual",
+            container: editor.container
+        },
+        show: function(title, content, position) {
+            jqPopoverContainer.css(position);
+            popoverHandler.options.content = content;
+            popoverHandler.options.title = title;
+            jqPopoverContainer.popover(popoverHandler.options);
+            jqPopoverContainer.popover("show");
+        },
+        destroy: function() {
+            return jqPopoverContainer.popover("destroy");
+        },
+        popoverExists: function() {
+            var ref;
+            return ((ref = jqPopoverContainer.data()) != null ? ref.popover : void 0) != null;
+        },
+        setContent: function(title, content) {
+            var popoverElement;
+            popoverElement = jqPopoverContainer.data().popover.tip();
+            popoverElement.children(".popover-content").html(content);
+            return popoverElement.children(".popover-title").text(title);
+        },
+        setPosition: function(position) {
+            return jqPopoverContainer.data().popover.tip().css(position);
+        }
+    };
+
+    var messageMap = {
+        "js.math_preview.error.document_end": "Error: end of the document reached",
+        "js.math_preview.error.empty_line": "Error: empty line reached",
+        "js.math_preview.error.whitespace_line": "Error: line of whitespaces reached"
+    };
+
+    var I18N = {
+        text: function(code) {
+            var ref;
+            return (ref = messageMap[code]) != null ? ref : code;
+        }
+    };
+
+    console.log(katexPreviewer);
+
+    katexPreviewer.setupPreviewer(editor, popoverHandler, null, I18N);
+    window.loadCss = function(cssShortName) {
+      var baseUrl = "../lib/ace/ext/" + cssShortName + "/";
+      var link = $("<link>").attr({
+        rel: "stylesheet",
+        href: baseUrl + cssShortName + ".min.css"
+      });
+      $("head").append(link);
+    }
+});
+</script>
+<span id = "highlightInfo"></span>
+<span id="formula"><span>
+
+</body>
+</html>

@@ -1,83 +1,115 @@
 foo = null  # force ace to use ace.define
 define((require, exports, module) ->
 
+  ###
+  Few types used in this module:
+
+  Correction
+    caption: string
+    value: string
+    meta: string
+    score: number
+    action?(word: string)
+
+  PopupAction
+    caption: string
+    doAction(word: string)
+  ###
+
   Autocomplete = require('ace/autocomplete')
   Spellchecker = require('ace/ext/papeeria/spellchecker')
 
-  # Returns Range object that describes the current word position.
-  # @param {Editor} editor: editor object.
-  # @return {Range}: current word range.
-  getCurrentWordRange = (editor) ->
-    session = editor.getSession()
-    row = editor.getCursorPosition().row
-    col = editor.getCursorPosition().column
-    return session.getWordRange(row, col)
+  ###
+  Convert an array of string to popup-eligible structure.
+  @param {PopupAction} action -- action object to be prepended to the resulting list (or null)
+  @param {Array<String>} corrections -- array of corrections
+  @return {Array<Correction>}
+  ###
+  convertCorrectionList = (action, corrections) ->
+    list = ({caption: item, value: item, meta: "", score: corrections.length - i} for item, i in corrections)
+    list.unshift(actionAsCorrection(action))
+    return list
 
-  # Convert an array of string to popup-eligible structure.
-  # @param {Array} corrections: array of strings with substitution options.
-  # @return {Array}: array of JSONs, actually.
-  convertCorrectionList = (corrections) ->
-    # TODO: get server to provide corrections' source
-    return ({caption: item, value: item, meta: "", score: corrections.length - i} for item, i in corrections)
-
-  # Get the word under the cursor.
-  # @param {Editor} editor: editor object.
-  # @return {String}: the current word.
-  extractWord = (editor) ->
-    session = editor.getSession()
-    wordRange = getCurrentWordRange(editor)
-    return session.getTextRange(wordRange)
+  # PopupAction to Correction converter
+  actionAsCorrection = (action) -> {
+    caption: action.caption,
+    value: action.caption,
+    meta: "",
+    score: Number.MAX_VALUE,
+    action: action.doAction
+  }
 
   mySpellcheckerPopup = null
+  mySpellchecker = null
 
 
-  # Sets up spellchecker popup and implements some routines
-  # to work on current in the editor.
-  setup = (editor) ->
-    mySpellcheckerPopup = new SpellcheckerCompleter()
+  ###
+  Sets up spellchecker popup and implements some routines
+  to work on current in the editor.
+  @param {Editor} editor -- ace editor
+  @param {(String, String) -> void} onReplaced -- callback taking typo and replacement
+  @param {PopupAction} blacklistAction -- action to be applied if popup target is not a typo
+  @param {PopupAction} whitelistAction -- action to be applied if popup target is a typo
+  ###
+  setup = (editor, onReplaced, blacklistAction, whitelistAction) ->
+    mySpellcheckerPopup = new SpellcheckerCompleter(onReplaced, blacklistAction, whitelistAction)
+    mySpellchecker = Spellchecker.getInstance()
     # Bind SpellcheckerCompleter.showPopup to Alt-Enter editor shortcut.
     command =
-      name: "spellCheckPopup"
+      name: "spellcheckerPopup"
       exec: ->
+        editor.completer?.detach()
         editor.completer = mySpellcheckerPopup
         editor.completer.showPopup(editor)
       bindKey: "Alt-Enter"
     editor.commands.addCommand(command)
 
 
-  # Autocomplete class extension since it behaves almost the same way.
-  # All we need is to override methods responsible for getting data for
-  # popup and inserting chosen correction instead of the current word.
   class SpellcheckerCompleter extends Autocomplete.Autocomplete
-    constructor: ->
-      @isDisposable = true
+    constructor: (@onReplaced, @blacklistAction, @whitelistAction) ->
       super()
+      @isDisposable = true
+      @typoRange = null
+      @typo = null
 
-    # "Gather" completions extracting current word
-    # and take it's corrections list as "completions"
+    # we should hide the popup, if user starts typing
+    changeListener: () => @detach()
+
     gatherCompletions: (editor, callback) =>
+      if not mySpellchecker.isEnabled()
+        callback(null, {finished: true})
+        return true
       # For some reason Autocomplete needs this base object, so
       # I propose just not to touch it.
       session = editor.getSession()
-      position = editor.getCursorPosition()
-      @base = session.doc.createAnchor(position.row, position.column)
-      word = extractWord(editor)
-      Spellchecker.getInstance().getCorrections(word, (correctionsList) ->
+      {row, column} = editor.getCursorPosition()
+      @base = session.doc.createAnchor(row, column)
+      @typoRange = mySpellchecker.getTypoRange(row, column)
+      @typo = session.getTextRange(@typoRange)
+      if mySpellchecker.isWordTypo(@typo)
+        mySpellchecker.getCorrections(@typo, (correctionsList) =>
+          callback(null, {
+            prefix: ""
+            matches: convertCorrectionList(@whitelistAction, correctionsList)
+            finished: true
+          })
+        )
+      else
         callback(null, {
           prefix: ""
-          matches: convertCorrectionList(correctionsList)
+          matches: convertCorrectionList(@blacklistAction, [])
           finished: true
         })
-      )
       return true
 
-    # Insert "matching" word instead of the current one.
-    # In fact we substitute current word with data,
-    # not just insert something.
     insertMatch: (data, options) =>
       data ?= @popup.getData(@popup.getRow())
-      wordRange = getCurrentWordRange(@editor)
-      @editor.getSession().replace(wordRange, data.value || data)
+      if data.action
+        data.action(@typo)
+      else
+        replacement = data.value || data
+        @editor.getSession().replace(@typoRange, replacement)
+        @onReplaced(@typo, replacement)
       @detach()
 
   return {

@@ -1,14 +1,14 @@
 foo = null # ACE builder wants some meaningful JS code here to use ace.define instead of just define
 define((require, exports, module) ->
   HashHandler = require("ace/keyboard/hash_handler")
-  PapeeriaLatexHighlightRules = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
-  LatexParsingContext = require("ace/ext/papeeria/latex_parsing_context")
-
-  EQUATION_STATE = PapeeriaLatexHighlightRules.EQUATION_STATE
-  LIST_STATE = PapeeriaLatexHighlightRules.LIST_STATE
-  ENVIRONMENT_STATE = PapeeriaLatexHighlightRules.ENVIRONMENT_STATE
-  TABLE_STATE = PapeeriaLatexHighlightRules.TABLE_STATE
-  FIGURE_STATE = PapeeriaLatexHighlightRules.FIGURE_STATE
+  { isType } = require("ace/ext/papeeria/papeeria_latex_highlight_rules")
+  {
+    EQUATION_CONTEXT
+    LIST_CONTEXT
+    ENVIRONMENT_CONTEXT
+    START_CONTEXT
+    getContext
+  } = require("ace/ext/papeeria/latex_parsing_context")
 
   EQUATION_SNIPPETS = require("ace/ext/papeeria/snippets/equation_snippets")
   LIST_ENVIRONMENTS = [
@@ -182,9 +182,11 @@ define((require, exports, module) ->
   )
 
 
+  getJsonFromUrl = (url, onSuccess) =>
+    $.getJSON(url).done((data) => onSuccess(data))
 
   processReferenceJson = (json) =>
-    return json.Labels?.map((elem) => {
+    return json?.map((elem) => {
       name: elem.caption
       value: elem.caption
       score: 1000
@@ -195,14 +197,16 @@ define((require, exports, module) ->
   processCitationJson = (json) =>
     result = []
     for bibfile, bibentries of json
+      bibfileName = bibfile.split("/").pop();
       if bibfile != "" && bibentries != ""
         bibentries.map((entry) =>
           result.push(
             name: entry.id
             value: entry.id
             score: 1000
-            meta: bibfile
+            meta: bibfileName
             meta_score: 10
+            path: bibfile
           )
         )
     return result
@@ -212,14 +216,15 @@ define((require, exports, module) ->
     * processJson -- function -- handler for defined type of json(citeJson, refJson, etc)
     * return object with fields name, value and (optional) meta, meta_score, score
     ###
-    constructor: (processJson) ->
+    constructor: (getJson, processJson) ->
       @lastFetchedUrl =  ""
       @cache = []
+      @getJson = getJson
       @processJson = processJson
 
     getReferences: (url, callback) =>
       if url != @lastFetchedUrl
-        $.getJSON(url).done((data) =>
+        @getJson(url, (data) =>
           if data?
             @cache = @processJson(data)
             callback(null, @cache)
@@ -241,14 +246,15 @@ define((require, exports, module) ->
 
       if token?
         for type in allowedTypes
-          if LatexParsingContext.isType(token, type)
+          if isType(token, type)
             editor.completer.showPopup(editor)
             break
 
   class TexCompleter
       constructor: ->
-        @refCache = new CompletionsCache(processReferenceJson)
-        @citeCache = new CompletionsCache(processCitationJson)
+        @refCache = new CompletionsCache(getJsonFromUrl, processReferenceJson)
+        @citeCache = new CompletionsCache(getJsonFromUrl, processCitationJson)
+        @filesCache = new CompletionsCache(getJsonFromUrl, (json) -> json)
         @enabled = true
 
       init: (editor) =>
@@ -267,24 +273,31 @@ define((require, exports, module) ->
           allowCommand = ["Return", "backspace"]
           if  event.command.name in allowCommand
             showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-          );
+          )
 
         editor.getSession().selection.on('changeCursor', (cursorEvent) ->
           showPopupIfTokenIsOneOfTypes(editor, ["ref", "cite"])
-        );
+        )
 
       setEnabled: (enabled) => @enabled = enabled
       setReferencesUrl: (url) => @referencesUrl = url
       setCitationsUrl: (url) => @citationsUrl = url
+      setFilesUrl: (url) => @filesUrl = url
+      setIncludeCallback: (callback) => @includeCallback = callback
+      processFiles : (callback) =>
+        if not @filesUrl?
+          callback(null, [])
+        else
+          @filesCache.getReferences(@filesUrl, callback)
 
       completeLinebreak: (editor) =>
-        cursor = editor.getCursorPosition();
-        line = editor.session.getLine(cursor.row);
-        tabString = editor.session.getTabString();
-        indentString = line.match(/^\s*/)[0];
+        cursor = editor.getCursorPosition()
+        line = editor.session.getLine(cursor.row)
+        tabString = editor.session.getTabString()
+        indentString = line.match(/^\s*/)[0]
         indexOfBegin = line.indexOf("begin")
 
-        if LatexParsingContext.getContext(editor.session, cursor.row, cursor.column) == LIST_STATE &&  indexOfBegin < cursor.column
+        if getContext(editor.session, cursor.row, cursor.column) == LIST_CONTEXT && indexOfBegin < cursor.column
           if indexOfBegin > -1
             editor.insert("\n" + tabString + indentString + "\\item ")
           else
@@ -304,27 +317,52 @@ define((require, exports, module) ->
           return
 
         token = session.getTokenAt(pos.row, pos.column)
-        context = LatexParsingContext.getContext(session, pos.row, pos.column)
+        context = getContext(session, pos.row, pos.column)
 
-        if LatexParsingContext.isType(token, "ref")
+        if isType(token, "ref")
           if @referencesUrl? then @refCache.getReferences(@referencesUrl, callback)
           return
 
-        if LatexParsingContext.isType(token, "cite")
-          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, callback)
+        if isType(token, "cite")
+          if @citationsUrl? then @citeCache.getReferences(@citationsUrl, (err, cites) =>
+            if @filesUrl?
+              # After we get a list of cite autocompletion we want to extract entries from already included biblio files
+              # Let's retrieve a list of files included to the current target from the filesUrl
+              @filesCache.getReferences(@filesUrl, (err, files) =>
+                # Once we have a list of files included to the compilation we can find citation keys that
+                # are (not) included and treat them differently
+                callback(null, cites.map((cite) =>
+                    if (cite.path in files) then cite
+                    else {
+                      name: cite.name
+                      value: cite.value
+                      score: 1000
+                      meta: cite.meta
+                      # We want to show included cite keys first, so let's decrease the meta_score for other entries
+                      meta_score: 9
+                      # Calls the provided custom callback when user inserts a key from a non-included file
+                      # (e.g. offers to add the appropriate bib-file to \bibliography tag)
+                      action: (editor) => @includeCallback?(cite.path)
+                    }
+                  )
+                )
+              )
+            else
+              callback(null, cites)
+          )
           return
 
         if (prefix.length >= 2 and prefix[0] == "\\") or (prefix.length >= 3)
           switch context
-            when "start" then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
+            when START_CONTEXT then callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-            when LIST_STATE then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
+            when LIST_CONTEXT then callback(null, LIST_KEYWORDS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET, LIST_END_ENVIRONMENT))
-            when EQUATION_STATE then callback(null, EQUATION_SNIPPETS)
-            when ENVIRONMENT_STATE then callback(null, ENVIRONMENT_LABELS)
+            when EQUATION_CONTEXT then callback(null, EQUATION_SNIPPETS)
+            when ENVIRONMENT_CONTEXT then callback(null, ENVIRONMENT_LABELS)
             else callback(null, BASIC_SNIPPETS.concat(LIST_SNIPPET,
               EQUATION_ENV_SNIPPETS, REFERENCE_SNIPPET, CITATION_SNIPPET))
-           return
+          return
 
         callback(null, [])
         return
